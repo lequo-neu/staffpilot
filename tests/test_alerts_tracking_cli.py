@@ -73,7 +73,9 @@ def test_command_line_end_to_end(workbook, tmp_path, monkeypatch, capsys):
     cli.main(["chat"])
     out = capsys.readouterr().out
     assert "Alerts:" in out and "Chart saved to" in out and "plan" in out
-    assert "Kept the kind of question" in out and "Started a new conversation" in out
+    # On failure, show the chat itself rather than the start of the output.
+    chat = out[out.find("Ask a question.") :]
+    assert "Kept the kind of question" in out and "Started a new conversation" in out, chat
     assert (tmp_path / "outputs" / "conversations" / "chat.md").exists()
     assert list((tmp_path / "outputs" / "answers").glob("*.png"))
 
