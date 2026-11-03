@@ -115,11 +115,7 @@ def test_model_failures_fall_back_to_the_template(planner):
         def compose(self, *args, **kwargs):
             raise RuntimeError("network down")
 
-    from staffpilot.agent import ModelRouter
-
-    answer = StaffPilot(planner, router=ModelRouter({"broken": Broken()}, "broken")).ask(
-        "How many agents does Alpha need?"
-    )
+    answer = StaffPilot(planner, Broken()).ask("How many agents does Alpha need?")
     assert answer.fallback_used and answer.verified
 
 
@@ -166,9 +162,5 @@ def test_a_model_that_writes_numbers_in_braces_falls_back_to_the_template(planne
         def compose(self, *args, **kwargs):
             return "Net value moves to {{$41.7M}}."
 
-    from staffpilot.agent import ModelRouter
-
-    answer = StaffPilot(planner, router=ModelRouter({"sloppy": Sloppy()}, "sloppy")).ask(
-        "What if sign ups in Alpha drop 30% in Q3?"
-    )
+    answer = StaffPilot(planner, Sloppy()).ask("What if sign ups in Alpha drop 30% in Q3?")
     assert answer.fallback_used and answer.verified and "{{" not in answer.text

@@ -30,13 +30,16 @@ def _ascii(text: str) -> str:
     return text.encode(encoding, errors="replace").decode(encoding, errors="replace")
 
 
+def _shown(path) -> str:
+    """A path as the user typed it: relative to the repository when it is inside it."""
+    return str(path.relative_to(REPO_ROOT) if path.is_relative_to(REPO_ROOT) else path)
+
+
 def _pilot(backend: str):
-    from staffpilot.agent import ModelRouter, StaffPilot, make_backend
+    from staffpilot.agent import StaffPilot
     from staffpilot.planner import Planner
 
-    planner = Planner()
-    chosen = make_backend(backend, planner.settings, EVAL_DIR / "cache")
-    return StaffPilot(planner, router=ModelRouter({chosen.name: chosen}, chosen.name))
+    return StaffPilot.for_backend(Planner(), backend, EVAL_DIR / "cache")
 
 
 def cmd_plan(_: argparse.Namespace) -> None:
@@ -64,7 +67,7 @@ def cmd_plan(_: argparse.Namespace) -> None:
     view["service_rate"] = view["service_rate"].map(lambda v: f"{v:.1%}")
     view["avg_active"] = view["avg_active"].map(lambda v: f"{v:,.0f}")
     print(view.to_string(index=False))
-    print(f"Wrote {OUTPUTS / 'plan.csv'}, kpis.csv and policy_comparison.csv")
+    print(f"Wrote {_shown(OUTPUTS / 'plan.csv')}, kpis.csv and policy_comparison.csv")
     from staffpilot.alerts import plan_alerts
     from staffpilot.tracking import record_run
 
@@ -94,18 +97,16 @@ def cmd_eda(_: argparse.Namespace) -> None:
     path = write_report(report, dataset, OUTPUTS / "eda")
     for finding in report.findings:
         print(f"* {finding}")
-    print(f"Wrote {path} and {len(list(path.parent.glob('*.png')))} charts")
+    print(f"Wrote {_shown(path)} and {len(list(path.parent.glob('*.png')))} charts")
 
 
 def _save_chart(answer, name: str) -> str:
-    if answer.chart is None:
-        return ""
-    from staffpilot.charts import save
+    from staffpilot.charts import save_answer_chart
 
-    slug = "".join(ch if ch.isalnum() else "_" for ch in name.lower())[:40].strip("_") or "answer"
-    path = save(answer.chart, OUTPUTS / "answers" / f"{slug}.png")
-    shown = path.relative_to(REPO_ROOT) if path.is_relative_to(REPO_ROOT) else path
-    return f" Chart saved to {shown}."
+    path = save_answer_chart(answer.chart, name, OUTPUTS / "answers")
+    if path is None:
+        return ""
+    return f" Chart saved to {_shown(path)}."
 
 
 def _footer(answer) -> str:
@@ -145,7 +146,7 @@ def cmd_chat(args: argparse.Namespace) -> None:
             path = OUTPUTS / "conversations" / "chat.md"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(memory.to_markdown(), encoding="utf-8")
-            print(f"Saved to {path.relative_to(REPO_ROOT) if path.is_relative_to(REPO_ROOT) else path}.")
+            print(f"Saved to {_shown(path)}.")
             continue
         answer = pilot.ask(question, memory)
         carried = f" Kept the {describe(answer.carried)} from your last question." if answer.carried else ""
@@ -253,7 +254,10 @@ def cmd_history(args: argparse.Namespace) -> None:
         frame["net_value"] = frame["net_value"].map(lambda v: f"${v / 1e6:,.1f}M")
     if "service_rate" in frame:
         frame["service_rate"] = frame["service_rate"].map(lambda v: f"{v:.1%}")
-    print(frame.to_string(index=False))
+    if "avg_active" in frame:
+        frame["avg_active"] = frame["avg_active"].map(lambda v: f"{v:,.0f}")
+    # Runs made before the folder was a git repository have no commit.
+    print(frame.fillna("none").to_string(index=False))
 
 
 def cmd_app(args: argparse.Namespace) -> None:

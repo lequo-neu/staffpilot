@@ -15,7 +15,6 @@ leave out from the previous turn (see `memory.py`).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import json
 import logging
 from pathlib import Path
 import time
@@ -29,6 +28,7 @@ from staffpilot.agent.backends import (
     _offline_intent,
     _offline_scenario,
     describe_error,
+    make_backend,
     template_answer,
 )
 from staffpilot.agent.facts import FactLedger
@@ -64,47 +64,24 @@ class Answer:
         return not self.unsupported and not self.missing
 
 
-class ModelRouter:
-    """Chooses which backend writes the answer for each intent.
-
-    The table comes from the evaluation (`eval/results/routing.json`): for each intent
-    the backend with the best accuracy, then the lowest latency. Without it, every
-    intent uses the default backend.
-    """
-
-    def __init__(self, backends: dict[str, Any], default: str, table: dict[str, str] | None = None) -> None:
-        self.backends = backends
-        self.default = default
-        self.table = {k: v for k, v in (table or {}).items() if v in backends}
-
-    @classmethod
-    def from_file(cls, backends: dict[str, Any], default: str, path: Path) -> ModelRouter:
-        table = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-        return cls(backends, default, table)
-
-    def router_backend(self) -> Any:
-        return self.backends[self.table.get("router", self.default)]
-
-    def for_intent(self, intent: Intent) -> Any:
-        return self.backends[self.table.get(intent.value, self.default)]
-
-
 class StaffPilot:
-    def __init__(
-        self, planner: Planner, backend: Any | None = None, router: ModelRouter | None = None
-    ) -> None:
+    def __init__(self, planner: Planner, backend: Any | None = None) -> None:
         self.planner = planner
         self.tools = PlannerTools(planner)
-        backend = backend or OfflineBackend()
-        self.router = router or ModelRouter({backend.name: backend}, backend.name)
+        self.backend = backend or OfflineBackend()
         self.offline = OfflineBackend()
+
+    @classmethod
+    def for_backend(cls, planner: Planner, name: str, cache_dir: Path | None = None) -> StaffPilot:
+        """The assistant on a named backend ("offline", "anthropic_fast", "openai:gpt-5-nano" and so on)."""
+        return cls(planner, make_backend(name, planner.settings, cache_dir))
 
     def route(self, question: str, conversation: Conversation | None = None) -> tuple[RoutedQuery, str]:
         route, name, _ = self._route(question, conversation)
         return route, name
 
     def _route(self, question: str, conversation: Conversation | None) -> tuple[RoutedQuery, str, list[str]]:
-        backend = self.router.router_backend()
+        backend = self.backend
         countries = self.planner.countries
         history = conversation.transcript() if conversation else ""
         try:
@@ -212,7 +189,7 @@ class StaffPilot:
         outputs = self.run_tools(route, question)
         ledger = self._ledger(outputs)
         formatted = ledger.formatted()
-        writer = self.router.for_intent(route.intent)
+        writer = self.backend
         sources = [s for o in outputs for s in o.sources]
         # Clarifications are written by the code, so their numbers (such as limits) are sources too.
         # Numbers from earlier answers in the chat already passed this check, so they may be repeated.
@@ -283,7 +260,7 @@ class StaffPilot:
         outputs = [self.tools.get_plan([resolved])]
         ledger = self._ledger(outputs)
         formatted = ledger.formatted()
-        writer = self.router.for_intent(Intent.memo)
+        writer = self.backend
         notes = [n for o in outputs for n in o.notes]
         try:
             draft = writer.draft_memo(resolved, formatted, notes)

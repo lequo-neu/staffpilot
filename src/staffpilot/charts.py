@@ -57,13 +57,7 @@ def money(value: float) -> str:
 
 def money_axis_label(value: float, _: object = None) -> str:
     """Axis ticks need no decimals: "$100M", "$2.5M", "$40k"."""
-    if abs(value) >= 1e7:
-        return f"${value / 1e6:,.0f}M"
-    if abs(value) >= 1e6:
-        return f"${value / 1e6:,.1f}M".replace(".0M", "M")
-    if abs(value) >= 1e3:
-        return f"${value / 1e3:,.0f}k"
-    return f"${value:,.0f}"
+    return money(value).replace(".0M", "M")
 
 
 def new_figure(width: float = 8.0, height: float = 3.6, ncols: int = 1) -> tuple[Figure, list]:
@@ -122,6 +116,14 @@ def save(fig: Figure, path: Path, dpi: int = 130) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=dpi, facecolor="white")
     return path
+
+
+def save_answer_chart(fig: Figure | None, question: str, folder: Path, dpi: int = 130) -> Path | None:
+    """Save an answer's chart under a file name made from the question; None when there is no chart."""
+    if fig is None:
+        return None
+    slug = "".join(ch if ch.isalnum() else "_" for ch in question.lower())[:40].strip("_") or "answer"
+    return save(fig, folder / f"{slug}.png", dpi)
 
 
 def _money_axis(ax) -> None:

@@ -73,7 +73,7 @@ Two safeguards keep the GenAI part honest:
 
 ## Quick start
 
-New to Python? Follow the step by step [setup guide](docs/SETUP_GUIDE.md) instead.
+New to Python? Follow the step by step [setup guide](docs/SETUP_GUIDE.md) instead. To check everything works before a commit or a submission, follow the [testing guide](docs/TESTING_GUIDE.md).
 
 Python 3.11, 3.12 or 3.13 (3.12 is what we use). Newer versions may lack prebuilt packages. Put the teaching team workbook in `data/raw/` (see [data/raw/README.md](data/raw/README.md)).
 
@@ -111,7 +111,7 @@ python -m pytest
 
 Add `--log-level INFO` (or `DEBUG`) before the command, or set `STAFFPILOT_LOG_LEVEL`, to see what the planner and the assistant are doing; every run also writes its own file in `logs/`.
 
-`eda` writes a data quality and exploration report with seven charts to `outputs/eda/`. `ask` and `memo` print a plain English answer and save a chart that illustrates it to `outputs/answers/`. `chat` is the same assistant in a conversation: follow ups use the earlier questions, `new` starts over, `save` writes the conversation to `outputs/conversations/chat.md`, and an empty line quits. `plan` prints the alerts that need attention and writes `outputs/plan.csv` (the recommended plan: 22 countries by 12 months with hires, notices, agents in ramp up and in notice, and payroll), `outputs/kpis.csv` and `outputs/policy_comparison.csv`. `app` starts the Gradio interface at http://127.0.0.1:7860.
+`eda` writes a data quality and exploration report with six charts to `outputs/eda/`. `ask` and `memo` print a plain English answer and save a chart that illustrates it to `outputs/answers/`. `chat` is the same assistant in a conversation: follow ups use the earlier questions, `new` starts over, `save` writes the conversation to `outputs/conversations/chat.md`, and an empty line quits. `plan` prints the alerts that need attention and writes `outputs/plan.csv` (the recommended plan: 22 countries by 12 months with hires, notices, agents in ramp up and in notice, and payroll), `outputs/kpis.csv` and `outputs/policy_comparison.csv`. `app` starts the Gradio interface at http://127.0.0.1:7860.
 
 To rebuild and execute the notebook: `python scripts/build_notebook.py`. The build is offline even when API keys are set, so it never costs money; the evaluation section reads `eval/results/` instead of calling models. `--live` lets the demo cells call the models, after you type yes.
 
@@ -239,7 +239,7 @@ Strong and fast tiers are compared separately so each model faces its peers. Ret
 | holdout (32) | offline | 28% | 81% | 0% | 100% |
 | followups (10) | offline | 90% | 100% | 75% | 100% |
 
-The offline keywords were written while looking at the main set, so its main score flatters it; the holdout shows the gap a language model router has to close. The follow up rules were written together with the follow up set, so treat that row as a regression check; the one miss ("What would that look like for Italy?") is a follow up without a clear cue, which is where a router that reads the history should do better. **The language model rows need API keys:** run `python -m staffpilot eval` with at least two providers set, then rebuild the notebook. The results also write `eval/results/routing.json`, which picks a model per intent from the holdout when an intent has at least three questions.
+The offline keywords were written while looking at the main set, so its main score flatters it; the holdout shows the gap a language model router has to close. The follow up rules were written together with the follow up set, so treat that row as a regression check; the one miss ("What would that look like for Italy?") is a follow up without a clear cue, which is where a router that reads the history should do better. **The language model rows need API keys:** run `python -m staffpilot eval` with at least two providers set, then rebuild the notebook. The results also write `eval/results/routing.json`, which recommends a model per intent from the holdout when an intent has at least three questions; the app does not apply it on its own, the user picks the model in Settings.
 
 ## Requirement trace
 
@@ -267,25 +267,25 @@ The offline keywords were written while looking at the main set, so its main sco
 | Multi LLM evaluation (20) | 82 labelled questions (10 of them follow ups), judge panel, tiers, tokens, routing table | harness done; **LLM rows need a run with keys** |
 | Data use (15) | Real budgets per advertiser, backtest on real sign ups, leap day repair, threshold scenarios | done; rerun on the official IE5374 file |
 | Presentation and demo (20) | Executed notebook, Gradio app with plan approval, report | **video still to record** |
-| Innovation (10) | Fact placeholders with attribution check, model routing from evaluation, plan approval step | done |
+| Innovation (10) | Fact placeholders with attribution check, routing table from the evaluation, plan approval step | done |
 
 ## Repository layout
 
 ```
 config/staffpilot.toml      project settings (dataset path)
 data/raw/                   put the teaching team file here (not committed)
-docs/                       setup guide, report, AI usage
+docs/                       setup guide, testing guide, report, AI usage
 eval/                       test sets, cached model replies, results
 notebooks/                  executed submission notebook
 outputs/                    plan, KPIs, policy comparison
 scripts/                    notebook builder, writing style check
 src/staffpilot/             package (core model, agent, app, CLI); ui/ holds the app's theme and styles
-tests/                      99 tests on synthetic data with years 2031 and 2032
+tests/                      100 tests on synthetic data with years 2031 and 2032
 ```
 
 ## Tests and CI
 
-`python -m pytest` runs 99 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
+`python -m pytest` runs 100 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
 
 ## Team contributions
 

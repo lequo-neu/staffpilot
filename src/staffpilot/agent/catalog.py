@@ -167,7 +167,7 @@ def cost_key(choice: ModelChoice, prices: dict[str, list[float]]) -> tuple:
 
 
 def _reasoning(choice: ModelChoice) -> bool:
-    return choice.provider == "openai" and bool(re.match(r"(gpt-5|o\d)", choice.model))
+    return bool(backends.fast_reasoning(choice.spec))
 
 
 def provider_models(provider: str, refresh: bool = False) -> list[str]:

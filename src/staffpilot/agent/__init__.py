@@ -1,6 +1,6 @@
 """Planning assistant built on top of the staffing model."""
 
-from staffpilot.agent.assistant import Answer, ModelRouter, StaffPilot
+from staffpilot.agent.assistant import Answer, StaffPilot
 from staffpilot.agent.backends import (
     CachedBackend,
     LangChainBackend,
@@ -18,7 +18,6 @@ __all__ = [
     "Intent",
     "LangChainBackend",
     "MemoDraft",
-    "ModelRouter",
     "OfflineBackend",
     "RoutedQuery",
     "StaffPilot",

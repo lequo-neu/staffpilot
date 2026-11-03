@@ -56,9 +56,6 @@ class ScenarioParams(BaseModel):
         True, description="True to reoptimize under the scenario, False to stress the current plan."
     )
 
-    def is_baseline(self) -> bool:
-        return self == ScenarioParams(countries=self.countries)
-
     def plain(self) -> str:
         """The scenario as a manager would say it, for answers and the app."""
         when = _month_phrase(self.months)

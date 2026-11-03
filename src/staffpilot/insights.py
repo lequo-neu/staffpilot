@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Literal
 
-from matplotlib.figure import Figure
 import pandas as pd
 
 from staffpilot.data import Dataset
 
 
-InsightKind = Literal["volatility", "seasonality", "eligibility", "budget", "growth"]
 INSIGHT_KINDS: tuple[str, ...] = ("volatility", "seasonality", "eligibility", "budget", "growth")
 
 
@@ -22,7 +18,6 @@ class Insight:
     table: pd.DataFrame
     headline: str
     facts: dict[str, float]
-    chart: Path | None = None
 
 
 def _daily(dataset: Dataset) -> pd.DataFrame:
@@ -149,9 +144,7 @@ _BUILDERS = {
 }
 
 
-def insight(
-    dataset: Dataset, kind: str, country: str | None = None, chart_dir: Path | None = None
-) -> Insight:
+def insight(dataset: Dataset, kind: str, country: str | None = None) -> Insight:
     if kind not in _BUILDERS:
         raise ValueError(f"Unknown insight {kind!r}; choose one of {INSIGHT_KINDS}")
     result = _BUILDERS[kind](dataset)
@@ -161,25 +154,4 @@ def insight(
             for column in row.columns:
                 if column != "country" and pd.api.types.is_numeric_dtype(row[column]):
                     result.facts[f"{country}_{column}"] = float(row[column].iloc[0])
-    if chart_dir is not None:
-        result.chart = _chart(result, chart_dir)
     return result
-
-
-def _chart(result: Insight, chart_dir: Path) -> Path:
-    chart_dir.mkdir(parents=True, exist_ok=True)
-    frame = result.table
-    numeric = [
-        c for c in frame.columns if c not in {"country", "month"} and pd.api.types.is_numeric_dtype(frame[c])
-    ]
-    label = "country" if "country" in frame.columns else "month"
-    fig = Figure(figsize=(8, 3.6))
-    ax = fig.subplots()
-    ax.bar(frame[label].astype(str), frame[numeric[0]], color="#3b6ea5")
-    ax.set_title(result.headline, fontsize=10)
-    ax.set_ylabel(numeric[0].replace("_", " "))
-    ax.tick_params(axis="x", rotation=60, labelsize=8)
-    fig.tight_layout()
-    path = chart_dir / f"insight_{result.kind}.png"
-    fig.savefig(path, dpi=110)
-    return path

@@ -19,7 +19,7 @@ Source `DADS5250_Hackathon_Google_Data.xlsx`, history years [2024, 2025], planni
 | Rows | 499,644 | one row per sign up |
 | Missing values | 0 | across all columns |
 | Duplicate advertiser ids | 0 |  |
-| Impossible dates repaired | 0 | moved to the last day of the month |
+| Impossible dates repaired | 920 | moved to the last day of the month |
 | Budgets at or below zero | 0 |  |
 | Budgets exactly on the threshold | 13 | ineligible under the strict rule |
 | Countries | 22 |  |

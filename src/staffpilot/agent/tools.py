@@ -51,14 +51,6 @@ class ToolOutput:
     sources: list[str] = field(default_factory=list)
     chart: Figure | None = None
 
-    def for_model(self, max_rows: int = 12) -> str:
-        """Compact text the language model sees: fact names, not raw numbers to copy."""
-        lines = [f"Tool {self.name}."]
-        lines += self.notes
-        if self.facts:
-            lines.append("Available facts: " + ", ".join(sorted(self.facts)))
-        return "\n".join(lines[: max_rows + 3])
-
 
 INSIGHT_METRIC = {
     "volatility": ("monthly_cv", "Month to month variation", False),

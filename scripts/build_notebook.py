@@ -56,7 +56,6 @@ import matplotlib.pyplot as plt
 
 from staffpilot import Planner, ScenarioParams, load_settings
 from staffpilot.agent import StaffPilot, available_providers
-from staffpilot.insights import insight
 from staffpilot.planner import RECOMMENDED_POLICY
 from staffpilot.logs import configure_logging
 
@@ -341,9 +340,7 @@ Two agent designs are offered. The structured assistant routes each question to 
         "code",
         """providers = available_providers()
 print("LLM providers with keys:", providers or "none, using the offline backend")
-from staffpilot.agent import ModelRouter, make_backend
-backend = make_backend(providers[0], settings, cache_dir=Path("../eval/cache")) if providers else None
-pilot = StaffPilot(planner, router=ModelRouter({backend.name: backend}, backend.name)) if backend else StaffPilot(planner)
+pilot = StaffPilot.for_backend(planner, providers[0] if providers else "offline", Path("../eval/cache"))
 questions = [
     "How many agents does Germany need in March and why?",
     "What if sign ups in Brazil drop 30% in Q3?",

@@ -29,7 +29,7 @@ from typing import Any
 
 import pandas as pd
 
-from staffpilot.agent.assistant import ModelRouter, StaffPilot
+from staffpilot.agent.assistant import StaffPilot
 from staffpilot.agent.backends import describe_error, make_backend
 from staffpilot.agent.memory import Conversation
 from staffpilot.agent.rag import Retriever
@@ -155,7 +155,7 @@ def evaluate_backend(
     run_agent: bool = False,
 ) -> pd.DataFrame:
     backend = make_backend(name, planner.settings, cache_dir)
-    pilot = StaffPilot(planner, router=ModelRouter({name: backend}, name))
+    pilot = StaffPilot(planner, backend)
     provider = name.removesuffix("_fast")
     # A model is never graded by a model of its own provider.
     graders = [j for j in judges or [] if j.name.removesuffix("_fast") != provider]

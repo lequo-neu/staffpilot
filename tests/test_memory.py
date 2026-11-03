@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from staffpilot.agent import Intent, ModelRouter, OfflineBackend, RoutedQuery, StaffPilot
+from staffpilot.agent import Intent, OfflineBackend, RoutedQuery, StaffPilot
 from staffpilot.agent.memory import Conversation, is_follow_up
 
 
@@ -106,7 +106,7 @@ def test_the_router_model_sees_the_recent_turns(planner):
             return super().route(question, countries)
 
     backend = Recording()
-    pilot = StaffPilot(planner, router=ModelRouter({"recording": backend}, "recording"))
+    pilot = StaffPilot(planner, backend)
     chat = Conversation()
     pilot.ask("What if sign ups in Alpha drop 30% in Q3?", chat)
     pilot.ask("And Beta?", chat)
@@ -124,7 +124,7 @@ def test_a_router_without_history_support_still_works(planner):
         def compose(self, *args, **kwargs):
             return "The case rules apply."
 
-    pilot = StaffPilot(planner, router=ModelRouter({"old": Old()}, "old"))
+    pilot = StaffPilot(planner, Old())
     chat = Conversation()
     pilot.ask("How long can an advertiser wait?", chat)
     answer = pilot.ask("And the ramp?", chat)

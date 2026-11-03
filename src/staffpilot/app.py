@@ -19,10 +19,10 @@ import gradio as gr
 import pandas as pd
 
 from staffpilot import cache, charts
-from staffpilot.agent import ModelRouter, StaffPilot, make_backend
+from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
 from staffpilot.agent.memory import Conversation, describe
-from staffpilot.alerts import Alert, plan_alerts
+from staffpilot.alerts import plan_alerts
 from staffpilot.cli import EVAL_DIR, OUTPUTS
 from staffpilot.eda import budget_figure, figures, profile
 from staffpilot.planner import RECOMMENDED_POLICY, Planner
@@ -62,8 +62,7 @@ def planner() -> Planner:
 
 def pilot(backend: str) -> StaffPilot:
     if backend not in _PILOTS:
-        chosen = make_backend(backend, planner().settings, EVAL_DIR / "cache")
-        _PILOTS[backend] = StaffPilot(planner(), router=ModelRouter({chosen.name: chosen}, chosen.name))
+        _PILOTS[backend] = StaffPilot.for_backend(planner(), backend, EVAL_DIR / "cache")
     return _PILOTS[backend]
 
 
@@ -92,20 +91,33 @@ def _monthly(bundle, country: str | None) -> pd.DataFrame:
     return m
 
 
-def _change(new: float, old: float) -> tuple[str, str]:
-    """Percent change as text and its direction."""
-    if not old:
-        return "", ""
-    change = (new - old) / abs(old)
-    return f"{abs(change):.1%}", "up" if change > 0 else "down" if change < 0 else ""
+AGAINST = "keeping the January team"
 
 
-def _points(new: float, old: float) -> tuple[str, str]:
-    """Difference of two shares in percentage points."""
-    diff = (new - old) * 100
-    if abs(diff) < 0.05:
-        return "", ""
-    return f"{abs(diff):.1f} pts", "up" if diff > 0 else "down"
+def _compare(
+    new: float,
+    old: float,
+    good: str | None = "up",
+    points: bool = False,
+    words: tuple[str, str] = ("more than", "less than"),
+    base: str = AGAINST,
+) -> tuple[str, str, str, str]:
+    """How a number moved against a reference: delta text, arrow, colour and the words after it.
+
+    Shares (points=True) are compared in percentage points, everything else in percent.
+    `good` says which direction is welcome; None leaves the delta uncoloured.
+    """
+    if points:
+        diff = (new - old) * 100
+        delta = f"{abs(diff):.1f} pts" if abs(diff) >= 0.05 else ""
+    else:
+        diff = (new - old) / abs(old) if old else 0.0
+        delta = f"{abs(diff):.1%}" if diff else ""
+    if not delta:
+        return "", "", "", f"same as {base}"
+    trend = "up" if diff > 0 else "down"
+    tone = "" if good is None else "good" if trend == good else "bad"
+    return delta, trend, tone, f"{words[0] if trend == 'up' else words[1]} {base}"
 
 
 def plan_kpis(p: Planner, country: str | None = None) -> str:
@@ -119,37 +131,27 @@ def plan_kpis(p: Planner, country: str | None = None) -> str:
     util = m["occupied_slot_days"].sum() / max(m["capacity_slot_days"].sum(), 1)
     util_hold = mh["occupied_slot_days"].sum() / max(mh["capacity_slot_days"].sum(), 1)
     rules = p.settings.rules
-    against = "keeping the January team"
-
-    net_delta, net_trend = _change(t["net_value"], h["net_value"])
-    cost_delta, cost_trend = _change(t["total_cost"], h["total_cost"])
-    service_delta, service_trend = _points(t["service_rate"], h["service_rate"])
-    util_delta, util_trend = _points(util, util_hold)
-    agents_delta, agents_trend = _change(t["avg_active"], t["start_agents"])
+    shares = {"points": True, "words": ("against", "against")}
     kpis = [
         components.Kpi(
             "Net value",
             charts.money(t["net_value"]),
             "Expected ad spend uplift from supported advertisers, minus agent salaries and the cost of notices, "
             "over the planning year. The line shows each month.",
-            net_delta,
-            net_trend,
-            "good" if net_trend == "up" else "bad" if net_trend == "down" else "",
-            f"{'more' if net_trend == 'up' else 'less'} than {against}"
-            if net_delta
-            else f"same as {against}",
+            *_compare(t["net_value"], h["net_value"]),
             m["net_value"].tolist(),
         ),
         components.Kpi(
             "Agents at work",
             f"{t['avg_active']:,.0f}",
             "Average number of agents working in a month, after new hires finish ramp up and notices take effect.",
-            agents_delta,
-            agents_trend,
-            "",
-            f"{'fewer' if agents_trend == 'down' else 'more'} than the {t['start_agents']:,.0f} in January"
-            if agents_delta
-            else "same as January",
+            *_compare(
+                t["avg_active"],
+                t["start_agents"],
+                good=None,
+                words=("more than", "fewer than"),
+                base=f"the {t['start_agents']:,.0f} in January",
+            ),
             m["active_agents"].tolist(),
         ),
         components.Kpi(
@@ -157,20 +159,14 @@ def plan_kpis(p: Planner, country: str | None = None) -> str:
             f"{t['service_rate']:.1%}",
             f"Share of eligible advertisers who get an agent within the {rules.max_wait_days} day waiting window. "
             f"They wait {t['mean_wait_days']:.1f} days on average; one in ten waits over {t['p90_wait_days']:.0f}.",
-            service_delta,
-            service_trend,
-            "good" if service_trend == "up" else "bad" if service_trend == "down" else "",
-            f"against {against}" if service_delta else f"same as {against}",
+            *_compare(t["service_rate"], h["service_rate"], **shares),
             m["service"].fillna(1.0).tolist(),
         ),
         components.Kpi(
             "Agent utilization",
             f"{util:.1%}",
             f"Share of agent capacity in use over the year; each agent can hold {rules.capacity_per_agent} advertisers.",
-            util_delta,
-            util_trend,
-            "good" if util_trend == "up" else "bad" if util_trend == "down" else "",
-            f"against {against}" if util_delta else f"same as {against}",
+            *_compare(util, util_hold, **shares),
             m["utilization"].fillna(0.0).tolist(),
         ),
         components.Kpi(
@@ -178,31 +174,11 @@ def plan_kpis(p: Planner, country: str | None = None) -> str:
             charts.money(t["total_cost"]),
             f"Salaries plus notice cost; a notice costs {rules.fire_cost_share:.0%} of a year's salary. "
             f"Notices make up {charts.money(t['fire_cost'])} of the total.",
-            cost_delta,
-            cost_trend,
-            "good" if cost_trend == "down" else "bad" if cost_trend == "up" else "",
-            f"{'less' if cost_trend == 'down' else 'more'} than {against}"
-            if cost_delta
-            else f"same as {against}",
+            *_compare(t["total_cost"], h["total_cost"], good="down"),
             m["cost"].tolist(),
         ),
     ]
     return components.kpi_cards(kpis)
-
-
-# Older names, kept for callers of earlier versions of the app.
-stats_html = kpi_cards = plan_kpis
-
-
-def alerts_html(alerts: list[Alert]) -> str:
-    return components.alert_list(alerts)
-
-
-def _chart_path(answer, name: str) -> str | None:
-    if answer.chart is None:
-        return None
-    slug = "".join(ch if ch.isalnum() else "_" for ch in name.lower())[:40].strip("_") or "answer"
-    return str(charts.save(answer.chart, OUTPUTS / "answers" / f"{slug}.png", dpi=components.WEB_DPI))
 
 
 def _readable(frame: pd.DataFrame) -> pd.DataFrame:
@@ -240,16 +216,12 @@ def ask(message: str, history: list, backend: str, memory: Conversation | None =
         return history, "", components.trace_empty(), None, pd.DataFrame(), "{}", memory
     answer = pilot(backend).ask(message, memory)
     history = [*history, {"role": "user", "content": message}, {"role": "assistant", "content": answer.text}]
-    path = _chart_path(answer, message)
+    path = charts.save_answer_chart(answer.chart, message, OUTPUTS / "answers", components.WEB_DPI)
     if path:
-        history.append({"role": "assistant", "content": {"path": path}})
+        history.append({"role": "assistant", "content": {"path": str(path)}})
     table = _readable(answer.tables[0]) if answer.tables else pd.DataFrame()
     route = json.dumps(answer.route.model_dump(mode="json", exclude_none=True), indent=2)
     return history, "", _trace(answer), answer.chart, table, route, memory
-
-
-def new_conversation():
-    return [], "", components.trace_empty(), None, pd.DataFrame(), "{}", Conversation()
 
 
 def export_conversation(memory: Conversation | None):
@@ -297,14 +269,13 @@ def example_text(evt: gr.SelectData) -> str:
 
 def start_chat(chats: dict | None):
     chats = chats or {}
-    history, box, trace, _, table, route, memory = new_conversation()
     return (
-        history,
-        box,
-        trace,
-        table,
-        route,
-        memory,
+        [],
+        "",
+        components.trace_empty(),
+        pd.DataFrame(),
+        "{}",
+        Conversation(),
         chats,
         None,
         _recent(chats, None),
@@ -494,10 +465,6 @@ PAGE_JS = """() => {
   };
   apply();
   new MutationObserver(apply).observe(document.body, { childList: true, subtree: true });
-  if (window.innerWidth < 769) {
-    const toggle = document.querySelector('.sidebar.open .toggle-button');
-    if (toggle) toggle.click();
-  }
 }""".replace("TIPS_JSON", json.dumps(TIPS))
 
 
@@ -597,7 +564,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 cards = gr.HTML()
                 status = gr.Markdown(elem_classes="sp-note")
                 with gr.Accordion(components.alert_summary(alerts), open=False, elem_classes="sp-alerts"):
-                    gr.HTML(alerts_html(alerts))
+                    gr.HTML(components.alert_list(alerts))
                 with gr.Column(elem_classes="sp-panel"):
                     figure = gr.Plot(show_label=False, elem_classes="sp-plot")
                 with gr.Column(elem_classes="sp-panel"):
@@ -663,6 +630,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
 
         # Navigation and conversations
         demo.load(None, None, None, js=PAGE_JS)
+        demo.load(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
         for control in (nav, recent):
             control.input(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
         new_btn.click(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)

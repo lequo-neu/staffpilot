@@ -117,7 +117,7 @@ The evaluation uses 40 labelled questions and a 32 question holdout:
 
 The keyword router was written against the main set, which explains its perfect score there. The gap on the holdout is the case for a language model router. BM25 retrieval finds the right rule passage in the top three for 6 of 7 labelled rule questions.
 
-`python -m staffpilot eval` adds GPT, Claude and Gemini at two tiers. Each answer is scored by judges from other providers, the run reports tokens and cost, and it writes the routing table the app uses.
+`python -m staffpilot eval` adds GPT, Claude and Gemini at two tiers. Each answer is scored by judges from other providers, the run reports tokens and cost, and it writes a routing table that recommends the best model for each intent.
 
 ## 8. Limitations
 

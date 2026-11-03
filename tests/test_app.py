@@ -9,6 +9,7 @@ import gradio as gr
 
 def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     from staffpilot import app
+    from staffpilot.ui import components
 
     monkeypatch.setattr(app, "OUTPUTS", tmp_path)
     demo = app.build_app(planner)
@@ -25,7 +26,7 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     assert any(isinstance(m["content"], dict) and m["content"]["path"].endswith(".png") for m in history)
     saved = app.export_conversation(memory)
     assert saved.visible and (tmp_path / "conversations").exists()
-    assert app.new_conversation()[-1].turns == []
+    assert app.start_chat({})[5].turns == []
 
     cards, figure, table = app.plan_view("Beta")
     assert "Net value" in cards and "<svg" in cards and figure is not None and len(table) == 12
@@ -41,7 +42,7 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     assert "Approved" in app.approve("Alpha")
     findings, *plots, quality = app.eda_view()
     assert findings and all(p is not None for p in plots) and len(quality) > 3
-    assert "need attention" not in app.alerts_html([])
+    assert "Nothing needs attention" in components.alert_list([])
 
 
 def test_conversations_are_filed_and_reopened(planner, tmp_path, monkeypatch):

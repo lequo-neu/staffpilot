@@ -101,7 +101,7 @@ The tests use made up data, so they work before you have the real file:
 python -m pytest -q
 ```
 
-The last line should say `99 passed`. If it does, Python, the solver and every package are working.
+The last line should say `100 passed`. If it does, Python, the solver and every package are working.
 
 ## Step 6: Add the data file
 
@@ -136,7 +136,7 @@ If you see `Data problem: Dataset not found`, go back to step 6 and compare the 
 python -m staffpilot eda
 ```
 
-This checks the data (missing values, duplicates, impossible dates) and writes `outputs/eda/eda_report.md` with seven charts. Open the Markdown file in VS Code or any Markdown viewer to read it with the pictures.
+This checks the data (missing values, duplicates, impossible dates) and writes `outputs/eda/eda_report.md` with six charts. Open the Markdown file in VS Code or any Markdown viewer to read it with the pictures.
 
 ## Step 8: Ask the assistant
 
@@ -269,3 +269,5 @@ You do not need to reinstall.
 | Rebuild the notebook | `python scripts/build_notebook.py` |
 | Compare language models | `python -m staffpilot eval` |
 | Leave the environment | `deactivate` |
+
+To check that everything works, page by page, follow the [testing guide](TESTING_GUIDE.md).
