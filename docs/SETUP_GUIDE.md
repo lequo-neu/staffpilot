@@ -166,7 +166,7 @@ The terminal prints `Starting StaffPilot at http://127.0.0.1:7860`. Open that ad
 
 * **New chat**, to start a conversation; the chats you have had in this browser tab are listed under **Recent chats**, and clicking one reopens it.
 * The pages: **Assistant** (chat; follow up questions work), **Plan** (monthly headcount per country, with an approval button), **Scenario** (describe a change in words, check the parameters, run it), **Memo** (a staffing memo for one country), **Data** (the exploratory analysis) and **Evaluation** (how the assistant scored).
-* **Settings**: the language model to use, **Refresh models** and **Save conversation**. Without API keys only Offline is listed; with keys you see every model your keys can use, cheapest first, and the cheapest one that answers a tiny test request is selected. Each question then costs a fraction of a cent; pick Offline to spend nothing.
+* **Settings**: the language model to use, **Refresh models** and **Save conversation**. The app always starts on **Offline**, which is free. With API keys the list also shows every model your keys can use, cheapest first; on start the app checks the cheapest ones with a tiny request, hides models that no longer work and marks the cheapest working one. Picking a model makes each question cost a fraction of a cent.
 
 The headline numbers (net value, agents at work, advertisers served, utilization, cost) are on the **Plan** page. Hover over the small i next to each one for what it means.
 

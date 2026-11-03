@@ -202,7 +202,7 @@ def _chart_path(answer, name: str) -> str | None:
     if answer.chart is None:
         return None
     slug = "".join(ch if ch.isalnum() else "_" for ch in name.lower())[:40].strip("_") or "answer"
-    return str(charts.save(answer.chart, OUTPUTS / "answers" / f"{slug}.png"))
+    return str(charts.save(answer.chart, OUTPUTS / "answers" / f"{slug}.png", dpi=components.WEB_DPI))
 
 
 def _readable(frame: pd.DataFrame) -> pd.DataFrame:
@@ -323,18 +323,19 @@ def show_page(name: str):
 
 
 def model_choices(refresh: bool = False) -> tuple[list[tuple[str, str]], str]:
-    """Offline plus every chat model the keys can use, cheapest first.
+    """Offline, then every chat model the keys can use, cheapest first. Offline is the default.
 
-    The default is the cheapest model that answers a tiny check, so a retired model that a
-    provider still lists is never preselected.
+    On start the cheapest models get one tiny check (see `catalog.working_default`, a few
+    tokens, remembered for a day), so retired models drop out of the list and the cheapest
+    one that answers is marked. Nothing else is sent until someone picks a model.
     """
     settings = planner().settings
     found = usable_models(settings, refresh)
-    default = working_default(settings, found) if found else None
+    working = working_default(settings, found) if found else None
     # The check may have just ruled out a retired model, so the list is read again.
     found = usable_models(settings) if found else []
-    listed = [(f"{c.label[:-1]}, default)" if c.spec == default else c.label, c.spec) for c in found]
-    return [("Offline (free, no API key)", "offline"), *listed], default or "offline"
+    listed = [(f"{c.label[:-1]}, cheapest working)" if c.spec == working else c.label, c.spec) for c in found]
+    return [("Offline (free, no API key)", "offline"), *listed], "offline"
 
 
 def plan_view(country: str):
@@ -358,7 +359,7 @@ def plan_view(country: str):
         "fire_cost",
     ]
     shown = plan if chosen else plan.groupby("month", as_index=False)[columns].sum()
-    return plan_kpis(p, chosen), figure, _readable(shown)
+    return plan_kpis(p, chosen), components.sharp(figure), _readable(shown)
 
 
 def approve(country: str) -> str:
@@ -413,7 +414,7 @@ def run_scenario(params_json: str):
         "service_rate_base",
         "service_rate_scenario",
     ]
-    return summary, figure, _readable(result.comparison[columns])
+    return summary, components.sharp(figure), _readable(result.comparison[columns])
 
 
 def memo(country: str, backend: str):
@@ -423,7 +424,7 @@ def memo(country: str, backend: str):
         if answer.verified
         else f"Number check flagged {answer.unsupported}."
     )
-    return f"{answer.text}\n\n*{check}*", answer.chart
+    return f"{answer.text}\n\n*{check}*", components.sharp(answer.chart)
 
 
 def eda_view():
@@ -433,10 +434,10 @@ def eda_view():
     findings = "\n".join(f"* {f}" for f in report.findings)
     return (
         findings,
-        figs["monthly_trend"],
-        figs["staff_vs_need"],
-        figs["seasonality_heatmap"],
-        budget_figure(p.dataset),
+        components.sharp(figs["monthly_trend"]),
+        components.sharp(figs["staff_vs_need"]),
+        components.sharp(figs["seasonality_heatmap"]),
+        components.sharp(budget_figure(p.dataset)),
         report.quality,
     )
 
@@ -505,9 +506,9 @@ def page_head(name: str) -> str:
 
 
 def refresh_models(current: str):
-    choices, cheapest = model_choices(refresh=True)
+    choices, default = model_choices(refresh=True)
     values = [value for _, value in choices]
-    return gr.Dropdown(choices=choices, value=current if current in values else cheapest)
+    return gr.Dropdown(choices=choices, value=current if current in values else default)
 
 
 def build_app(p: Planner | None = None) -> gr.Blocks:
@@ -537,7 +538,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     choices,
                     value=default_model,
                     label="Language model",
-                    info="Read from your API keys and sorted by price. The cheapest is picked for you.",
+                    info="Offline is free. The models below come from your API keys, cheapest first.",
                 )
                 refresh_btn = gr.Button("Refresh models", size="sm")
                 gr.Markdown(

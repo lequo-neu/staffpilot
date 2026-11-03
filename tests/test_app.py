@@ -83,7 +83,7 @@ def test_pages_switch_and_models_default_to_offline_without_keys(planner):
     assert tab_icon and Image.open(tab_icon).size == (64, 64)
 
 
-def test_model_list_starts_with_offline_then_the_cheapest(planner, monkeypatch):
+def test_models_are_checked_but_offline_stays_the_default(planner, monkeypatch):
     from staffpilot import app
     from staffpilot.agent import catalog
     from staffpilot.agent.catalog import ModelChoice
@@ -91,11 +91,38 @@ def test_model_list_starts_with_offline_then_the_cheapest(planner, monkeypatch):
     app.build_app(planner)
     found = [ModelChoice("openai", "gpt-5-nano"), ModelChoice("anthropic", "claude-haiku-5-5")]
     monkeypatch.setattr(app, "usable_models", lambda settings, refresh=False: found)
-    monkeypatch.setattr(app, "working_default", lambda settings, choices: choices[0].spec)
+    checked = []
+
+    def check(settings, choices):
+        checked.append([c.spec for c in choices])
+        return "openai:gpt-5-nano"
+
+    monkeypatch.setattr(app, "working_default", check)
     choices, default = app.model_choices()
+    assert checked == [["openai:gpt-5-nano", "anthropic:claude-haiku-5-5"]]
+    assert default == "offline"
     assert choices[0] == ("Offline (free, no API key)", "offline")
-    assert choices[1] == ("gpt-5-nano (OpenAI, default)", "openai:gpt-5-nano")
+    assert choices[1] == ("gpt-5-nano (OpenAI, cheapest working)", "openai:gpt-5-nano")
     assert choices[2] == ("claude-haiku-5-5 (Anthropic)", "anthropic:claude-haiku-5-5")
-    assert default == "openai:gpt-5-nano"
     assert app.refresh_models("anthropic:claude-haiku-5-5").value == "anthropic:claude-haiku-5-5"
+    assert app.refresh_models("openai:retired-model").value == "offline"
     assert catalog.PROVIDER_NAMES["openai"] == "OpenAI"
+
+
+def test_charts_reach_the_browser_as_sharp_png():
+    import base64
+    import io
+
+    from PIL import Image
+
+    from staffpilot import charts
+    from staffpilot.ui.components import WEB_DPI, sharp
+
+    fig, (ax,) = charts.new_figure(width=8.0, height=3.6)
+    ax.plot([1, 2, 3], [1, 3, 2])
+    data = sharp(fig).plot
+    assert data.startswith("data:image/png;base64,")
+    picture = Image.open(io.BytesIO(base64.b64decode(data.split(",", 1)[1])))
+    assert picture.size[0] == 8 * WEB_DPI
+    assert fig.get_dpi() == 110  # the figure itself is left as it was
+    assert sharp(None) is None

@@ -6,9 +6,14 @@ Elements given a tooltip (see `tip`) show their text on hover and on keyboard fo
 
 from __future__ import annotations
 
+import base64
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 import html
+import io
+
+from gradio.components.plot import PlotData
+from matplotlib.figure import Figure
 
 from staffpilot import COPYRIGHT, SLOGAN, TEAM
 from staffpilot.alerts import Alert
@@ -16,6 +21,24 @@ from staffpilot.ui import icon
 
 
 LEVEL_NAMES = {"critical": "Critical", "warning": "Warning", "info": "Note"}
+# Charts reach the browser at twice their layout resolution so they stay sharp on
+# high density screens and when a panel scales them up.
+WEB_DPI = 300
+
+
+def sharp(fig: Figure | None) -> PlotData | None:
+    """A chart for `gr.Plot`, as lossless PNG at WEB_DPI.
+
+    Gradio's default is lossy WebP at the figure's own resolution (110 dpi here), which
+    looks soft on a laptop screen. Only the copy sent to the browser changes; the figure
+    keeps its size for the notebook and the saved files.
+    """
+    if fig is None:
+        return None
+    with io.BytesIO() as buffer:
+        fig.savefig(buffer, format="png", dpi=WEB_DPI, facecolor="white")
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return PlotData(type="matplotlib", plot=f"data:image/png;base64,{encoded}")
 
 
 @dataclass

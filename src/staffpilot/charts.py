@@ -118,9 +118,9 @@ def finish(fig: Figure, title: str, subtitle: str = "") -> Figure:
     return fig
 
 
-def save(fig: Figure, path: Path) -> Path:
+def save(fig: Figure, path: Path, dpi: int = 130) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130, facecolor="white")
+    fig.savefig(path, dpi=dpi, facecolor="white")
     return path
 
 
@@ -150,21 +150,20 @@ def headcount(plan: pd.DataFrame, monthly: pd.DataFrame, title: str, capacity: i
         label="agents at work",
     )
     for xi, h, n in zip(x, hires, notices, strict=True):
+        # A month with both notices and hires gets one label above the point, so the hires
+        # text never lands on a steep line.
         if n:
+            text = f"{int(n):,} notices" + (f", +{int(h):,} hires" if h else "")
             ax.annotate(
-                f"{int(n):,} notices",
-                (xi, active[xi - 1]),
-                xytext=(4, 8),
-                textcoords="offset points",
-                fontsize=7.5,
-                color=RED,
+                text, (xi, active[xi - 1]), xytext=(6, 6), textcoords="offset points", fontsize=7.5, color=RED
             )
-        if h:
+        elif h:
             ax.annotate(
                 f"+{int(h):,} hires",
                 (xi, active[xi - 1]),
-                xytext=(4, -12),
+                xytext=(0, -13),
                 textcoords="offset points",
+                ha="center",
                 fontsize=7.5,
                 color=TEAL,
             )
