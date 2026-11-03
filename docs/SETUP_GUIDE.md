@@ -49,7 +49,7 @@ Then download the repository into your home folder (replace the link with your t
 
 ```bash
 cd ~
-git clone https://github.com/<user>/staffpilot.git
+git clone https://github.com/lequo-neu/staffpilot.git
 cd staffpilot
 ```
 

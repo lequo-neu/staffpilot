@@ -5,9 +5,9 @@
 Monthly support agent staffing for 22 countries, with a GenAI planning assistant on top of the model.
 IE5374 Applied Generative AI, Module 7 Hackathon, Topic 3: Dynamic Agent Staffing Optimization (a problem contributed by Google).
 
-**Submission links:** GitHub repository `<add link>` · demo video (3 minutes) `<add link>` · notebook [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb)
+**Submission links:** GitHub repository [`github.com/lequo-neu/staffpilot`](https://github.com/lequo-neu/staffpilot) · demo video (3 minutes) `<to be added>` · notebook [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb)
 
-**Topic confirmation (R0):** `<date the team was confirmed for Topic 3 on the sign up sheet>`
+**Topic confirmation (R0):** registered for Topic 3 on the sign up sheet on 3 November 2026
 
 ## The short version
 
