@@ -78,6 +78,12 @@ def test_source_code_has_no_hard_coded_years():
     pattern = re.compile(r"\b20[23]\d\b")
     # Not a calendar year of the data: the version string Anthropic's API requires in a header.
     allowed = {'"2023-06-01"'}
+    # From Python 3.12 a formatted string literal is split into several tokens, its text being FSTRING_MIDDLE
+    # (TSTRING_MIDDLE for 3.14 template strings). Scanning those too makes the check behave
+    # the same on every version; before, 3.11 saw years in formatted strings that 3.12 missed.
+    text_tokens = {tokenize.NUMBER, tokenize.STRING} | {
+        getattr(tokenize, name) for name in ("FSTRING_MIDDLE", "TSTRING_MIDDLE") if hasattr(tokenize, name)
+    }
     offenders = []
     for path in Path(__file__).resolve().parents[1].joinpath("src", "staffpilot").rglob("*.py"):
         source = path.read_text(encoding="utf-8")
@@ -89,10 +95,12 @@ def test_source_code_has_no_hard_coded_years():
                 tokenize.NL,
             )
             if (
-                token.type in (tokenize.NUMBER, tokenize.STRING)
+                token.type in text_tokens
                 and not is_docstring
                 and pattern.search(token.string)
                 and token.string not in allowed
+                # The copyright notice states when the code was written, not a planning year.
+                and "Copyright" not in token.string
             ):
                 offenders.append(f"{path.name}:{token.start[0]} {token.string[:40]}")
             if token.type not in (tokenize.COMMENT, tokenize.NL):
