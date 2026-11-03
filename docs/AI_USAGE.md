@@ -32,4 +32,4 @@ AI assisted reviews from a teaching assistant, tester and instructor point of vi
 
 ## What was not used
 
-No code was copied from other teams or from other courses. A public write up of the original Google case (BADSS) was read for domain context only; its approach differs (one global model, weekly decisions, a genetic algorithm).
+No code was copied from other teams or from other courses.

@@ -309,7 +309,6 @@ AI assistants were used to draft the code, tests and documentation. Every result
 * Gans and Zhou (2002), managing learning and turnover in employee staffing: https://faculty.washington.edu/yongpin/Staffing_OR.pdf
 * Green, Kolesar and Whitt (2007), staffing with time varying demand: https://www.columbia.edu/~ww2040/TimeVarying1217.pdf
 * LangChain 1.x agents: https://docs.langchain.com/oss/python/releases/v1
-* Domain reference only, no code used: BADSS case write up, https://github.com/yiihann/demand-staffing-optimizer
 
 ## License
 
