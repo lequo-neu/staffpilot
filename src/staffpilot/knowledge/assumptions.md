@@ -6,21 +6,23 @@ The brief leaves some points open. Each choice below is a setting in config/staf
 
 Uplift is applied to the projected annual budget and counted once, for the advertiser's sign up cohort. The alternative, counting only the 60 day support window, cuts the value of support by about a factor of six. Net value then turns negative under every policy, about minus 178 million dollars when January headcount is kept and minus 67 million dollars with the optimized plan, so cutting is even more clearly right; the open question becomes whether support pays for itself at all.
 
+Why the annual budget: the data gives each advertiser a projected annual budget, and the brief states uplift as a share of ad spend without naming a shorter period. Support is onboarding, so campaigns set up with an agent keep running after the 60 days. The staffing decision does not depend on this choice: under both readings every notice is given in January and the plan beats keeping January headcount by about 110 million dollars.
+
 ## A2 Eligibility boundary
 
 An advertiser is eligible only when its budget is strictly greater than the threshold, because the brief says "exceeds". Only a handful of sign ups sit exactly on a threshold.
 
 ## A3 Pool on 1 January
 
-The pool starts empty. The brief only says agents start with no advertisers. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.
+The pool starts empty. The brief only says agents start with no advertisers, and the history does not record who was still waiting on 31 December. Starting empty is also the conservative choice, because the carryover would raise net value from about 480 to about 606 million dollars. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.
 
 ## A4 Pay during ramp up
 
-Agents in their ramp up month are on payroll.
+Agents in their ramp up month are on payroll, as any employee in training is. Not paying them would add only about 1 million dollars and lead to more hiring, so paying them is the conservative choice.
 
 ## A5 Notice month
 
-An agent who receives notice keeps working during the notice month and is paid for it. The 40 percent cost is charged in the month the notice is given.
+An agent who receives notice is paid for the notice month and keeps serving the advertisers already assigned, but takes no new ones, so nobody loses support halfway through. The 40 percent cost is charged in the month the notice is given. Every notice in the plan falls in January, so this timing does not change the year's firing cost.
 
 ## A6 Departing agents
 

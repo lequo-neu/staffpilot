@@ -78,3 +78,60 @@ def test_a_backend_without_a_usable_model_is_left_out(planner, tmp_path, monkeyp
         planner, ["offline", "google"], path, tmp_path / "out", None, ["google"]
     )
     assert set(results["backend"]) == {"offline"} and len(summary) == 1
+
+
+def test_a_provider_without_a_strong_model_judges_with_its_fast_one(planner, tmp_path, monkeypatch):
+    from staffpilot import evaluation
+    from staffpilot.agent.backends import ModelUnavailableError, OfflineBackend
+
+    built = []
+
+    def make(name, settings, cache_dir=None):
+        built.append(name)
+        if name == "google":
+            raise ModelUnavailableError("no strong google model")
+        return OfflineBackend()
+
+    case = {
+        "id": "a",
+        "question": "How many agents does Alpha need?",
+        "intent": "plan_lookup",
+        "countries": ["Alpha"],
+    }
+    path = tmp_path / "cases.jsonl"
+    path.write_text(json.dumps(case), encoding="utf-8")
+    monkeypatch.setattr(evaluation, "make_backend", make)
+    run_evaluation(planner, ["offline"], path, tmp_path / "out", None, ["google"])
+    assert built[:2] == ["google", "google_fast"]
+
+
+def test_local_models_judge_each_other_but_never_themselves(planner, tmp_path, monkeypatch):
+    from staffpilot import evaluation
+    from staffpilot.agent.backends import Judgement, OfflineBackend
+
+    graded = []
+
+    class Model(OfflineBackend):
+        def __init__(self, name):
+            super().__init__()
+            self.name = name
+            self.model_spec = name
+
+        def judge(self, question, answer, facts):
+            graded.append(self.name)
+            return Judgement(score=4, reason="fine")
+
+    case = {
+        "id": "a",
+        "question": "How many agents does Alpha need?",
+        "intent": "plan_lookup",
+        "countries": ["Alpha"],
+    }
+    path = tmp_path / "cases.jsonl"
+    path.write_text(json.dumps(case), encoding="utf-8")
+    monkeypatch.setattr(evaluation, "make_backend", lambda name, settings, cache_dir=None: Model(name))
+    local = ["local:gemma", "local:llama"]
+    results, _ = run_evaluation(planner, local, path, tmp_path / "out", None, local)
+    by_backend = results.set_index("backend")
+    assert by_backend.loc["local:gemma", "judges"] == 1 and by_backend.loc["local:llama", "judges"] == 1
+    assert sorted(graded) == ["local:gemma", "local:llama"]  # each graded the other once

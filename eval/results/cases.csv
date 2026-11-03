@@ -1,36 +1,36 @@
 split,backend,model,id,intent,predicted_intent,intent_ok,countries_ok,scenario_score,insight_ok,grounded,fallback,tokens,cost_usd,seconds,answer,error,judge_score,judges
-main,offline,offline,p01,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.020610833074897528,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
+main,offline,offline,p01,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.09507991699501872,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
 
 Most of the change is a cut: 516 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 16 agents, starting in August, so they are trained before the busy months.
 
-In March, 86 agents are working, with no hiring or notice decisions that month.",,,0
-main,offline,offline,p02,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.01865650014951825,"Vietnam should start the year with 59 agents and finish it with 95, with about 79.4 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $10.0M of net value.
+In March, 86 agents are working, with no hiring or notice decisions that month.",,4.0,2
+main,offline,offline,p02,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.042708874912932515,"Vietnam should start the year with 59 agents and finish it with 95, with about 79.4 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $10.0M of net value.
 
-The plan also hires 36 agents, starting in January, so they are trained before the busy months.",,,0
-main,offline,offline,p03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.018997249891981483,"UK should start the year with 589 agents and finish it with 120, with about 147 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $34.4M of net value.
+The plan also hires 36 agents, starting in January, so they are trained before the busy months.",,5.0,2
+main,offline,offline,p03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019255666062235832,"UK should start the year with 589 agents and finish it with 120, with about 147 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $34.4M of net value.
 
 Most of the change is a cut: 487 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 18 agents, starting in September, so they are trained before the busy months.",,,0
-main,offline,offline,p04,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019150041043758392,"USA should start the year with 652 agents and finish it with 252, with about 259 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $117.6M of net value.
+The plan also hires 18 agents, starting in September, so they are trained before the busy months.",,5.0,2
+main,offline,offline,p04,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019033124903216958,"USA should start the year with 652 agents and finish it with 252, with about 259 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $117.6M of net value.
 
 Most of the change is a cut: 439 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 39 agents, starting in September, so they are trained before the busy months.",,,0
-main,offline,offline,p05,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019493124913424253,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
-main,offline,offline,p06,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.018227542052045465,"India should start the year with 428 agents and finish it with 300, with about 275 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.4 days, and earns $85.3M of net value.
+The plan also hires 39 agents, starting in September, so they are trained before the busy months.",,4.5,2
+main,offline,offline,p05,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.025384084088727832,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,4.0,2
+main,offline,offline,p06,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.018752541858702898,"India should start the year with 428 agents and finish it with 300, with about 275 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.4 days, and earns $85.3M of net value.
 
 Most of the change is a cut: 180 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 52 agents, starting in September, so they are trained before the busy months.
 
-In October, 286 agents are working, with 14 hires and 0 notices decided that month.",,,0
-main,offline,offline,p07,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.018375250045210123,"UAE should start the year with 309 agents and finish it with 15, with about 39.5 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 4.6 days, and earns -$9.8M of net value.
+In October, 286 agents are working, with 14 hires and 0 notices decided that month.",,4.0,2
+main,offline,offline,p07,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019023209111765027,"UAE should start the year with 309 agents and finish it with 15, with about 39.5 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 4.6 days, and earns -$9.8M of net value.
 
-Most of the change is a cut: 294 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.",,,0
-main,offline,offline,p08,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019772875122725964,"Japan should start the year with 297 agents and finish it with 129, with about 126 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.9 days, and earns $29.1M of net value.
+Most of the change is a cut: 294 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.",,4.5,2
+main,offline,offline,p08,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.020100791938602924,"Japan should start the year with 297 agents and finish it with 129, with about 126 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.9 days, and earns $29.1M of net value.
 
 Most of the change is a cut: 191 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
@@ -52,70 +52,70 @@ In October, 71 agents are working, with 1 hires and 0 notices decided that month
 
 In November, 72 agents are working, with no hiring or notice decisions that month.
 
-In December, 72 agents are working, with no hiring or notice decisions that month.",,,0
-main,offline,offline,c01,compare,compare,True,True,,,True,False,0,,0.01595258293673396,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+In December, 72 agents are working, with no hiring or notice decisions that month.",,4.0,2
+main,offline,offline,c01,compare,compare,True,True,,,True,False,0,,1.1758808330632746,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,,0
-main,offline,offline,c02,compare,compare,True,True,,,True,False,0,,0.39526258292607963,"Keeping January headcount all year would earn -$4.1M. The optimized plan earns $9.9M, which is $14.0M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,5.0,2
+main,offline,offline,c02,compare,compare,True,True,,,True,False,0,,0.9020213331095874,"Keeping January headcount all year would earn -$4.1M. The optimized plan earns $9.9M, which is $14.0M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 100.0% of eligible advertisers with about 107 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.2M).",,,0
-main,offline,offline,c03,compare,compare,True,True,,,True,False,0,,0.016246708808466792,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+It still serves 100.0% of eligible advertisers with about 107 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.2M).",,4.0,2
+main,offline,offline,c03,compare,compare,True,True,,,True,False,0,,0.015299332793802023,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,,0
-main,offline,offline,c04,compare,compare,True,True,,,True,False,0,,0.37387775001116097,"Keeping January headcount all year would earn $43.8M. The optimized plan earns $44.9M, which is $1.2M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,4.5,2
+main,offline,offline,c04,compare,compare,True,True,,,True,False,0,,0.3376885410398245,"Keeping January headcount all year would earn $43.8M. The optimized plan earns $44.9M, which is $1.2M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 100.0% of eligible advertisers with about 109 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($44.5M).",,,0
-main,offline,offline,w01,what_if,what_if,True,True,1.0,,True,False,0,,0.15316966595128179,"If sign ups fall 30% from July to September in Brazil, and we rebuild the plan, net value goes from $44.9M to $41.7M, a change of -$3.2M.
+It still serves 100.0% of eligible advertisers with about 109 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($44.5M).",,4.5,2
+main,offline,offline,w01,what_if,what_if,True,True,1.0,,True,False,0,,0.13039116701111197,"If sign ups fall 30% from July to September in Brazil, and we rebuild the plan, net value goes from $44.9M to $41.7M, a change of -$3.2M.
 
-Headcount moves from about 109 to 108 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w02,what_if,what_if,True,True,1.0,,True,False,0,,0.1969324580859393,"If sign ups rise 20% in USA, and we rebuild the plan, net value goes from $117.6M to $145.3M, a change of $27.7M.
+Headcount moves from about 109 to 108 agents in an average month, and service stays at 100.0%.",,4.5,2
+main,offline,offline,w02,what_if,what_if,True,True,1.0,,True,False,0,,0.19688779092393816,"If sign ups rise 20% in USA, and we rebuild the plan, net value goes from $117.6M to $145.3M, a change of $27.7M.
 
-Headcount moves from about 259 to 300 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w03,what_if,what_if,True,True,1.0,,True,False,0,,0.3373346251901239,"If the eligibility threshold is lowered by 20% in UK, and we rebuild the plan, net value goes from $34.4M to $37.8M, a change of $3.4M.
+Headcount moves from about 259 to 300 agents in an average month, and service stays at 100.0%.",,5.0,2
+main,offline,offline,w03,what_if,what_if,True,True,1.0,,True,False,0,,0.24824283295311034,"If the eligibility threshold is lowered by 20% in UK, and we rebuild the plan, net value goes from $34.4M to $37.8M, a change of $3.4M.
 
-Headcount moves from about 147 to 169 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w04,what_if,what_if,True,True,1.0,,True,False,0,,0.19609833299182355,"If salaries rise 10% in Germany, and we rebuild the plan, net value goes from $24.0M to $22.3M, a change of -$1.7M.
+Headcount moves from about 147 to 169 agents in an average month, and service stays at 100.0%.",,5.0,2
+main,offline,offline,w04,what_if,what_if,True,True,1.0,,True,False,0,,0.13392166583798826,"If salaries rise 10% in Germany, and we rebuild the plan, net value goes from $24.0M to $22.3M, a change of -$1.7M.
 
-Headcount moves from about 133 to 133 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w05,what_if,what_if,True,True,1.0,,True,False,0,,0.22304300009272993,"If each agent can hold 12 advertisers in India, and we rebuild the plan, net value goes from $85.3M to $85.6M, a change of $301,419.
+Headcount moves from about 133 to 133 agents in an average month, and service stays at 100.0%.",,4.5,2
+main,offline,offline,w05,what_if,what_if,True,True,1.0,,True,False,0,,0.1627351250499487,"If each agent can hold 12 advertisers in India, and we rebuild the plan, net value goes from $85.3M to $85.6M, a change of $301,419.
 
-Headcount moves from about 275 to 236 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w06,what_if,what_if,True,True,1.0,,True,False,0,,0.20706054102629423,"If hiring is capped at 5 a month in Vietnam, and we rebuild the plan, net value goes from $10.0M to $10.0M, a change of $13,428.
+Headcount moves from about 275 to 236 agents in an average month, and service stays at 100.0%.",,5.0,2
+main,offline,offline,w06,what_if,what_if,True,True,1.0,,True,False,0,,0.1349563340190798,"If hiring is capped at 5 a month in Vietnam, and we rebuild the plan, net value goes from $10.0M to $10.0M, a change of $13,428.
 
-Headcount moves from about 79.4 to 78.8 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w07,what_if,what_if,True,True,1.0,,True,False,0,,0.1834744589868933,"If support lifts ad spend by 8% on average in Mexico, and we rebuild the plan, net value goes from $10.5M to $4.2M, a change of -$6.4M.
+Headcount moves from about 79.4 to 78.8 agents in an average month, and service stays at 100.0%.",,3.0,2
+main,offline,offline,w07,what_if,what_if,True,True,1.0,,True,False,0,,0.13757325010374188,"If support lifts ad spend by 8% on average in Mexico, and we rebuild the plan, net value goes from $10.5M to $4.2M, a change of -$6.4M.
 
-Headcount moves from about 116 to 113 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w08,what_if,what_if,True,True,1.0,,True,False,0,,0.1750952498987317,"If the largest budgets are served first in Canada, and we rebuild the plan, net value goes from $20.3M to $20.2M, a change of -$83,610.
+Headcount moves from about 116 to 113 agents in an average month, and service stays at 100.0%.",,4.0,2
+main,offline,offline,w08,what_if,what_if,True,True,1.0,,True,False,0,,0.13839387497864664,"If the largest budgets are served first in Canada, and we rebuild the plan, net value goes from $20.3M to $20.2M, a change of -$83,610.
 
-Headcount moves from about 92 to 92 agents in an average month, and service goes from 100.0% to 99.4%.",,,0
-main,offline,offline,w09,what_if,what_if,True,True,1.0,,True,False,0,,0.04774395888671279,"If sign ups fall 25% in Spain, and we keep the current plan, net value goes from $7.2M to $4.6M, a change of -$2.6M.
+Headcount moves from about 92 to 92 agents in an average month, and service goes from 100.0% to 99.4%.",,5.0,2
+main,offline,offline,w09,what_if,what_if,True,True,1.0,,True,False,0,,0.03839712496846914,"If sign ups fall 25% in Spain, and we keep the current plan, net value goes from $7.2M to $4.6M, a change of -$2.6M.
 
-Headcount moves from about 68.5 to 68.5 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w10,what_if,what_if,True,True,1.0,,True,False,0,,0.16522887512110174,"If late December sign ups are still waiting on 1 January in Australia, and we rebuild the plan, net value goes from $13.0M to $17.5M, a change of $4.4M.
+Headcount moves from about 68.5 to 68.5 agents in an average month, and service stays at 100.0%.",,4.0,2
+main,offline,offline,w10,what_if,what_if,True,True,1.0,,True,False,0,,0.13626741687767208,"If late December sign ups are still waiting on 1 January in Australia, and we rebuild the plan, net value goes from $13.0M to $17.5M, a change of $4.4M.
 
-Headcount moves from about 108 to 123 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,w11,what_if,what_if,True,True,1.0,,True,False,0,,0.13743095798417926,"If at least 99% of eligible advertisers must be served in UAE, and we rebuild the plan, net value goes from -$9.7M to -$9.8M, a change of -$30,680.
+Headcount moves from about 108 to 123 agents in an average month, and service stays at 100.0%.",,4.5,2
+main,offline,offline,w11,what_if,what_if,True,True,1.0,,True,False,0,,0.12241224991157651,"If at least 99% of eligible advertisers must be served in UAE, and we rebuild the plan, net value goes from -$9.7M to -$9.8M, a change of -$30,680.
 
-Headcount moves from about 25.8 to 39.5 agents in an average month, and service goes from 0.0% to 100.0%.",,,0
-main,offline,offline,w12,what_if,what_if,True,True,1.0,,True,False,0,,0.1491251669358462,"If sign ups rise 50% in November and December in Italy, and we rebuild the plan, net value goes from $11.1M to $13.4M, a change of $2.3M.
+Headcount moves from about 25.8 to 39.5 agents in an average month, and service goes from 0.0% to 100.0%.",,4.5,2
+main,offline,offline,w12,what_if,what_if,True,True,1.0,,True,False,0,,0.14168854197487235,"If sign ups rise 50% in November and December in Italy, and we rebuild the plan, net value goes from $11.1M to $13.4M, a change of $2.3M.
 
-Headcount moves from about 109 to 112 agents in an average month, and service stays at 100.0%.",,,0
-main,offline,offline,s01,sensitivity,sensitivity,True,True,,,True,False,0,,1.258022499969229,"If sign ups come in a fifth below forecast, rebuilding the plan earns $16.2M against $15.7M for keeping it, because surplus agents can leave.
+Headcount moves from about 109 to 112 agents in an average month, and service stays at 100.0%.",,5.0,2
+main,offline,offline,s01,sensitivity,sensitivity,True,True,,,True,False,0,,1.1555429589934647,"If sign ups come in a fifth below forecast, rebuilding the plan earns $16.2M against $15.7M for keeping it, because surplus agents can leave.
 
-If they come in a fifth above, the current plan still earns $32.4M, but advertisers wait about 13.4 days on average. Rebuilding it keeps waits near 1.3 days. Refreshing the plan every month is the safe habit.",,,0
-main,offline,offline,s02,sensitivity,sensitivity,True,True,,,True,False,0,,1.4438372501172125,"If sign ups come in a fifth below forecast, rebuilding the plan earns $1.6M against $1.3M for keeping it, because surplus agents can leave.
+If they come in a fifth above, the current plan still earns $32.4M, but advertisers wait about 13.4 days on average. Rebuilding it keeps waits near 1.3 days. Refreshing the plan every month is the safe habit.",,3.5,2
+main,offline,offline,s02,sensitivity,sensitivity,True,True,,,True,False,0,,1.1601168338675052,"If sign ups come in a fifth below forecast, rebuilding the plan earns $1.6M against $1.3M for keeping it, because surplus agents can leave.
 
-If they come in a fifth above, the current plan still earns $4.0M, but advertisers wait about 14.4 days on average. Rebuilding it keeps waits near 0.7 days. Refreshing the plan every month is the safe habit.",,,0
-main,offline,offline,s03,sensitivity,sensitivity,True,True,,,True,False,0,,1.2692449160385877,"If sign ups come in a fifth below forecast, rebuilding the plan earns $1.3M against $1.2M for keeping it, because surplus agents can leave.
+If they come in a fifth above, the current plan still earns $4.0M, but advertisers wait about 14.4 days on average. Rebuilding it keeps waits near 0.7 days. Refreshing the plan every month is the safe habit.",,2.5,2
+main,offline,offline,s03,sensitivity,sensitivity,True,True,,,True,False,0,,1.0736429579555988,"If sign ups come in a fifth below forecast, rebuilding the plan earns $1.3M against $1.2M for keeping it, because surplus agents can leave.
 
-If they come in a fifth above, the current plan still earns $2.7M, but advertisers wait about 15.6 days on average. Rebuilding it keeps waits near 2.2 days. Refreshing the plan every month is the safe habit.",,,0
-main,offline,offline,i01,insight,insight,True,True,,True,True,False,0,,0.04023687494918704,UAE has the most volatile monthly demand; day to day noise is high everywhere.,,,0
-main,offline,offline,i02,insight,insight,True,True,,True,True,False,0,,0.020332999993115664,Demand peaks in month 11 and is lowest in month 6.,,,0
-main,offline,offline,i03,insight,insight,True,True,,True,True,False,0,,0.03574695787392557,42.5% of sign ups clear their country threshold.,,,0
-main,offline,offline,i04,insight,insight,True,True,,False,True,False,0,,0.035248042084276676,42.5% of sign ups clear their country threshold.,,,0
-main,offline,offline,i05,insight,insight,True,True,,True,True,False,0,,0.033973915968090296,Eligible sign ups changed by -1.5% between the last two years.,,,0
-main,offline,offline,m01,memo,memo,True,True,,,True,False,0,,0.020117541076615453,"### Staffing memo: France, 2026
+If they come in a fifth above, the current plan still earns $2.7M, but advertisers wait about 15.6 days on average. Rebuilding it keeps waits near 2.2 days. Refreshing the plan every month is the safe habit.",,2.0,2
+main,offline,offline,i01,insight,insight,True,True,,True,True,False,0,,0.07330083381384611,UAE has the most volatile monthly demand; day to day noise is high everywhere.,,3.5,2
+main,offline,offline,i02,insight,insight,True,True,,True,True,False,0,,0.020781584084033966,Demand peaks in month 11 and is lowest in month 6.,,5.0,2
+main,offline,offline,i03,insight,insight,True,True,,True,True,False,0,,0.03476941701956093,42.5% of sign ups clear their country threshold.,,3.5,2
+main,offline,offline,i04,insight,insight,True,True,,False,True,False,0,,0.0328228329308331,42.5% of sign ups clear their country threshold.,,2.0,2
+main,offline,offline,i05,insight,insight,True,True,,True,True,False,0,,0.0312515408731997,Eligible sign ups changed by -1.5% between the last two years.,,5.0,2
+main,offline,offline,m01,memo,memo,True,True,,,True,False,0,,0.018890250008553267,"### Staffing memo: France, 2026
 
 France: move from 489 to 79 agents, averaging 107 active agents.
 
@@ -135,8 +135,8 @@ France: move from 489 to 79 agents, averaging 107 active agents.
 **Risks to watch**
 * Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
 * The value of support assumes uplift applies to the projected annual budget.
-",,,0
-main,offline,offline,m02,memo,memo,True,True,,,True,False,0,,0.020435415906831622,"### Staffing memo: Vietnam, 2026
+",,4.0,2
+main,offline,offline,m02,memo,memo,True,True,,,True,False,0,,0.01867991709150374,"### Staffing memo: Vietnam, 2026
 
 Vietnam: move from 59 to 95 agents, averaging 79.4 active agents.
 
@@ -155,80 +155,361 @@ Vietnam: move from 59 to 95 agents, averaging 79.4 active agents.
 **Risks to watch**
 * Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
 * The value of support assumes uplift applies to the projected annual budget.
-",,,0
-main,offline,offline,r01,rules,rules,True,True,,,True,False,0,,0.0005070420447736979,"Here is what the case rules say.
+",,5.0,2
+main,offline,offline,r01,rules,rules,True,True,,,True,False,0,,0.00054191704839468,"Here is what the case rules say.
 
 [rules.md / Waiting pool] Eligible advertisers enter a waiting pool. If an agent has a free slot, the advertiser is assigned at once. If no slot is free, the advertiser waits in the pool for up to 60 days. An advertiser still unassigned after 60 days is removed from the pool and never receives support.
 
-[kpis.md / Service rate] Share of eligible advertisers who sign up in the planning year and are assigned an agent, at any time, before their 60 day wait runs out.",,,0
-main,offline,offline,r02,rules,rules,True,True,,,True,False,0,,0.00031512510031461716,"Here is what the case rules say.
+[kpis.md / Service rate] Share of eligible advertisers who sign up in the planning year and are assigned an agent, at any time, before their 60 day wait runs out.",,4.0,2
+main,offline,offline,r02,rules,rules,True,True,,,True,False,0,,0.00034529087133705616,"Here is what the case rules say.
 
 [assumptions.md / A5 Notice month] An agent who receives notice keeps working during the notice month and is paid for it. The 40 percent cost is charged in the month the notice is given.
 
-[kpis.md / Firing cost] 40 percent of annual salary for each notice given.",,,0
-main,offline,offline,r03,rules,rules,True,True,,,True,False,0,,0.00047324993647634983,"Here is what the case rules say.
+[kpis.md / Firing cost] 40 percent of annual salary for each notice given.",,3.0,2
+main,offline,offline,r03,rules,rules,True,True,,,True,False,0,,0.0005129170604050159,"Here is what the case rules say.
 
 [kpis.md / Service rate] Share of eligible advertisers who sign up in the planning year and are assigned an agent, at any time, before their 60 day wait runs out.
 
-[assumptions.md / A9 Waiting and value] Waiting does not reduce uplift unless the 60 day limit is passed. The optimizer still prefers earlier service through a penalty of 1 percent of uplift per week waited, because the brief asks for timely support. That choice gives up about 3 million dollars of simulated value and cuts the average wait from about 3 days to about 1 day.",,,0
-main,offline,offline,r04,rules,rules,True,True,,,True,False,0,,0.000578208826482296,"Here is what the case rules say.
+[assumptions.md / A9 Waiting and value] Waiting does not reduce uplift unless the 60 day limit is passed. The optimizer still prefers earlier service through a penalty of 1 percent of uplift per week waited, because the brief asks for timely support. That choice gives up about 3 million dollars of simulated value and cuts the average wait from about 3 days to about 1 day.",,4.0,2
+main,offline,offline,r04,rules,rules,True,True,,,True,False,0,,0.0006063340697437525,"Here is what the case rules say.
 
 [assumptions.md / A3 Pool on 1 January] The pool starts empty. The brief only says agents start with no advertisers. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.
 
-[assumptions.md / A9 Waiting and value] Waiting does not reduce uplift unless the 60 day limit is passed. The optimizer still prefers earlier service through a penalty of 1 percent of uplift per week waited, because the brief asks for timely support. That choice gives up about 3 million dollars of simulated value and cuts the average wait from about 3 days to about 1 day.",,,0
-main,offline,offline,o01,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.0001638750545680523,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-main,offline,offline,o02,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00016012485139071941,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h01,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019937042146921158,"Canada should start the year with 228 agents and finish it with 91, with about 92 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $20.3M of net value.
+[assumptions.md / A9 Waiting and value] Waiting does not reduce uplift unless the 60 day limit is passed. The optimizer still prefers earlier service through a penalty of 1 percent of uplift per week waited, because the brief asks for timely support. That choice gives up about 3 million dollars of simulated value and cuts the average wait from about 3 days to about 1 day.",,4.0,2
+main,offline,offline,o01,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00017316709272563457,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+main,offline,offline,o02,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00016533304005861282,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p01,plan_lookup,plan_lookup,True,True,,,False,True,4377,,113.76282716705464,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
+
+Most of the change is a cut: 516 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 16 agents, starting in August, so they are trained before the busy months.
+
+In March, 86 agents are working, with no hiring or notice decisions that month.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p02,plan_lookup,plan_lookup,True,True,,,True,False,5336,,136.15268675005063,"The recommended plan targets a $10.0M while securing service delivery against a 98 percent service floor threshold.
+
+The hiring trajectory begins in month one with 11 new additions, followed by 7, and another influx in month nine, totaling 36 new hires to reach a fully scaled capacity. These agents are expected to sustain an average active agent count of 79.4 throughout the term, starting with an initial staff complement of 59.
+
+This phased hiring schedule allows the operation to maintain a robust service rate of 100.0% while successfully delivering on the expected outcome outlined in the model.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p03,plan_lookup,plan_lookup,True,True,,,True,False,3720,,71.11298250011168,"The recommended plan for 2026 projects that the UK will issue 487 notices, with the first notice beginning in the month of 1. This plan successfully achieves a 100.0% service rate while delivering a net value of $34.4M.
+
+Achieving this outcome is supported by the required initial staffing level of 589 agents, leading to a total cost realization of $17.7M.
+
+Operationally, the plan demonstrates an ROI of 2.9 and requires only 18 hires to reach the desired operational efficiency metrics.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p04,plan_lookup,plan_lookup,True,True,,,False,True,4141,,79.02586062485352,"USA should start the year with 652 agents and finish it with 252, with about 259 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $117.6M of net value.
+
+Most of the change is a cut: 439 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 39 agents, starting in September, so they are trained before the busy months.
+
+In December, 252 agents are working, with no hiring or notice decisions that month.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p05,plan_lookup,plan_lookup,True,True,,,True,False,3490,,91.22712554200552,"The total staffing cost and net value calculations require aggregating country-specific operational data against the plan's defined parameters. Our current modeling indicates that when factoring in 13.5% potential growth against the plan's initial setup of 2,026, the gross value justifies proceeding with the current structure.
+
+The primary consideration remains maintaining compliance within the 60 response window while aligning capacity utilization with our scaling benchmarks of 10.
+
+To mitigate risk effectively, we need to ensure that the quarterly invoicing appropriately accounts for our agreed-upon 40.0% allocation, which remains fixed across the entire deployment duration of 60.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p06,plan_lookup,plan_lookup,True,True,,,True,False,2095,,34.07826099987142,"India is projected to have {286} active agents in October.
+
+This projection is part of a recommended plan optimized for the year {2,026} that targets full service availability at a utilization rate of 76.9%. The plan began with {428} agents, maintained an average of {275} active agents across the month, and successfully serves a volume indicated by {106,182}.
+
+The total investment for this structure is $5.0M, which aligns with the predicted net value of {$85.3M} for the setup, assuming a successful retention rate documented by {180}.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p07,plan_lookup,plan_lookup,True,True,,,True,False,3924,,78.73991791694425,"The plan reached a service rate of 100.0%. This recommendation applies to the operational year 2,026 and reflects a successful run based on an average of 39.5 active agents deployed against the anticipated volume.
+
+The operation incurred a total cost of $$10.2M, which accounts for the investment needed to sustain operations while also requiring a minimum of 309 starting agents in the UAE market.
+
+Despite these operational commitments, the campaign ultimately recorded a net value of -$9.8M.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,p08,plan_lookup,plan_lookup,True,True,,,False,True,5701,,106.52448541717604,"Japan should start the year with 297 agents and finish it with 129, with about 126 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.9 days, and earns $29.1M of net value.
+
+Most of the change is a cut: 191 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 23 agents, starting in October, so they are trained before the busy months.
+
+In October, 106 agents are working, with 23 hires and 0 notices decided that month.
+
+In November, 129 agents are working, with no hiring or notice decisions that month.
+
+In December, 129 agents are working, with no hiring or notice decisions that month.
+
+South Korea should start the year with 199 agents and finish it with 72, with about 75.8 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $9.4M of net value.
+
+Most of the change is a cut: 137 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 10 agents, starting in September, so they are trained before the busy months.
+
+In October, 71 agents are working, with 1 hires and 0 notices decided that month.
+
+In November, 72 agents are working, with no hiring or notice decisions that month.
+
+In December, 72 agents are working, with no hiring or notice decisions that month.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,c01,compare,compare,True,True,,,True,False,2505,,51.41979433293454,"The optimized plan delivers a greater net value uplift compared to maintaining current headcount. This difference is driven by the optimal structure which achieves $109.3M against the baseline of $0.
+
+While keeping current headcount supports a volume indicated by 6,474 with a total cost of $286.2M, the optimized approach efficiently handles 2,206 users with a total cost of $178.0M.
+
+Crucially, the optimized plan maintains a service rate of 99.1%, closely matching the hold scenario’s 99.3%, while still maximizing the potential revenue growth represented by the difference between $657.6M and $656.6M.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,c02,compare,compare,True,True,,,False,True,4486,,97.12210662500001,"Keeping January headcount all year would earn -$4.1M. The optimized plan earns $9.9M, which is $14.0M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+
+It still serves 100.0% of eligible advertisers with about 107 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.2M).",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,c03,compare,compare,True,True,,,False,True,4795,,99.98308020900004,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+
+It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,c04,compare,compare,True,True,,,False,True,4251,,82.71308599994518,"Keeping January headcount all year would earn $43.8M. The optimized plan earns $44.9M, which is $1.2M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+
+It still serves 100.0% of eligible advertisers with about 109 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($44.5M).",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w01,what_if,what_if,True,True,1.0,,False,True,4877,,87.20152108301409,"If sign ups fall 30% from July to September and each agent can hold 10 advertisers in Brazil, and we keep the current plan, net value goes from $44.9M to $41.7M, a change of -$3.2M.
+
+Headcount moves from about 109 to 109 agents in an average month, and service stays at 100.0%.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w02,what_if,what_if,True,True,1.0,,True,False,2425,,36.635986750014126,"The scenario successfully accommodates the 20 percent rise in demand, stabilizing service delivery while driving financial uplift. The increase pushes arrivals to {13,638}, supported by a maintained {100.0%} across the volume.
+
+This scale-up allows the net value to reach {$124.3M}, which represents a significant increase from the baseline net value of {$117.6M}. This positive shift occurs because, despite the higher volume served at {13,638}, the total cost remains constant at {$34.0M}.
+
+The current plan effectively absorbs this increased activity without requiring additional investment in operational cost, maximizing the return on capacity management.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w03,what_if,what_if,True,True,1.0,,True,False,4778,,80.09149345802143,"Lowering the eligibility threshold by 20 percent generates a substantial uplift, projecting net value to reach $40.0M. This increase is driven by the successful scaling of arrivals from a base of 6,224 to a scenario volume of 8,101.
+
+Under this optimized structure, the total operational cost increases from $17.7M to accommodate the higher volume, while the service rate remains at 100.0%. Furthermore, each agent will be able to hold up to 10 advertisers as the plan is rebuilt around this higher throughput.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w04,what_if,what_if,True,True,1.0,,True,False,2779,,52.193431958090514,"The increased salary projection holds up well, allowing us to maintain full service quality while scaling to handle higher volumes from 5,373 to 5,495. This scenario sees the total cost shift from $17.5M to $19.3M, successfully absorbing the impact of the wage increase while keeping drop rates at 0.
+
+Despite this successful scaling, the net value decreases from $24.0M to $23.3M. We must monitor this relationship between the rising costs and the ultimate net value to ensure future scenarios maintain acceptable margins.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w05,what_if,what_if,True,True,1.0,,True,False,5105,,102.36508737504482,"Increasing agent capacity to 12 sustains a robust financial trajectory, achieving a net value of $$87.3M. This positive shift is driven by the successful capture of greater volume, leading to $14,735 served arrivals against a baseline of $14,442.
+
+To accommodate this volume increase, the plan projects needing $70 hires while maintaining a total cost of $$4.7M. This scaling allows the team to absorb the volume increase predicted in December, demonstrating scalability without sacrificing service quality.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w06,what_if,what_if,True,True,1.0,,True,False,2675,,50.84455549996346,"The scenario with capped hiring maintains all core operational and financial metrics at their established levels. The plan successfully services 4,873 arrivals while holding the service rate at 100.0%, resulting in zero change compared to the base plan's 4,873 and 100.0%.
+
+Despite the shift in staffing needs, which results in 35 versus the base plan's 36, there is no financial impact, as both scenarios project a consistent net value of $10.0M and a total cost of $1.5M. This constrained model sustains the full expected uplift value of $11.5M.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w07,what_if,what_if,True,True,0.0,,True,False,5145,,106.13432079204358,"The established protocol when facing reduced sign-ups is to proportionally scale support resources while initiating a plan rebuild. If arrivals fall {Mexico.arrivals_change}, the operational response is for support to lift ad spend by 80%, enabling us to reset performance trajectory.
+
+This critical action is supported by the understanding that each agent can hold {rules.capacity_per_agent} advertisers in Mexico, allowing the team to successfully execute the plan rebuild and sustain service.
+
+We must ensure that all scaling activities are aligned with our goal of maintaining the optimal net value, especially given the high uplift potential detailed in {Mexico.uplift_value_scenario}.",,3.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w08,what_if,what_if,True,True,1.0,,True,False,4947,,97.67356149991974,"Serving high budget advertisers first in Canada maintains near-parity on net value, decreasing only slightly from $20.3M to $20.2M. This outcome is achieved despite a small decrease in service rate, which shifts from 100.0%% to 99.4%%.
+
+The main driver of the shift is a slight reduction in served volume, which dips from 4,715 to 4,685. Consequently, the dropped volume increases from zero to accommodate 30 instances in this scenario.
+
+Overall, the total cost remains stable at $9.4M, meaning the operational expenditure does not change even with this prioritization structure.",,3.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w09,what_if,what_if,True,True,1.0,,True,False,2668,,50.08112087496556,"Maintaining the current plan amidst a significant downturn would result in a severely compromised outcome, leading to a net value of {-$2.3M}.
+
+The primary strain on the system is evident in the inability to service customers, with only {469} of the base volume being accommodated and forcing a sharp reduction in your service rate to {13.8%}. This directly correlates with a volume of {2,939} advertisers falling through without support, while the total cost remains fixed at {$3.6M}.
+
+Consequently, the plan shifts from being a net positive to incurring a substantial negative {-$2.3M} for the period.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w10,what_if,what_if,True,True,0.0,,False,True,4575,,83.58815045910887,"Nothing changes in Australia, net value goes from $13.0M to $13.0M, a change of 0.0%.
+
+Headcount moves from about 108 to 108 agents in an average month, and service stays at 100.0%.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w11,what_if,what_if,True,True,1.0,,False,True,4935,,92.94679116713814,"If the eligibility threshold is lowered by 1% and at least 99% of eligible advertisers must be served in UAE, and we rebuild the plan, net value goes from -$9.7M to -$9.8M, a change of -$31,642.
+
+Headcount moves from about 25.8 to 39.5 agents in an average month, and service goes from 0.0% to 100.0%.",,2.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,w12,what_if,what_if,True,True,1.0,,False,True,5060,,91.98681870894507,"If sign ups rise 50% in November and December and each agent can hold 10 advertisers in Italy, and we keep the current plan, net value goes from $11.1M to $13.6M, a change of $2.5M.
+
+Headcount moves from about 109 to 109 agents in an average month, and service stays at 100.0%.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,s01,sensitivity,sensitivity,True,True,,,False,True,6668,,98.39294650009833,"If sign ups come in a fifth below forecast, rebuilding the plan earns $16.2M against $15.7M for keeping it, because surplus agents can leave.
+
+If they come in a fifth above, the current plan still earns $32.4M, but advertisers wait about 13.4 days on average. Rebuilding it keeps waits near 1.3 days. Refreshing the plan every month is the safe habit.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,s02,sensitivity,sensitivity,True,True,,,True,False,4176,,77.83850991609506,"The plan demonstrates strong inherent robustness, successfully accommodating the full range of volume fluctuations from `$691,403` to `$4.3M`. At the lower end, such as volumes reaching `$691,403`, the current plan maintains a `100.0%` of $100.0\%$ with near-zero wait times documented by `0`.
+
+However, the extreme high volume scenario places stress on the current model; scaling to `$4.3M` shows a predicted average wait time of `25.0` and a service rate of `96.0%`. This suggests that while the current plan is stable for typical variations, there is a significant uplift to be gained by applying replanning strategies.
+
+The optimized approach for high-volume scenarios significantly mitigates friction, evidenced by the replanned scenario maintaining `100.0%` of $100.0\%$ while reducing the average wait time to `0.7`.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,s03,sensitivity,sensitivity,True,True,,,False,True,6837,,110.14740029210225,"If sign ups come in a fifth below forecast, rebuilding the plan earns $1.3M against $1.2M for keeping it, because surplus agents can leave.
+
+If they come in a fifth above, the current plan still earns $2.7M, but advertisers wait about 15.6 days on average. Rebuilding it keeps waits near 2.2 days. Refreshing the plan every month is the safe habit.",,3.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,i01,insight,insight,True,False,,True,True,False,3008,,70.86214954219759,"UAE currently exhibits the most volatile monthly demand. This fluctuation is particularly pronounced there, though high day-to-day noise levels are present across all service regions.
+
+The current pattern suggests that increased focus on smoothing inbound load spikes will be necessary to ensure optimal staffing efficiency.",,1.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,i02,insight,insight,True,True,,True,False,True,1990,,54.01209287485108,"I do not have data for All. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,2.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,i03,insight,insight,True,True,,True,False,True,3034,,69.87945462483913,42.5% of sign ups clear their country threshold.,,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,i04,insight,insight,True,False,,True,True,False,2941,,66.09211612516083,"The United States holds the largest pool of eligible advertiser budgets. This capacity is demonstrated by a mean budget of 85,949, which aligns with the identified top mean budget and considerably exceeds the overall average budget of $45,910.
+
+This large market size is supported by a client base contributing 26,116 eligible budgets. This data indicates the high-value nature of the US market compared to other regions.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,i05,insight,insight,True,True,,True,True,False,2916,,71.94074133294635,"I cannot definitively state whether eligible sign-ups grew between the two years because the actual volume data for both periods was not included in this request. My analysis is currently limited to background factors, including the current year being 2,026 and the established capacity rate of 10.
+
+To provide the comparative insight you need, please supply the corresponding sign-up figures for both years. Once received, I can apply metrics like the expected uplift rate of 13.5% and clearly outline the growth trend for your regional review.",,2.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,m01,memo,memo,True,True,,,True,False,1142,,7.89409741689451,"### Staffing memo: France, 2026
+
+Staffing Plan Summary - France 2,026
+
+**Headcount changes**
+* , 
+
+**Cost and value**
+* Summary of $9.9M with a total cost of $18.0M. ROI is 1.5.
+
+**Why**
+* This plan maintains a 100.0% service rate and achieved a net value of $9.9M. Key metrics include 107 average active agents, 489 starting agents, and 9 hires made in month 9. The plan incurred a salary cost of $7.1M and experienced 419 notices.
+
+**Risks to watch**
+* The current utilization is 56.2% with an average idle agent count of 46.6, indicating potential for optimization.
+",,3.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,m02,memo,memo,True,True,,,True,False,1044,,3.85400054208003,"### Staffing memo: Vietnam, 2026
+
+Staffing Plan Recommendation for Vietnam (Year 2,026)
+
+**Headcount changes**
+* , 
+
+**Cost and value**
+* Cost:
+* Net Value:
+* ROI:
+* Service Rate:
+* Wait Days:
+
+**Why**
+* Active Agents:
+* Idle Agents:
+* Start Agents:
+* End Agents:
+* Hires:
+
+**Risks to watch**
+* Dropped Calls:
+* Notices:
+",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,r01,rules,rules,True,True,,,True,False,2604,,59.81665433314629,"The advertiser can wait up to 60 in the pool before removal candidacy is reached. This waiting period aligns with our established 60 threshold following placement into a team structure.
+
+Our models operate with a capacity of 10 agents, and the transition to an active arrangement is underpinned by our target uplift rate of 13.5%. Should the arrangement end, the financial structure dictates a cost share of 40.0%.",,3.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,r02,rules,rules,True,True,,,True,False,1628,,37.97876120801084,"The cost associated with terminating an agent is determined by a `40.0%` obligation, which represents the agreed-upon distribution of termination expenses between parties. This decision is weighed against the `10` maintained during their support period, which totals up to `60`.
+
+To proceed with termination without issue, the process must adhere to a waiting window defined by `60`.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,r03,rules,rules,True,True,,,True,False,1861,,38.057266749907285,"The service rate represents the share of eligible advertisers who acquire accounts in the planning year and are successfully assigned an agent before their grace period expires.
+
+This definition applies to the entire `60` window, but the system is optimized for speed because any waiting beyond initial onboarding incurs a cost; specifically, the expected uplift value loses one percent for each week waited, even though the maximum waiting period is 60 days. This optimization drives the average wait time down significantly compared to what would occur without penalty structures, leading to substantial projected value gains.
+
+Operationally, while headcount is reviewed monthly, the advertiser flows are assessed weekly to ensure feasibility. Furthermore, a service level variant allows for placing an explicit floor on this ultimate share of eligible advertisers served.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,r04,rules,rules,True,True,,,False,True,3915,,92.11676545790397,"Here is what the case rules say.
+
+[assumptions.md / A3 Pool on 1 January] The pool starts empty. The brief only says agents start with no advertisers. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.
+
+[assumptions.md / A9 Waiting and value] Waiting does not reduce uplift unless the 60 day limit is passed. The optimizer still prefers earlier service through a penalty of 1 percent of uplift per week waited, because the brief asks for timely support. That choice gives up about 3 million dollars of simulated value and cuts the average wait from about 3 days to about 1 day.",,4.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,o01,out_of_scope,out_of_scope,True,True,,,True,False,1404,,28.396301542175934,"This request falls outside of our current operational domain. Our data sets are focused strictly on advertiser support operations, staffing models, and resource planning for Google's business units.
+
+Specifically, our systems handle metrics such as the {{10} required capacity, usage of our predictive planning model tied to {{2,026}, and the establishment of service levels based on constraints like {{60}. We do not possess or integrate external predictive service data, such as localized weather forecasts.",,5.0,1
+main,local:google/gemma-4-e4b,local:google/gemma-4-e4b,o02,out_of_scope,out_of_scope,True,True,,,True,False,1554,,34.576751874992624,"I cannot provide recommendations regarding stock purchases. My function is limited to supporting operational logistics and advising on the structure of our support models.
+
+Investment decisions require dedicated financial expertise, which falls outside the scope of service provided by our team. We are here to optimize scalability and review operational metrics like {60} or assist with capacity planning related to {2,026}.",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p01,plan_lookup,plan_lookup,True,True,,,True,False,814,,8.96546904114075,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Germany"", ""month"": ""March"", ""year"": ""2026""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p02,plan_lookup,plan_lookup,True,True,,,True,False,786,,11.892587499925867,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Vietnam"", ""year"": 2026, ""num_countries"": 1}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p03,plan_lookup,plan_lookup,True,True,,,True,False,779,,9.077611916000023,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""UK"", ""year"": 2026, ""show"": 1}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p04,plan_lookup,plan_lookup,True,True,,,True,False,773,,8.122007957892492,"{""name"": ""plan_lookup"", ""parameters"": {""year"": 2026, ""country"": ""USA""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p05,plan_lookup,plan_lookup,True,False,,,True,False,15187,,46.781720666913316,"{""name"": ""plan_lookup"", ""parameters"": {""country_list"": ""all""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p06,plan_lookup,plan_lookup,True,True,,,True,False,813,,10.91066745808348,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""India"", ""month"": ""October"", ""year"": ""2026""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p07,plan_lookup,plan_lookup,True,True,,,True,False,1358,,8.41820758394897,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""UAE"", ""year"": ""2026""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,p08,plan_lookup,plan_lookup,True,True,,,True,False,1245,,9.601942667039111,"{""name"": ""plan_lookup"", ""parameters"": {""country_list"": ""['Japan', 'South Korea']"", ""quarter"": ""Q4"", ""year"": ""2026""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,c01,compare,compare,True,True,,,True,False,830,,8.830678458092734,"{""name"": ""compare_optimized_to_historical"", ""parameters"": {""historical_plan_name"": ""January""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,c02,compare,compare,True,True,,,True,False,820,,8.163593916920945,"{""name"": ""is_optimized_better_than_nothing"", ""parameters"": {""country"": ""France""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,c03,compare,compare,True,True,,,True,False,844,,8.832685332978144,"{""name"": ""compare_baseline"", ""parameters"": {""hold"": ""hold"", ""optimized"": ""optimized"", ""peak_cover"": ""peak_cover"", ""plan"": ""plan""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,c04,compare,compare,True,True,,,True,False,815,,8.647049667080864,"{""name"": ""compare_optimized_and_hold"", ""parameters"": {""country"": ""Brazil""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w01,what_if,what_if,True,True,1.0,,True,False,2732,,15.576172832865268,"{""name"": ""what_if"", ""parameters"": {""country"": ""Brazil"", ""change"": -30, ""period"": ""Q3"", ""support_lift_avg"": 0, ""capacity_per_agent"": ""rules.capacity_per_agent"", ""hiring_capped_at"": 1000, ""min_service_rate"": 100}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w02,what_if,what_if,True,True,1.0,,True,False,998,,10.656974832993,"{""name"": ""what_if"", ""parameters"": {""country"": ""USA"", ""change_percentage"": 20, ""rebuild_plan"": True}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w03,what_if,what_if,True,True,1.0,,True,False,1007,,11.106475624954328,"{""name"": ""what_if"", ""parameters"": {""country"": ""UK"", ""parameter_name"": ""eligibility_threshold"", ""change_percentage"": 20, ""rebuild_plan"": True}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w04,what_if,what_if,True,True,1.0,,True,False,2151,,16.542429875116795,"{""name"": ""what_if"", ""parameters"": {""salaries_change"": 10, ""location"": ""Germany""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w05,what_if,what_if,True,True,1.0,,True,False,994,,12.857622042065486,"{""name"": ""what_if"", ""parameters"": {""country"": ""India"", ""capacity_per_agent"": 12, ""plan"": ""rebuild""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w06,what_if,what_if,True,True,1.0,,True,False,1039,,13.127236666856334,"{""name"": ""what_if"", ""parameters"": {""country"": ""Vietnam"", ""hires"": 5, ""rebuild_plan"": True}}",,2.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w07,what_if,what_if,True,True,1.0,,True,False,1007,,10.439933583140373,"{""name"": ""what_if"", ""parameters"": {""country"": ""Mexico"", ""year"": 2026, ""expected_uplift_rate"": 8}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w08,what_if,what_if,True,True,1.0,,True,False,984,,11.092335499823093,"{""name"": ""what_if"", ""parameters"": {""country"": ""Canada"", ""rule"": ""serve_largest_budgets_first""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w09,what_if,what_if,True,True,1.0,,True,False,1010,,9.897299792151898,"{""name"": ""what_if"", ""parameters"": {""country"": ""Spain"", ""sign_ups_change"": -25, ""plan"": ""current plan""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w10,what_if,what_if,True,True,1.0,,True,False,1007,,11.065144832944497,"{""name"": ""what_if"", ""parameters"": {""country"": ""Australia"", ""month"": ""January"", ""plan_year"": 2026, ""rule_set"": ""rules""}}",,3.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w11,what_if,what_if,True,True,1.0,,True,False,1016,,10.577556082978845,"{""name"": ""what_if"", ""parameters"": {""served_rate"": 99, ""rebuild_plan"": True, ""country"": ""UAE""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,w12,what_if,what_if,True,True,1.0,,True,False,1015,,10.87474950007163,"{""name"": ""what_if"", ""parameters"": {""country"": ""Italy"", ""month"": ""November December"", ""change_type"": ""demand"", ""change_percentage"": 50, ""rebuild_plan"": True}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,s01,sensitivity,sensitivity,True,True,,,True,False,1501,,15.746280207997188,"{""name"": ""sensitivity"", ""parameters"": {""sign_up_volume_percent"": 100, ""planned_or_replanned"": ""replanned"", ""year"": 2026}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,s02,sensitivity,sensitivity,True,True,,,True,False,1521,,13.880185124929994,"{""name"": ""is_plan_robust"", ""parameters"": {""country"": ""Poland"", ""sign_ups"": ""80""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,s03,sensitivity,sensitivity,True,True,,,True,False,3122,,16.57220183406025,"{""name"": ""sensitivity"", ""parameters"": {""start"": 70, ""end"": 130, ""step"": 10, ""demand_levels"": [""current_plan"", ""replanned""], ""metric"": ""net_value""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,i01,insight,insight,True,True,,True,True,False,411,,11.989918583072722,"{""name"": ""get_most_volatile_demand_countries"", ""parameters"": {}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,i02,insight,insight,True,True,,True,True,False,437,,9.40759591711685,"{""name"": ""get_insight"", ""parameters"": {""insight_name"": ""seasonal_peak_in_sign_ups""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,i03,insight,insight,True,True,,True,True,False,1039,,8.107044333824888,"{""name"": ""calculate_eligible_signups"", ""parameters"": {""country"": ""India""}}",,3.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,i04,insight,insight,True,True,,False,True,False,422,,8.63413754105568,"{""name"": ""get_country_eligible_budgets"", ""parameters"": {}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,i05,insight,insight,True,True,,True,True,False,420,,8.49908420885913,"{""name"": ""insight"", ""parameters"": {""change_type"": ""growth"", ""year_change"": ""-1.5%"", ""year2"": ""2,026""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,m01,memo,memo,True,True,,,True,False,1050,,4.886016375152394,"### Staffing memo: France, 2026
+
+Staffing Memo
+
+**Headcount changes**
+* France.hires
+
+**Cost and value**
+* France.total_cost
+* France.uplift_value
+* France.net_value
+
+**Why**
+* Utilization rate is at 56.2%% and service floor is at 98%.
+
+**Risks to watch**
+* Dropped calls are at 0.
+",,3.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,m02,memo,memo,True,True,,,False,True,1001,,20.368390415795147,"### Staffing memo: Vietnam, 2026
+
+Vietnam: move from 59 to 95 agents, averaging 79.4 active agents.
+
+**Headcount changes**
+* Hire 36 agents in total; the first hiring decision is in month 1, and new agents start one month later.
+
+**Cost and value**
+* Salary cost $1.5M and firing cost $0.
+* Expected uplift value $11.5M, net value $10.0M.
+* Service rate 100.0% with an average wait of 1.3 days.
+
+**Why**
+* Headcount follows forecast eligible sign ups, with each agent holding at most 10 advertisers for 60 days.
+* Notices cost 40.0% of annual salary, so cuts happen early when the saving over the rest of the year is larger than that cost.
+
+**Risks to watch**
+* Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
+* The value of support assumes uplift applies to the projected annual budget.
+",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,r01,rules,rules,True,False,,,True,False,986,,3.917283833026886,"{""name"": ""waiting_pool"", ""parameters"": {""max_wait_days"": 60}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,r02,rules,rules,True,True,,,True,False,486,,9.667184165911749,"{""name"": ""get_firing_cost"", ""parameters"": {""year"": 2026, ""agent_capacity"": 10, ""uplift_rate"": 0.135, ""fire_cost_share"": 0.4}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,r03,rules,rules,True,False,,,True,False,1026,,3.6593932919204235,"{""name"": ""service_rate"", ""parameters"": {""year"": ""2,026""}}",,1.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,r04,rules,rules,True,False,,,True,False,1053,,4.730074666207656,"{""name"": explain_assumption, ""parameters"": {""pool_size"": 21500, ""date"": ""1 January"", ""rule_source"": ""assumptions.md / A3 Pool on 1 January""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,o01,out_of_scope,out_of_scope,True,True,,,True,False,372,,8.326556417159736,"{""name"": ""respond"", ""parameters"": {""intent_name"": ""out_of_scope""}}",,5.0,1
+main,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,o02,out_of_scope,out_of_scope,True,False,,,True,False,899,,6.650588040938601,"{""name"": ""out_of_scope"", ""parameters"": {}}",,5.0,1
+holdout,offline,offline,h01,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.042079833103343844,"Canada should start the year with 228 agents and finish it with 91, with about 92 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $20.3M of net value.
 
 Most of the change is a cut: 152 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 15 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h02,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.0202996670268476,"Italy should start the year with 350 agents and finish it with 100, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $11.1M of net value.
+The plan also hires 15 agents, starting in September, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h02,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.023092000046744943,"Italy should start the year with 350 agents and finish it with 100, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $11.1M of net value.
 
 Most of the change is a cut: 267 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 17 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.020004333928227425,"Brazil should start the year with 189 agents and finish it with 116, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.5 days, and earns $44.9M of net value.
+The plan also hires 17 agents, starting in September, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.030086541082710028,"Brazil should start the year with 189 agents and finish it with 116, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.5 days, and earns $44.9M of net value.
 
 Most of the change is a cut: 92 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 19 agents, starting in September, so they are trained before the busy months.
 
-In September, 97 agents are working, with 19 hires and 0 notices decided that month.",,,0
-holdout,offline,offline,h04,what_if,out_of_scope,False,False,0.0,,True,False,0,,0.0002119590062648058,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h05,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.020102584036067128,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
+In September, 97 agents are working, with 19 hires and 0 notices decided that month.",,3.5,2
+holdout,offline,offline,h04,what_if,out_of_scope,False,False,0.0,,True,False,0,,0.0002372909802943468,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,offline,offline,h05,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.021368582965806127,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
 
 Most of the change is a cut: 516 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 16 agents, starting in August, so they are trained before the busy months.",,,0
-holdout,offline,offline,h06,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.02016216586343944,"Poland should start the year with 150 agents and finish it with 59, with about 60.7 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.7 days, and earns $2.6M of net value.
+The plan also hires 16 agents, starting in August, so they are trained before the busy months.",,4.0,2
+holdout,offline,offline,h06,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.019789667101576924,"Poland should start the year with 150 agents and finish it with 59, with about 60.7 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.7 days, and earns $2.6M of net value.
 
 Most of the change is a cut: 100 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 9 agents, starting in August, so they are trained before the busy months.",,,0
-holdout,offline,offline,h07,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.019400791032239795,"Turkey should start the year with 102 agents and finish it with 40, with about 40.7 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 2.2 days, and earns $1.9M of net value.
+The plan also hires 9 agents, starting in August, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h07,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.02061574999243021,"Turkey should start the year with 102 agents and finish it with 40, with about 40.7 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 2.2 days, and earns $1.9M of net value.
 
 Most of the change is a cut: 68 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 6 agents, starting in October, so they are trained before the busy months.
 
-In December, 40 agents are working, with no hiring or notice decisions that month.",,,0
-holdout,offline,offline,h08,compare,compare,True,True,,,True,False,0,,0.01558491587638855,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+In December, 40 agents are working, with no hiring or notice decisions that month.",,5.0,2
+holdout,offline,offline,h08,compare,compare,True,True,,,True,False,0,,0.023681499995291233,"Keeping January headcount all year would earn $370.4M. The optimized plan earns $479.7M, which is $109.3M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,,0
-holdout,offline,offline,h09,compare,plan_lookup,False,True,,,True,False,0,,0.019201916875317693,"Mexico should start the year with 442 agents and finish it with 98, with about 116 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.5 days, and earns $10.5M of net value.
+It still serves 99.1% of eligible advertisers with about 2,206 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($468.3M).",,4.5,2
+holdout,offline,offline,h09,compare,plan_lookup,False,True,,,True,False,0,,0.018686291994526982,"Mexico should start the year with 442 agents and finish it with 98, with about 116 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.5 days, and earns $10.5M of net value.
 
 Most of the change is a cut: 358 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 14 agents, starting in October, so they are trained before the busy months.",,,0
-holdout,offline,offline,h10,sensitivity,plan_lookup,False,True,,,True,False,0,,0.0204671670217067,"South Africa should start the year with 78 agents and finish it with 57, with about 53.2 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.6 days, and earns $2.6M of net value.
+The plan also hires 14 agents, starting in October, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h10,sensitivity,plan_lookup,False,True,,,True,False,0,,0.021104583982378244,"South Africa should start the year with 78 agents and finish it with 57, with about 53.2 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.6 days, and earns $2.6M of net value.
 
 Most of the change is a cut: 29 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 8 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h11,insight,out_of_scope,False,True,,False,True,False,0,,0.0002113750670105219,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h12,insight,out_of_scope,False,True,,False,True,False,0,,0.00017120782285928726,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h13,memo,plan_lookup,False,True,,,True,False,0,,0.02015362516976893,"### Staffing memo: Indonesia, 2026
+The plan also hires 8 agents, starting in September, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h11,insight,out_of_scope,False,True,,False,True,False,0,,0.00022424990311264992,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,offline,offline,h12,insight,out_of_scope,False,True,,False,True,False,0,,0.00017850007861852646,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,offline,offline,h13,memo,plan_lookup,False,True,,,True,False,0,,0.02017333311960101,"### Staffing memo: Indonesia, 2026
 
 Indonesia: move from 120 to 37 agents, averaging 39.2 active agents.
 
@@ -248,44 +529,44 @@ Indonesia: move from 120 to 37 agents, averaging 39.2 active agents.
 **Risks to watch**
 * Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
 * The value of support assumes uplift applies to the projected annual budget.
-",,,0
-holdout,offline,offline,h14,rules,plan_lookup,False,True,,,True,False,0,,0.02082700002938509,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
-holdout,offline,offline,h15,rules,plan_lookup,False,True,,,True,False,0,,0.02057320810854435,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
-holdout,offline,offline,h16,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00020058290101587772,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h17,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019259541993960738,"Australia should start the year with 450 agents and finish it with 89, with about 108 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 2.3 days, and earns $13.0M of net value.
+",,5.0,2
+holdout,offline,offline,h14,rules,plan_lookup,False,True,,,True,False,0,,0.020540500059723854,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,3.5,2
+holdout,offline,offline,h15,rules,plan_lookup,False,True,,,True,False,0,,0.14000829099677503,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,3.5,2
+holdout,offline,offline,h16,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00021070893853902817,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,offline,offline,h17,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019000332802534103,"Australia should start the year with 450 agents and finish it with 89, with about 108 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 2.3 days, and earns $13.0M of net value.
 
 Most of the change is a cut: 376 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 15 agents, starting in October, so they are trained before the busy months.",,,0
-holdout,offline,offline,h18,plan_lookup,plan_lookup,True,False,,,True,False,0,,0.0002316250465810299,"I do not have data for Indian. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,,0
-holdout,offline,offline,h19,plan_lookup,out_of_scope,False,False,,,True,False,0,,0.00016758288256824017,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-holdout,offline,offline,h20,what_if,plan_lookup,False,False,0.0,,True,False,0,,0.00020341691561043262,"I do not have data for Effect. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,,0
-holdout,offline,offline,h21,what_if,plan_lookup,False,False,0.0,,True,False,0,,0.0002719161566346884,"I do not have data for Canadian. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,,0
-holdout,offline,offline,h22,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.06428729183971882,"South Korea should start the year with 199 agents and finish it with 72, with about 75.8 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $9.4M of net value.
+The plan also hires 15 agents, starting in October, so they are trained before the busy months.",,5.0,2
+holdout,offline,offline,h18,plan_lookup,plan_lookup,True,False,,,True,False,0,,0.00024850014597177505,"I do not have data for Indian. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,1.0,2
+holdout,offline,offline,h19,plan_lookup,out_of_scope,False,False,,,True,False,0,,0.0001696248073130846,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,offline,offline,h20,what_if,plan_lookup,False,False,0.0,,True,False,0,,0.0002057079691439867,"I do not have data for Effect. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,3.0,2
+holdout,offline,offline,h21,what_if,plan_lookup,False,False,0.0,,True,False,0,,0.00021054083481431007,"I do not have data for Canadian. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,3.0,2
+holdout,offline,offline,h22,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.019944957923144102,"South Korea should start the year with 199 agents and finish it with 72, with about 75.8 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $9.4M of net value.
 
 Most of the change is a cut: 137 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 10 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h23,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.01973183313384652,"China should start the year with 252 agents and finish it with 126, with about 120 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.2 days, and earns $52.0M of net value.
+The plan also hires 10 agents, starting in September, so they are trained before the busy months.",,3.5,2
+holdout,offline,offline,h23,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.018539292039349675,"China should start the year with 252 agents and finish it with 126, with about 120 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 0.2 days, and earns $52.0M of net value.
 
 Most of the change is a cut: 150 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 24 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h24,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.02020387491211295,"Argentina should start the year with 200 agents and finish it with 17, with about 30.9 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns -$596,465 of net value.
+The plan also hires 24 agents, starting in September, so they are trained before the busy months.",,5.0,2
+holdout,offline,offline,h24,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.019842791138216853,"Argentina should start the year with 200 agents and finish it with 17, with about 30.9 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns -$596,465 of net value.
 
 Most of the change is a cut: 185 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 2 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h25,compare,plan_lookup,False,True,,,True,False,0,,0.020180208142846823,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
-holdout,offline,offline,h26,compare,plan_lookup,False,True,,,True,False,0,,0.019859707914292812,"UK should start the year with 589 agents and finish it with 120, with about 147 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $34.4M of net value.
+The plan also hires 2 agents, starting in September, so they are trained before the busy months.",,4.5,2
+holdout,offline,offline,h25,compare,plan_lookup,False,True,,,True,False,0,,0.01936912490054965,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,3.5,2
+holdout,offline,offline,h26,compare,plan_lookup,False,True,,,True,False,0,,0.019067415967583656,"UK should start the year with 589 agents and finish it with 120, with about 147 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.1 days, and earns $34.4M of net value.
 
 Most of the change is a cut: 487 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 18 agents, starting in September, so they are trained before the busy months.",,,0
-holdout,offline,offline,h27,sensitivity,what_if,False,True,,,True,False,0,,0.00022874982096254826,"Which input should change, and by how much? For example: sign ups drop 30 percent in Q3.",,,0
-holdout,offline,offline,h28,insight,insight,True,True,,True,True,False,0,,0.032352957874536514,Eligible sign ups changed by -1.5% between the last two years.,,,0
-holdout,offline,offline,h29,insight,plan_lookup,False,False,,False,True,False,0,,0.0002348748967051506,"I do not have data for Mexican. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,,0
-holdout,offline,offline,h30,memo,plan_lookup,False,True,,,True,False,0,,0.019412541994825006,"### Staffing memo: France, 2026
+The plan also hires 18 agents, starting in September, so they are trained before the busy months.",,4.0,2
+holdout,offline,offline,h27,sensitivity,what_if,False,True,,,True,False,0,,0.0002324159722775221,"Which input should change, and by how much? For example: sign ups drop 30 percent in Q3.",,3.0,2
+holdout,offline,offline,h28,insight,insight,True,True,,True,True,False,0,,0.08768862509168684,Eligible sign ups changed by -1.5% between the last two years.,,4.5,2
+holdout,offline,offline,h29,insight,plan_lookup,False,False,,False,True,False,0,,0.0002437918446958065,"I do not have data for Mexican. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,3.0,2
+holdout,offline,offline,h30,memo,plan_lookup,False,True,,,True,False,0,,0.018455625046044588,"### Staffing memo: France, 2026
 
 France: move from 489 to 79 agents, averaging 107 active agents.
 
@@ -305,48 +586,305 @@ France: move from 489 to 79 agents, averaging 107 active agents.
 **Risks to watch**
 * Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
 * The value of support assumes uplift applies to the projected annual budget.
-",,,0
-holdout,offline,offline,h31,rules,plan_lookup,False,True,,,True,False,0,,0.02043741592206061,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
-holdout,offline,offline,h32,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00020220899023115635,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,,0
-followups,offline,offline,f01,what_if,what_if,True,True,1.0,,True,False,0,,0.1408227919600904,"If sign ups fall 30% from July to September in Mexico, and we rebuild the plan, net value goes from $10.5M to $9.5M, a change of -$1.0M.
+",,4.0,2
+holdout,offline,offline,h31,rules,plan_lookup,False,True,,,True,False,0,,0.019000417087227106,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,3.5,2
+holdout,offline,offline,h32,out_of_scope,out_of_scope,True,True,,,True,False,0,,0.00019387505017220974,"That is outside what I can help with. Ask me about the staffing plan, a what if scenario, the sign up data or the case rules.",,5.0,2
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h01,plan_lookup,what_if,False,True,,,False,True,5108,,106.71561679197475,"If each agent can hold 1 advertisers in Canada, and we keep the current plan, net value goes from $20.3M to -$5.5M, a change of -$25.8M.
 
-Headcount moves from about 116 to 113 agents in an average month, and service stays at 100.0%.",,,0
-followups,offline,offline,f02,what_if,what_if,True,True,1.0,,True,False,0,,0.14408770808950067,"If sign ups fall 50% from July to September in Brazil, and we rebuild the plan, net value goes from $44.9M to $39.6M, a change of -$5.3M.
+Headcount moves from about 92 to 92 agents in an average month, and service goes from 100.0% to 13.1%.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h02,plan_lookup,plan_lookup,True,True,,,True,False,2241,,43.07538775005378,"Yes, the plan recommends optimizing headcount immediately to stabilize at 100 agents. The current operational model, which relies on an average of 109 active agents across the initial team size of 350, presents opportunities to drive down costs while sustaining a 100.0% of 100.0%.
 
-Headcount moves from about 109 to 107 agents in an average month, and service stays at 100.0%.",,,0
-followups,offline,offline,f03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.01911762496456504,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
+This optimization begins with notices in month 1 and successfully yields a net value of $11.1M. By adjusting to the proposed structure, the team can maintain service excellence while keeping dropped arrivals at 0.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h03,plan_lookup,plan_lookup,True,True,,,True,False,2371,,46.283905958989635,"The September metrics indicate a focused operational period with low attrition risk and stable service delivery against the plan. During that month, the required active agent count was {97}, complemented by a service rate of {100.0%} and the intake of {19} new hires.
+
+Crucially, attrition remained minimal with only {0} notices recorded during September, keeping the annual attrition velocity in check and supporting the {$44.9M} projected for the planning period.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h04,what_if,what_if,True,True,1.0,,True,False,4988,,89.18975766701624,"The primary impact of a forty percent slump in Japanese sign-ups between April and June is a severe degradation of our service efficacy, causing the net value to sharply decline. This is driven by the relationship between arrivals and capacity utilization; while the service rate remains 100.0%% during baseline conditions, the scenario sees that rate compress to 14.2%% due to the drop from 6,683 arrivals to only 6,108.
+
+The financial pressure is immediate because the fixed costs remain at $10.1M, while the scarcity of new sign-ups limits our ability to capture value, evidenced by the net value changing from $29.1M in baseline to -$5.1M under the slump scenario. Practically, we see a dramatic contraction in served advertisers, which falls from 6,683 to 869, indicating that the scaling of service volume is directly bottlenecked by the initial signing velocity.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h05,what_if,what_if,True,True,0.0,,True,False,2768,,51.85349816712551,"The eligibility threshold adjustment, when coupled with a seasonal contraction in sign-ups, results in a clear reduction of achievable net value compared to our base plan. This scenario sees arrivals fall from 5,373 to 3,860, directly correlating with the net value shifting from $24.0M to $17.8M.
+
+While the overall service rate remains stable at 100.0% and there is no change in average active accounts, the lower volume during this period means that even with full service delivery against arrivals, the total potential uplift is constrained. This volume shift dictates the overall impact on our yearly targets for 2,026.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h06,what_if,what_if,True,True,0.0,,False,True,4932,,89.00241191708483,"If sign ups rise 15% in December in Poland, and we rebuild the plan, net value goes from $2.6M to $2.7M, a change of $77,465.
+
+Headcount moves from about 60.7 to 61 agents in an average month, and service stays at 100.0%.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h07,what_if,what_if,True,True,1.0,,True,False,2484,,39.3605004590936,"To successfully manage a 100% surge in sign-ups, the current plan must account for 14 staff members while maintaining service quality. This scalable structure allows the team to handle an increased volume, raising the served arrivals from 2,089 to 2,301.
+
+This successful scaling drives the net value from $1.9M to $2.3M. Importantly, while the total cost remains at $1.7M, this investment secures a positive financial outcome for the scaling operation.
+
+The increased arrival volume is robust, achieving a 100.0% service rate despite the heightened operational demands of the month.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h08,compare,compare,True,True,,,True,False,1535,,33.3682559998706,"The optimization effort is strategically worthwhile given the potential upside outlined in the current plan. The primary benefit stems from the projected {13.5%} increase, which outweighs the risk mitigated by the {40.0%} during this {2,026}.
+
+This comparison suggests that the expected gain from introducing efficiencies justifies the management resources required, particularly when considering the {60} availability and established service thresholds set at {60}. Furthermore, the model operates with an average of {10} users per agent when scaling the support structure.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h09,compare,compare,True,True,,,True,False,2802,,59.818997707916424,"The key gap between the current baseline plan and the optimized strategy lies in achieving a significant net value increase of {$15.7M} while simultaneously reducing operational expenditures from $8.7M to {$5.2M}.
+
+This major shift is predicated on successfully reducing the average active contacts from 442 to {116} while maintaining a service rate of {100.0%}. This efficiency allows the team to realize an optimized net value of {$10.5M}.
+
+For implementation, the support team must align expectations regarding maximum wait times with the {60} tolerance level to ensure a smooth transition to the new operational model.",,2.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h10,sensitivity,sensitivity,True,True,,,False,True,3364,,87.75221625017002,The current plan remains unchanged unless you would like to explore specific outcomes or ranges.,,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h11,insight,sensitivity,False,True,,True,True,False,3196,,82.87254595779814,"Sign ups are least predictable in markets operating near the capacity limits defined by 10. This high sensitivity arises because current fluctuations are compounded by the rigid commitments defined under 40.0%, which mandates that costs are shared heavily when scale is misjudged between the contracted period of 2,026 and actual scaling requirements.
+
+To mitigate this variability, immediate focus should be placed on improving the initial adoption curve by accurately modeling expected growth using the baseline 13.5%. This proactive approach allows us to move into a stable operational phase, minimizing the reliance on lengthy overflow queues covered by 60.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h12,insight,insight,True,True,,False,True,False,3476,,95.93510233308189,"Currently, the available data shows that eligible signups have changed by -1.5% between the last two years. This overall trend is driven by macro adoption rates relative to our planning period of 2,026. To optimize resource allocation, we should maintain careful monitoring regarding operational constraints like the established 10 limit.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h13,memo,memo,True,True,,,True,False,1008,,2.5731612080708146,"### Staffing memo: Indonesia, 2026
+
+Staffing Plan Recommendation - Indonesia, year 2,026
+
+**Headcount changes**
+* , {{
+
+**Cost and value**
+* , {{
+
+**Why**
+
+
+**Risks to watch**
+* None
+",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h14,rules,rules,True,True,,,True,False,2829,,68.37962512508966,"The partnership runs for a maximum period defined by the established support window of {{60}. This duration ensures we address the advertiser’s needs effectively while maintaining alignment with our operational agreements.
+
+If the client relationship extends beyond this initial commitment, it signals a potential need to reassess alignment, especially considering the constraints detailed in {{60}. Maintaining clear expectations regarding this support cycle is crucial for both parties to maximize outcomes.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h15,rules,rules,True,True,,,True,False,3158,,81.25510179088451,"Eligibility is determined by the volume load against agent capacity, which defines the operational scope of the engagement. Each dedicated agent is scaled to handle a maximum volume defined by {10}.
+
+The partnership operates under the framework of {2,026}, where the commercial terms include an expected uplift rate of {13.5%} and a variable fire cost share of {40.0%}. Support for the service commitment extends for a maximum of {60} following the initiation period, which includes a wait time limit of {60}.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h16,out_of_scope,out_of_scope,True,True,,,True,False,3206,,85.10401175008155,"The request for translation falls outside of our defined service scope. We specialize in mapping operational variables, such as setting the planning year to {2,026}, managing resource capacity at {10} per agent, and applying agreed-upon financial structures like the {40.0%} upon termination.
+
+Our support boundaries are focused on these structured parameters, which must align with established guidelines like the {60} or fitting within the annual planning cycle of {2,026}.
+
+For tasks falling outside these defined areas, we recommend routing the request to a different specialized team.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h17,plan_lookup,insight,False,True,,,True,False,1904,,48.55708137503825,"Demand scales significantly around Christmas, with the high season peaking in month 11 and experiencing its lowest point in month 6. The highest demand reached 137.1%, coinciding with the `11`, while the lowest usage was tracked at 78.1%, occurring during `6`.
+
+This cyclical pattern is characteristic of the planning year 2,026. To optimize resource allocation, modeling capacity around these extremes ensures readiness for the sustained high-volume period starting in month 11 and allows for necessary scaling down during the trough months.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h18,plan_lookup,plan_lookup,True,True,,,True,False,3801,,69.35618787491694,"The net value generated by the Indian team over the year was $85.3M. This positive return was underpinned by maintaining a consistent service rate of 100.0% and achieving an impressive ROI of 18.2.
+
+Operationally, the team started with 428 agents and delivered results while incurring a total cost of $$5.0M.
+
+Given the positive performance, the recommended plan for 2026 balances this success by factoring in a service floor commitment of 63.4.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h19,plan_lookup,sensitivity,False,True,,,True,False,7007,,110.29285712516867,"The team operates most efficiently when volume is sustained at or above projected targets, allowing the resources to be accurately matched to the incoming load. At lower scales, the service begins with a baseline cost of $1.9M while maintaining service coverage, but ramping down minimizes active agent utilization to 24.9.
+
+As demand increases toward the upper bounds, service quality remains high, hitting a maximum service rate of 100.0% and achieving a mean wait time of 1.1. To maintain this scalability, the total operational cost rises to $2.0M alongside the usage of 36.2 resources, which is necessary to support the high end of the volume curve.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h20,what_if,what_if,True,True,0.0,,False,True,5125,,95.90664179204032,"If sign ups rise 10% from July to September in Spain, and we rebuild the plan, net value goes from $7.2M to $7.4M, a change of $194,780.
+
+Headcount moves from about 68.5 to 69.7 agents in an average month, and service stays at 100.0%.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h21,what_if,what_if,True,True,1.0,,False,True,4779,,83.25573629094288,"If sign ups fall 83%, the eligibility threshold is lowered by 17% and each agent can hold 8 advertisers in Canada, and we rebuild the plan, net value goes from $20.3M to -$2.2M, a change of -$22.4M.
+
+Headcount moves from about 92 to 37.9 agents in an average month, and service stays at 100.0%.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h22,what_if,what_if,True,True,1.0,,True,False,2963,,54.47008266719058,"Yes, the plan survives under these resource constraints. The scenario maintains the initial financial health by preserving the net value at $9.4M, which is equal to $9.4M. This stability is achieved even though the total cost increases from $5.0M to $5.1M, reflecting the attempt to rebuild while operating under limitations.
+
+Operationally, the viability is underpinned by sustaining a high service rate of 100.0% (100.0%) while still serving 3,784 customers, even as the resources shrink from the base case where 10 were hired to a constrained capacity.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h23,what_if,what_if,True,True,1.0,,True,False,2808,,50.34013604209758,"Assuming the 20% average ad spend uplift assumption holds true, this high-growth scenario successfully scales resources to maximize financial return. In this modeled outcome, arrivals increase from `5,800` to `4,887`, while the total operational cost scales from `$4.0M` to `$4.9M`.
+
+This scaling allows the net value to climb from `$52.0M` to a robust `$74.1M`. Most importantly, this growth translates into an uplift value of `$56.1M`, reaching the successful benchmark of `$78.9M`.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h24,what_if,what_if,True,True,1.0,,True,False,2661,,47.47134808287956,"The scenario results in a negative net value of -$1.8M. This outcome is driven by the capacity constraints under the current plan, which limits service delivery despite a significant climb in demand.
+
+With arrivals rising to 974, the service rate falls sharply to 12.1%. Given the current resources, this scenario projects a substantial number of dropped advertisers totaling 856, while the fixed total cost remains at $2.0M.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h25,compare,compare,True,False,,,True,False,2375,,49.53228037501685,"Maintaining the current staffing levels limits potential revenue growth and increases operational costs unnecessarily. By implementing an optimized structure, we could increase the net value by $$109.3M and lower the total cost from $$286.2M to $$178.0M.
+
+Crucially, achieving this higher net value of $$479.7M requires scaling down the headcount from 6,474 agents to only 2,206. This optimized model sustains a service rate of 99.1%, indicating that the potential upside is achievable without compromising current quality standards.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h26,compare,compare,True,True,,,True,False,2438,,47.3414497920312,"The `Optimized` and `Service_98` approaches deliver the highest comparative value for the UK market, achieving a nearly identical {$34.4M} and {$34.4M}. This positions them as the superior strategic choices compared to `Peak Cover` and `Reactive`, which while still strong, achieve a lower {$33.3M} and {$33.8M}.
+
+These approaches maximize value generation, showing a potential upside of {$52.1M} compared to the baseline {$52.1M}. Furthermore, both high-performing models maintain a perfect service capability at {100.0%} and {100.0%}.
+
+If resource constraints are a concern, the `Optimized` model achieves this high net value while requiring only {$17.7M} against the baseline cost of {$30.4M}.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h27,sensitivity,sensitivity,True,True,,,False,True,6707,,98.57620812486857,"If sign ups come in a fifth below forecast, rebuilding the plan earns $88.6M against $86.7M for keeping it, because surplus agents can leave.
+
+If they come in a fifth above, the current plan still earns $147.2M, but advertisers wait about 12.8 days on average. Rebuilding it keeps waits near 1.1 days. Refreshing the plan every month is the safe habit.",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h28,insight,insight,True,True,,True,False,True,3607,,96.35889504197985,"I do not have data for All. The countries in the data are USA, UK, Germany, India, Brazil, Japan, Australia, Canada, France, Mexico, China, Italy, Spain, Poland, South Korea, South Africa, Vietnam, Argentina, Turkey, Indonesia, Thailand, UAE.",,1.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h29,insight,insight,True,True,,True,False,True,3204,,72.82063937489875,42.5% of sign ups clear their country threshold.,,2.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h30,memo,memo,True,True,,,True,False,1147,,0.049994041211903095,"### Staffing memo: France, 2026
+
+Staffing Plan Summary - France 2,026
+
+**Headcount changes**
+* , 
+
+**Cost and value**
+* Summary of $9.9M with a total cost of $18.0M. ROI is 1.5.
+
+**Why**
+* This plan maintains a 100.0% service rate and achieved a net value of $9.9M. Key metrics include 107 average active agents, 489 starting agents, and 9 hires made in month 9. The plan incurred a salary cost of $7.1M and experienced 419 notices.
+
+**Risks to watch**
+* The current utilization is 56.2% with an average idle agent count of 46.6, indicating potential for optimization.
+",,4.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h31,rules,rules,True,True,,,True,False,3185,,97.94342262507416,"A new hire can transition into taking on independent advertisers following a dedicated support window defined by the maximum wait time and initial onboarding period. This essential `{rules.support_days}` period allows for training completion before the agent assumes full ownership, which is capped by `{rules.max_wait_days}`.
+
+During this phase, the agent must ramp up to efficiently utilize their full `{rules.capacity_per_agent}` while demonstrating commitment toward the target `{rules.expected_uplift_rate}`. It is crucial that this transition adheres to the established timelines for successful integration into the team structure.",,5.0,1
+holdout,local:google/gemma-4-e4b,local:google/gemma-4-e4b,h32,out_of_scope,out_of_scope,True,True,,,True,False,1460,,38.272204166976735,"This particular request falls outside the scope of our current advertiser support services. We are unable to assist with flight bookings or travel arrangements through this channel.
+
+Our current operational agreements restrict our support functions to issues pertaining directly to the advertiser platform. Any service requests concerning logistics must be handled via dedicated travel services.",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h01,plan_lookup,plan_lookup,True,True,,,True,False,788,,16.284168832935393,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Canada"", ""month"": ""summer"", ""year"": ""2026"", ""recommended"": ""true""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h02,plan_lookup,plan_lookup,True,True,,,True,False,788,,16.961858958005905,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Italy"", ""plan_type"": ""recommended"", ""year"": 2026, ""min_service_rate"": ""98""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h03,plan_lookup,plan_lookup,True,True,,,True,False,812,,9.798845874844119,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Brazil"", ""month"": ""September"", ""year"": ""2026""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h04,what_if,out_of_scope,False,False,0.0,,True,False,900,,13.512882249895483,"{""name"": ""calculate_impact"", ""parameters"": {""country"": ""Japan"", ""sign_up_slump"": 40, ""month"": ""June""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h05,what_if,plan_lookup,False,True,0.0,,True,False,787,,10.339376332936808,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Germany"", ""year"": 2026, ""eligibility_bar_cut_percentage"": 25}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h06,what_if,plan_lookup,False,True,0.0,,True,False,807,,10.765697415918112,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Poland"", ""month"": ""next year"", ""new_service_rate"": ""113%""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h07,what_if,what_if,True,True,1.0,,True,False,1578,,12.24300791695714,"{""name"": ""what_if"", ""parameters"": {""country"": ""Turkey"", ""month"": ""December"", ""sign_ups"": ""2*2,089"", ""support_lift"": ""0""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h08,compare,compare,True,True,,,True,False,847,,13.16076258290559,"{""name"": ""compare_leaving_staffing_alone"", ""parameters"": {""hold_net_value"": ""$370.4M"", ""optimized_uplift_value"": ""$657.6M""}}",,4.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h09,compare,plan_lookup,False,True,,,True,False,777,,12.023800665978342,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Mexico"", ""year"": ""2026""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h10,sensitivity,plan_lookup,False,True,,,True,False,825,,19.2583469171077,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""South Africa"", ""year"": 2026, ""n"": 1}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h11,insight,out_of_scope,False,True,,False,True,False,369,,24.60850999993272,"{""name"": ""predictability"", ""parameters"": {""country"": ""France""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h12,insight,out_of_scope,False,True,,False,True,False,375,,11.822631041985005,"{""name"": ""get_month_with_most_new_eligible_advertisers"", ""parameters"": {}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h13,memo,memo,True,True,,,False,True,1343,,13.521478875074536,"### Staffing memo: Indonesia, 2026
+
+Indonesia: move from 120 to 37 agents, averaging 39.2 active agents.
+
+**Headcount changes**
+* Give notice to 90 agents in total, starting in month 1; they leave one month after notice.
+* Hire 7 agents in total; the first hiring decision is in month 8, and new agents start one month later.
+
+**Cost and value**
+* Salary cost $625,188 and firing cost $566,208.
+* Expected uplift value $5.7M, net value $4.5M.
+* Service rate 100.0% with an average wait of 1.0 days.
+
+**Why**
+* Headcount follows forecast eligible sign ups, with each agent holding at most 10 advertisers for 60 days.
+* Notices cost 40.0% of annual salary, so cuts happen early when the saving over the rest of the year is larger than that cost.
+
+**Risks to watch**
+* Sign ups vary a lot from day to day; the waiting pool absorbs short peaks but not a sustained rise.
+* The value of support assumes uplift applies to the projected annual budget.
+",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h14,rules,plan_lookup,False,True,,,True,False,592,,13.640416875015944,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""all"", ""month"": ""January"", ""year"": ""2026""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h15,rules,insight,False,False,,,True,False,1008,,9.554520708043128,"{""name"": ""insight.eligible"", ""parameters"": {""country"": ""USA""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h16,out_of_scope,out_of_scope,True,True,,,True,False,376,,7.841717124916613,"{""name"": ""translate_text"", ""parameters"": {""text"": ""This paragraph"", ""language"": ""French""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h17,plan_lookup,plan_lookup,True,True,,,True,False,773,,8.955841792048886,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Australia"", ""month"": ""Christmas""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h18,plan_lookup,plan_lookup,True,False,,,True,False,380,,10.1299297909718,"{""name"": ""plan_lookup"", ""parameters"": {""team_name"": ""Indian team"", ""year"": ""2,026""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h19,plan_lookup,out_of_scope,False,False,,,True,False,425,,11.305697957985103,"{""name"": ""calculate_leanness"", ""parameters"": {""country_code"": ""TH"", ""year"": 2026, ""rules"": {""capacity_per_agent"": 10, ""expected_uplift_rate"": 0.135, ""fire_cost_share"": 0.4, ""max_wait_days"": 60, ""support_days"": 60}}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h20,what_if,plan_lookup,False,False,0.0,,True,False,384,,7.941887750057504,"{""name"": ""plan_lookup"", ""parameters"": {""salary_growth_rate"": 0.1, ""country_code"": ""Spain""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h21,what_if,plan_lookup,False,False,0.0,,True,False,384,,7.4140085419639945,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Canada"", ""agents_capacity"": 8}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h22,what_if,plan_lookup,False,True,0.0,,True,False,831,,12.386253000004217,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""South Korea"", ""hires_per_month"": 3, ""year"": 2026}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h23,what_if,plan_lookup,False,True,0.0,,True,False,785,,9.816470958059654,"{""name"": ""plan_lookup"", ""parameters"": {""countries"": [""China""], ""year"": 2026, ""service_floor"": 0.98}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h24,what_if,plan_lookup,False,True,0.0,,False,True,1633,,11.386757750064135,"Argentina should start the year with 200 agents and finish it with 17, with about 30.9 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns -$596,465 of net value.
+
+Most of the change is a cut: 185 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 2 agents, starting in September, so they are trained before the busy months.",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h25,compare,plan_lookup,False,True,,,True,False,583,,8.871466666925699,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""all"", ""plan_year"": ""2026""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h26,compare,plan_lookup,False,True,,,True,False,1617,,11.825714374892414,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""UK"", ""approach_type"": ""value"", ""year"": 2026}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h27,sensitivity,what_if,False,True,,,True,False,400,,9.33410979108885,"{""name"": ""what_if"", ""parameters"": {""country_code"": ""USA"", ""demand_change_percentage"": 30, ""plan_version"": 2,026, ""rules"": ""default""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h28,insight,insight,True,True,,True,True,False,423,,9.459018874913454,"{""name"": ""is_growth_trend_clear"", ""parameters"": {""eligible_sign_ups_change"": -1.5, ""time_period"": 2, ""year"": 2026}}",,3.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h29,insight,insight,True,True,,True,True,False,1025,,7.623087667161599,"{""name"": ""get_country_eligible_fraction"", ""parameters"": {""country"": ""Mexico""}}",,5.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h30,memo,plan_lookup,False,True,,,True,False,615,,0.05906079197302461,"### Staffing memo: France, 2026
+
+Staffing Memo
+
+**Headcount changes**
+* France.hires
+
+**Cost and value**
+* France.total_cost
+* France.uplift_value
+* France.net_value
+
+**Why**
+* Utilization rate is at 56.2%% and service floor is at 98%.
+
+**Risks to watch**
+* Dropped calls are at 0.
+",,3.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h31,rules,plan_lookup,False,True,,,True,False,582,,8.078809833154082,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""all"", ""year"": ""2026""}}",,1.0,1
+holdout,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,h32,out_of_scope,out_of_scope,True,True,,,True,False,368,,6.8260776659008116,"{""name"": ""book_flight"", ""parameters"": {""destination"": ""Seattle""}}",,5.0,1
+followups,offline,offline,f01,what_if,what_if,True,True,1.0,,True,False,0,,0.13592149992473423,"If sign ups fall 30% from July to September in Mexico, and we rebuild the plan, net value goes from $10.5M to $9.5M, a change of -$1.0M.
+
+Headcount moves from about 116 to 113 agents in an average month, and service stays at 100.0%.",,4.0,2
+followups,offline,offline,f02,what_if,what_if,True,True,1.0,,True,False,0,,0.32004295801743865,"If sign ups fall 50% from July to September in Brazil, and we rebuild the plan, net value goes from $44.9M to $39.6M, a change of -$5.3M.
+
+Headcount moves from about 109 to 107 agents in an average month, and service stays at 100.0%.",,4.5,2
+followups,offline,offline,f03,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.020987083902582526,"Germany should start the year with 602 agents and finish it with 102, with about 133 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.3 days, and earns $24.0M of net value.
 
 Most of the change is a cut: 516 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 16 agents, starting in August, so they are trained before the busy months.
 
-In July, 86 agents are working, with no hiring or notice decisions that month.",,,0
-followups,offline,offline,f04,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.01864899997599423,"France should start the year with 489 agents and finish it with 79, with about 107 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.0 days, and earns $9.9M of net value.
+In July, 86 agents are working, with no hiring or notice decisions that month.",,5.0,2
+followups,offline,offline,f04,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.019645333057269454,"France should start the year with 489 agents and finish it with 79, with about 107 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.0 days, and earns $9.9M of net value.
 
 Most of the change is a cut: 419 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
 The plan also hires 9 agents, starting in September, so they are trained before the busy months.
 
-In March, 70 agents are working, with no hiring or notice decisions that month.",,,0
-followups,offline,offline,f05,memo,memo,True,True,,,True,False,0,,0.018377291038632393,"Japan should start the year with 297 agents and finish it with 129, with about 126 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.9 days, and earns $29.1M of net value.
+In March, 70 agents are working, with no hiring or notice decisions that month.",,4.5,2
+followups,offline,offline,f05,memo,memo,True,True,,,True,False,0,,0.02006012503989041,"Japan should start the year with 297 agents and finish it with 129, with about 126 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.9 days, and earns $29.1M of net value.
 
 Most of the change is a cut: 191 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 23 agents, starting in October, so they are trained before the busy months.",,,0
-followups,offline,offline,f06,what_if,what_if,True,True,1.0,,True,False,0,,0.3713855829555541,"If the eligibility threshold is lowered by 20% in Canada, and we rebuild the plan, net value goes from $20.3M to $21.9M, a change of $1.6M.
+The plan also hires 23 agents, starting in October, so they are trained before the busy months.",,4.5,2
+followups,offline,offline,f06,what_if,what_if,True,True,1.0,,True,False,0,,0.28158629196695983,"If the eligibility threshold is lowered by 20% in Canada, and we rebuild the plan, net value goes from $20.3M to $21.9M, a change of $1.6M.
 
-Headcount moves from about 92 to 110 agents in an average month, and service stays at 100.0%.",,,0
-followups,offline,offline,f07,compare,compare,True,True,,,True,False,0,,0.3757745837792754,"Keeping January headcount all year would earn $8.9M. The optimized plan earns $10.0M, which is $1.1M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+Headcount moves from about 92 to 110 agents in an average month, and service stays at 100.0%.",,5.0,2
+followups,offline,offline,f07,compare,compare,True,True,,,True,False,0,,0.3627235419116914,"Keeping January headcount all year would earn $8.9M. The optimized plan earns $10.0M, which is $1.1M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
 
-It still serves 100.0% of eligible advertisers with about 79.4 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.7M).",,,0
-followups,offline,offline,f08,rules,rules,True,True,,,True,False,0,,0.0007135409396141768,"Here is what the case rules say.
+It still serves 100.0% of eligible advertisers with about 79.4 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.7M).",,4.0,2
+followups,offline,offline,f08,rules,rules,True,True,,,True,False,0,,0.0006524159107357264,"Here is what the case rules say.
 
 [rules.md / Waiting pool] Eligible advertisers enter a waiting pool. If an agent has a free slot, the advertiser is assigned at once. If no slot is free, the advertiser waits in the pool for up to 60 days. An advertiser still unassigned after 60 days is removed from the pool and never receives support.
 
-[assumptions.md / A3 Pool on 1 January] The pool starts empty. The brief only says agents start with no advertisers. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.",,,0
-followups,offline,offline,f09,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.021280999993905425,"Italy should start the year with 350 agents and finish it with 100, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $11.1M of net value.
+[assumptions.md / A3 Pool on 1 January] The pool starts empty. The brief only says agents start with no advertisers. If the advertisers who signed up in the last 60 days of history were still waiting, about 21,500 people would be in the pool on day one, and the January plan would change a lot.",,4.5,2
+followups,offline,offline,f09,what_if,plan_lookup,False,True,0.0,,True,False,0,,0.0202315840870142,"Italy should start the year with 350 agents and finish it with 100, with about 109 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.2 days, and earns $11.1M of net value.
 
 Most of the change is a cut: 267 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
 
-The plan also hires 17 agents, starting in September, so they are trained before the busy months.",,,0
-followups,offline,offline,f10,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.030104791978374124,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,,0
+The plan also hires 17 agents, starting in September, so they are trained before the busy months.",,4.5,2
+followups,offline,offline,f10,plan_lookup,plan_lookup,True,True,,,True,False,0,,0.02147241705097258,"Across all countries the recommended plan keeps about 2,220 agents at work, down from 6,474 in January. It costs $178.5M for the year, serves 100.0% of eligible advertisers and earns $479.7M of net value.",,4.0,2
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f01,what_if,what_if,True,True,1.0,,True,False,2771,,54.62829495896585,"The primary outcome of a sign-up decrease from 4,950 to 4,621 is a substantial erosion of achievable net value, though fixed operational costs remain constant under the current plan.
+
+This volume decline shifts the expected net value from $10.5M to -$5.2M, resulting in the uplift value dropping to $0. While the total cost remains at $5.2M, maintaining service standards is achievable given that the average active agent count stabilizes at 116.
+
+Practically, by keeping the current plan metrics in place, we sustain service quality with each agent handling up to 10 advertisers.",,5.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f02,what_if,what_if,True,True,1.0,,False,True,5543,,106.49128974997438,"If sign ups fall 50% from July to September, support lifts ad spend by 100% on average, each agent can hold 10 advertisers and at least 100% of eligible advertisers must be served in Brazil, and we keep the current plan, net value goes from $44.9M to $319.1M, a change of $274.2M.
+
+Headcount moves from about 109 to 109 agents in an average month, and service stays at 100.0%.",,3.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f03,plan_lookup,plan_lookup,True,True,,,True,False,2412,,41.199445333797485,"The current recommended plan successfully projects a strong annual financial outcome, culminating in an overall net value of $479.7M. This projection is supported by the plan's ability to maintain a 100.0% while managing the total cost at $178.5M.
+
+Operationally, during a specific month like July, the plan currently projects that 86 agents will be active, requiring zero hires and also generating no notices.",,4.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f04,plan_lookup,plan_lookup,True,True,,,False,True,4737,,96.14245970803313,"France should start the year with 489 agents and finish it with 79, with about 107 at work in an average month. That keeps 100.0% of eligible advertisers served, with an average wait of 1.0 days, and earns $9.9M of net value.
+
+Most of the change is a cut: 419 notices in total, the first in January. Notices take effect a month later, so nobody is dropped mid support.
+
+The plan also hires 9 agents, starting in September, so they are trained before the busy months.
+
+In March, 70 agents are working, with no hiring or notice decisions that month.",,4.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f05,memo,memo,True,True,,,True,False,2079,,31.18126320792362,"The recommended staffing plan for Japan in {2,026} achieves a net value of {$29.1M} while maintaining coverage for all arrivals, which is supported by a service rate of {100.0%}.
+
+This optimal setup requires starting with {297} agents and balances efficiency, showing a utilization of {75.9%%}} against a total cost of {$10.1M} including salaries of {$6.3M}. The plan also accounts for future scaling, noting that the initial hiring begins in {10} and the contracts are valid until {1}.
+
+Crucially, this plan successfully managed all arrivals with zero dropped contacts while keeping the mean wait time at {1.9}.",,5.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f06,what_if,what_if,True,True,1.0,,True,False,2961,,52.771845292067155,"The revised plan scenario predicts a decrease in net value from $20.3M to $19.8M, while simultaneously increasing the total operational cost from $9.4M to $9.9M.
+
+This reduction in net value occurs despite a substantial increase in volume, where served arrivals jump from 4,715 to 5,466. Although the average active users increase from 92 to 106, the higher fulfillment of volume under this scenario leads to a compression in overall profitability metrics.
+
+Given that the net value is projected to decrease by -$478,521, management should focus on optimizing the fulfillment process to maintain service quality and protect margins moving forward.",,4.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f07,compare,compare,True,True,,,False,True,4818,,100.72219075006433,"Keeping January headcount all year would earn $8.9M. The optimized plan earns $10.0M, which is $1.1M more, almost entirely because surplus agents are let go early rather than paid to wait for work.
+
+It still serves 100.0% of eligible advertisers with about 79.4 agents at work in an average month. A simple rule that follows last month's demand gets most of the way there ($9.7M).",,5.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f08,rules,rules,True,True,,,True,False,1655,,33.310253290925175,"The maximum duration an advertiser can remain in the pool is governed by 60. This waiting threshold is set concurrently with the standard service period defined by 60, establishing a consistent operational lifecycle for all placements.
+
+Understanding this timeline is critical as it dictates the window during which 40.0% applies, allowing management to proactively address saturation or successful placement transitions before the cap is reached.",,4.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f09,what_if,what_if,True,True,0.5,,True,False,3041,,53.20113233290613,"The projection is a strong positive outcome, with the scenario projecting a net value of {$151.8M} under the current operating plan. This performance is supported by a successful increase in arrivals, rising from {5,126} to {5,413}, allowing the service team to maintain a maximum utilization rate of {100.0%}.
+
+To accommodate this growth, the required hiring volume remains stable at {17}, yet the total cost to the operation stays consistent at {$9.4M}. This sustains a substantial uplift value of {$161.2M}, which significantly outweighs the base investment costs outlined in {$9.4M}.
+
+This dynamic demonstrates that the operational structure can handle volume increases while maintaining high service quality without needing to adjust our base cost structure.",,5.0,1
+followups,local:google/gemma-4-e4b,local:google/gemma-4-e4b,f10,plan_lookup,plan_lookup,True,True,,,True,False,2117,,48.902117958059534,"The overall agent requirement must account for the full volume detailed in 2,026, factored against an individual capacity of 10. To accurately staff and meet projected service demands, this baseline must be scaled up by the 13.5% to cover necessary overhead and shrinkage.
+
+Once we account for the combined volume projections and productivity rules, the required headcount is determined. It is also important to ensure that our service commitments align with the established maximum wait period of 60 and that our operational support window matches the required timeframe of 60.",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f01,what_if,what_if,True,False,0.6666666666666666,,True,False,1982,,11.520625332836062,"{""name"": ""what_if"", ""parameters"": {""country"": ""Mexico"", ""sign_ups_change"": -30, ""avg_active_change"": 528, ""hires_change"": 233, ""total_cost_change"": 8.0M, ""uplift_value_change"": -15.7M, ""eligibility_rate"": 1}}",,3.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f02,what_if,what_if,True,True,1.0,,True,False,1060,,15.000954249873757,"{""name"": ""what_if"", ""parameters"": {""country_code"": ""Brazil"", ""sign_ups_change"": ""-50%"", ""ad_spend_lift_avg"": ""0%"", ""capacity_per_agent"": ""1"", ""hiring_capped_monthly"": ""1000"", ""serve_eligibleAdvertisers_percent"": ""100""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f03,plan_lookup,plan_lookup,True,True,,,True,False,807,,9.465250957990065,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""Germany"", ""month"": ""July"", ""year"": ""2026""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f04,plan_lookup,plan_lookup,True,True,,,True,False,800,,8.478490750072524,"{""name"": ""plan_lookup"", ""parameters"": {""country"": ""France"", ""year"": ""2026""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f05,memo,memo,True,True,,,True,False,1324,,6.205449499888346,"{""name"": ""memo_country"", ""parameters"": {""country"": ""Japan"", ""year"": ""2026""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f06,what_if,what_if,True,True,1.0,,True,False,1748,,14.963298582937568,"{""name"": ""what_if"", 
+""parameters"": {""country"": ""Canada"", 
+               ""sign_ups_change"": -20, 
+               ""eligibility_threshold_change"": -0.2, 
+               ""salaries_change"": -10, 
+               ""ad_spend_uplift"": 13.5, 
+               ""capacity_per_agent"": 20, 
+               ""max_hires_monthly"": 10, 
+               ""min_service_rate"": 50}}",,2.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f07,compare,compare,True,True,,,True,False,1407,,10.403926708037034,"{""name"": ""compare_countries"", ""parameters"": {""country"": ""Vietnam""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f08,rules,rules,True,True,,,True,False,536,,10.093435167102143,"{""name"": ""rules.max_wait_days"", ""parameters"": {}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f09,what_if,insight,False,True,0.0,,True,False,994,,6.498296583071351,"{""name"": ""insight"", ""parameters"": {""country"": ""Italy""}}",,5.0,1
+followups,local:meta-llama-3.1-8b-instruct,local:meta-llama-3.1-8b-instruct,f10,plan_lookup,plan_lookup,True,True,,,True,False,585,,22.96745275007561,"{""name"": ""plan_lookup"", ""parameters"": {""country_list"": ""all"", ""plan_type"": ""recommended"", ""year"": ""2026""}}",,1.0,1

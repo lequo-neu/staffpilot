@@ -24,7 +24,7 @@ from typing import Any, Protocol, cast
 
 from pydantic import BaseModel, Field, ValidationError
 
-from staffpilot.agent.schemas import Intent, MemoDraft, RoutedQuery
+from staffpilot.agent.schemas import Intent, MemoDraft, RoutedQuery, repair_route
 from staffpilot.agent.tools import ToolOutput
 from staffpilot.config import Settings, load_env_file
 from staffpilot.scenarios import ScenarioParams
@@ -38,6 +38,9 @@ PROVIDER_KEYS = {
     "anthropic": ("ANTHROPIC_API_KEY",),
     "google": ("GOOGLE_API_KEY", "GEMINI_API_KEY"),
 }
+# Models running on this computer (LM Studio or Bionic); free and keyless.
+LOCAL = "local"
+PROVIDERS = (*PROVIDER_KEYS, LOCAL)
 FULL_MONTHS = {
     name: i
     for i, name in enumerate(
@@ -80,7 +83,32 @@ COUNTRY_ALIASES = {
     "korea": "South Korea",
     "emirates": "UAE",
     "united arab emirates": "UAE",
+    # Adjectives, so "the Indian team" means India. "Polish" is left out: it is also a verb.
+    "american": "USA",
+    "british": "UK",
+    "german": "Germany",
+    "indian": "India",
+    "brazilian": "Brazil",
+    "japanese": "Japan",
+    "australian": "Australia",
+    "canadian": "Canada",
+    "french": "France",
+    "mexican": "Mexico",
+    "chinese": "China",
+    "italian": "Italy",
+    "spanish": "Spain",
+    "korean": "South Korea",
+    "south african": "South Africa",
+    "vietnamese": "Vietnam",
+    "argentine": "Argentina",
+    "argentinian": "Argentina",
+    "turkish": "Turkey",
+    "indonesian": "Indonesia",
+    "thai": "Thailand",
+    "emirati": "UAE",
 }
+# Words a model may put in the country list when the question covers every country.
+ALL_COUNTRIES = {"all", "all countries", "every country", "global", "worldwide", "overall", "total"}
 
 
 class Judgement(BaseModel):
@@ -117,7 +145,31 @@ def available_providers() -> list[str]:
     if os.environ.get(OFFLINE_ENV_VAR, "").strip() in {"1", "true", "yes"}:
         return []
     load_env_file()
-    return [name for name, keys in PROVIDER_KEYS.items() if any(os.environ.get(k) for k in keys)]
+    keyed = [name for name, keys in PROVIDER_KEYS.items() if any(os.environ.get(k) for k in keys)]
+    return [*keyed, LOCAL] if local_server_running() else keyed
+
+
+_local_seen: tuple[float, bool] = (0.0, False)
+
+
+def local_server_running(url: str | None = None) -> bool:
+    """True when a local model server answers; checked at most once every 30 seconds."""
+    global _local_seen
+    import time
+    import urllib.request
+
+    if time.time() - _local_seen[0] < 30:
+        return _local_seen[1]
+    from staffpilot.config import load_settings
+
+    address = (url or load_settings().llm.local_url).rstrip("/") + "/models"
+    try:
+        with urllib.request.urlopen(address, timeout=1):  # noqa: S310 (the configured local address)
+            running = True
+    except OSError:
+        running = False
+    _local_seen = (time.time(), running)
+    return running
 
 
 def describe_error(error: Exception, chars: int = 300) -> str:
@@ -279,11 +331,11 @@ _NOT_PLACES = {name.capitalize() for name in FULL_MONTHS} | {
 
 
 def _unknown_places(text: str, countries: list[str]) -> list[str]:
-    """Capitalised words, other than the first word, that look like a place but match no country."""
+    """Capitalised words, other than the first word of a sentence, that look like a place but match no country."""
     known = {c.lower() for c in countries} | set(COUNTRY_ALIASES)
     unknown = []
     for match in _PLACE.finditer(text):
-        if match.start() == 0:
+        if match.start() == 0 or re.search(r"[.!?:]\s*$", text[: match.start()]):
             continue
         name = match.group(1)
         first = name.split()[0]
@@ -748,21 +800,45 @@ def fast_reasoning(model_spec: str) -> dict[str, Any]:
     return {}
 
 
+_limiters: dict[str, Any] = {}
+
+
+def chat_model(model_spec: str, settings: Settings) -> Any:
+    """The LangChain chat model for a "provider:model" spec, with each provider's quirks.
+
+    Shared by the structured assistant and the create_agent chat so both behave the same.
+    """
+    from langchain.chat_models import init_chat_model
+
+    provider, _, model = model_spec.partition(":")
+    kwargs: dict[str, Any] = {"timeout": settings.llm.timeout, "max_retries": settings.llm.max_retries}
+    if provider == "anthropic":
+        # Recent Claude models reject sampling parameters, so none are set; max_tokens is required.
+        kwargs["max_tokens"] = 4096
+    kwargs.update(fast_reasoning(model_spec))
+    rpm = settings.llm.requests_per_minute.get("google" if provider == "google_genai" else provider, 0)
+    if rpm:
+        from langchain_core.rate_limiters import InMemoryRateLimiter
+
+        # One limiter per provider, so answers and judges share the same allowance.
+        kwargs["rate_limiter"] = _limiters.setdefault(
+            provider, InMemoryRateLimiter(requests_per_second=rpm / 60, check_every_n_seconds=0.5)
+        )
+    if provider == LOCAL:
+        # LM Studio speaks the OpenAI API on this computer; it needs no real key.
+        kwargs.update(base_url=settings.llm.local_url, api_key="local", timeout=settings.llm.local_timeout)
+        return init_chat_model(f"openai:{model}", **kwargs)
+    return init_chat_model(model_spec, **kwargs)
+
+
 class LangChainBackend:
     """Any chat model that LangChain's init_chat_model can build from a "provider:model" string."""
 
     def __init__(self, name: str, model_spec: str, settings: Settings) -> None:
-        from langchain.chat_models import init_chat_model
-
         self.name = name
         self.model_spec = model_spec
         self.usage = {"input": 0, "output": 0}
-        kwargs: dict[str, Any] = {"timeout": settings.llm.timeout, "max_retries": settings.llm.max_retries}
-        if model_spec.startswith("anthropic:"):
-            # Recent Claude models reject sampling parameters, so none are set; max_tokens is required.
-            kwargs["max_tokens"] = 4096
-        kwargs.update(fast_reasoning(model_spec))
-        self.model = init_chat_model(model_spec, **kwargs)
+        self.model = chat_model(model_spec, settings)
 
     def _count(self, message: Any) -> None:
         tokens_in, tokens_out = _usage(message)
@@ -773,13 +849,30 @@ class LangChainBackend:
     def _structured(self, schema: type[BaseModel], messages: list[tuple[str, str]]) -> BaseModel:
         # Native JSON schema output works on every provider here and avoids forced tool choice,
         # which current Claude models reject.
-        runnable = self.model.with_structured_output(schema, method="json_schema", include_raw=True)
+        # The OpenAI client (also used for local servers) validates a Pydantic schema itself and
+        # raises before StaffPilot can repair the reply, so it gets the plain JSON schema instead.
+        validates_itself = self.model_spec.split(":", 1)[0] in {"openai", LOCAL}
+        target = schema.model_json_schema() if validates_itself else schema
+        runnable = self.model.with_structured_output(target, method="json_schema", include_raw=True)
         result = runnable.invoke(messages)
         self._count(result.get("raw"))
-        if result.get("parsing_error") is not None:
-            raise ValueError(f"{self.name} returned output that does not match {schema.__name__}")
         parsed = result.get("parsed")
-        return parsed if isinstance(parsed, BaseModel) else schema.model_validate(parsed)
+        if isinstance(parsed, BaseModel):
+            return parsed
+        if result.get("parsing_error") is not None or parsed is None:
+            # The reply did not fit the schema; keep its JSON so a router reply can be repaired.
+            try:
+                parsed = json.loads(_text(result.get("raw")))
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"{self.name} returned output that does not match {schema.__name__}"
+                ) from None
+        if schema is RoutedQuery:
+            route, repairs = repair_route(parsed)
+            if repairs:
+                log.info("Repaired the %s router reply: %s", self.name, "; ".join(repairs))
+            return route
+        return schema.model_validate(parsed)
 
     def route(self, question: str, countries: list[str], history: str = "") -> RoutedQuery:
         system = ROUTER_PROMPT.format(countries=", ".join(countries))
@@ -940,8 +1033,8 @@ class ModelUnavailableError(ValueError):
 def make_backend(name: str, settings: Settings, cache_dir: Path | None = None) -> Any:
     """Build a backend by name.
 
-    `name` is "offline", a provider ("openai", "anthropic", "google", optionally with a
-    "_fast" suffix for the cheap tier), or a full "provider:model" spec chosen in the app.
+    `name` is "offline", a provider ("openai", "anthropic", "google" or "local", optionally
+    with a "_fast" suffix for the cheap tier), or a full "provider:model" spec chosen in the app.
     Provider names resolve to a model through `catalog.pick_model`: the config when it
     names one, otherwise what the provider lists for this key.
     """
@@ -954,8 +1047,8 @@ def make_backend(name: str, settings: Settings, cache_dir: Path | None = None) -
         from staffpilot.agent.catalog import pick_model
 
         provider, tier = (name[: -len("_fast")], "fast") if name.endswith("_fast") else (name, "strong")
-        if provider not in PROVIDER_KEYS:
-            raise ModelUnavailableError(f"Unknown backend {name!r}; use offline, openai, anthropic or google")
+        if provider not in PROVIDERS:
+            raise ModelUnavailableError(f"Unknown backend {name!r}; use offline, {', '.join(PROVIDERS)}")
         spec = pick_model(settings, provider, tier)
         if spec is None:
             raise ModelUnavailableError(

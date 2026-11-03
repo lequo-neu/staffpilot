@@ -4,7 +4,7 @@ The structured assistant is tested offline, but the free form chat built with La
 
 * Command: `python -m staffpilot chat --agent --backend anthropic_fast`
 * Model: `anthropic:claude-haiku-5-5` (picked as the cheapest Anthropic model that answers)
-* Data: `DADS5250_Hackathon_Google_Data.xlsx`, planning year 2026
+* Data: `IE5374_Hackathon_Google_Data.xlsx`, planning year 2026
 * Cost: three questions, well under one cent
 
 ## Transcript

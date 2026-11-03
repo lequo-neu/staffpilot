@@ -155,6 +155,39 @@ def test_numbers_inside_braces_count_as_missing_facts():
     assert missing == ["5,343", "$41.7M"]
 
 
+@pytest.mark.parametrize(
+    "draft, problem",
+    [
+        ('{"name": "plan_lookup", "parameters": {"year": 2026}}', "JSON instead of sentences"),
+        ("* Brazil.hires", "Brazil.hires"),
+        ("* France.hires agents", "France.hires"),
+        ("Arrivals are {Brazil.arrivals}.", "{Brazil.arrivals}"),
+        ("**Headcount changes**\n* ,\n", "an empty bullet"),
+    ],
+)
+def test_unfilled_or_unreadable_drafts_count_as_missing(draft, problem):
+    # Each of these passed the number check in the local evaluation and was graded 1 by hand.
+    _, missing = FactLedger({"Brazil.hires": 16.0, "plan.year": 2026.0}).render(draft)
+    assert problem in missing
+
+
+def test_file_names_and_years_read_normally():
+    ledger = FactLedger({"plan.year": 2026.0})
+    text, missing = ledger.render("Plan for {{plan.year}}, from rules.md.")
+    assert text == "Plan for 2026, from rules.md." and missing == []
+
+
+def test_country_adjectives_and_sentence_starts_are_not_unknown_places(planner):
+    route = OfflineBackend().route("Net value of the Indian team over the year?", ["India", "Spain"])
+    assert route.countries == ["India"] and route.clarification is None
+    pilot = StaffPilot(planner)
+    first = planner.countries[0]
+    assert pilot.route(f"Net value of {first} over the year? Effect on the plan?")[0].clarification is None
+    stray = RoutedQuery(intent=Intent.insight, countries=["All"], insight_kind="seasonality")
+    cleaned = pilot._clean(stray, "When is the seasonal peak in sign ups?")
+    assert cleaned.countries == [] and cleaned.clarification is None
+
+
 def test_a_model_that_writes_numbers_in_braces_falls_back_to_the_template(planner):
     class Sloppy(OfflineBackend):
         name = "sloppy"
@@ -164,3 +197,64 @@ def test_a_model_that_writes_numbers_in_braces_falls_back_to_the_template(planne
 
     answer = StaffPilot(planner, Sloppy()).ask("What if sign ups in Alpha drop 30% in Q3?")
     assert answer.fallback_used and answer.verified and "{{" not in answer.text
+
+
+def test_router_replies_are_repaired_field_by_field():
+    from staffpilot.agent.schemas import repair_route
+
+    # A what if with a percent written as 90 and an invented field: both are fixed, the rest kept.
+    route, repairs = repair_route(
+        {
+            "intent": "what_if",
+            "countries": ["Alpha"],
+            "months": [7, 8, 9],
+            "scenario": {"demand_multiplier": 0.7, "service_target": 90, "hiring_capped_at": 1000},
+        }
+    )
+    assert route.intent == Intent.what_if and route.countries == ["Alpha"]
+    assert route.scenario.demand_multiplier == 0.7 and route.scenario.service_target == 0.9
+    assert any("hiring_capped_at" in r for r in repairs)
+
+    # A plan question with a stray, invalid scenario keeps its intent and country.
+    route, repairs = repair_route(
+        {"intent": "plan_lookup", "countries": ["Beta"], "scenario": {"service_target": 10000}}
+    )
+    assert route.intent == Intent.plan_lookup and route.countries == ["Beta"] and route.scenario is None
+    assert repairs == ["dropped a scenario on a question that is not a what if"]
+
+    # An impossible value that is not a percent is dropped, not guessed.
+    route, _ = repair_route(
+        {"intent": "what_if", "scenario": {"service_target": 10000, "demand_multiplier": 1.2}}
+    )
+    assert route.scenario.service_target is None and route.scenario.demand_multiplier == 1.2
+
+    with pytest.raises(ValueError):
+        repair_route({"intent": "make_coffee"})
+
+
+def test_a_model_reply_that_misses_the_schema_is_repaired_not_rejected(monkeypatch, settings):
+    from langchain_core.messages import AIMessage
+
+    from staffpilot.agent.backends import LangChainBackend
+
+    raw = AIMessage(
+        content='{"intent": "compare", "countries": ["Alpha"], "scenario": {"service_target": 90}}'
+    )
+
+    class Runnable:
+        def invoke(self, messages):
+            return {"raw": raw, "parsed": None, "parsing_error": ValueError("service_target too large")}
+
+    class Model:
+        def with_structured_output(self, *args, **kwargs):
+            return Runnable()
+
+    backend = LangChainBackend.__new__(LangChainBackend)
+    backend.name, backend.model_spec, backend.usage, backend.model = (
+        "fake",
+        "local:fake",
+        {"input": 0, "output": 0},
+        Model(),
+    )
+    route = backend.route("Compare the plans for Alpha", ["Alpha"])
+    assert route.intent == Intent.compare and route.countries == ["Alpha"] and route.scenario is None

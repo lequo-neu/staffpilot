@@ -45,6 +45,10 @@ def test_only_chat_models_are_kept():
     assert not is_chat_model("openai", "gpt-4o-realtime-preview")
     assert not is_chat_model("google", "gemini-3-pro-image")
     assert is_chat_model("anthropic", "claude-haiku-5-5")
+    assert not is_chat_model("google", "gemini-robotics-er-2-preview")
+    # Local servers name ordinary chat models "instruct"; only embedding models are left out.
+    assert is_chat_model("local", "meta-llama-3.1-8b-instruct")
+    assert not is_chat_model("local", "text-embedding-nomic-embed-text-v1.5")
 
 
 def test_models_are_sorted_cheapest_first(listed, settings):
@@ -162,3 +166,47 @@ def test_error_messages_never_show_api_keys():
         RuntimeError("404 not found for key AIzaSyA1b2C3d4E5f6G7h8I9j0 and sk-proj1234567890abcdef")
     )
     assert text.startswith("RuntimeError: 404") and "AIzaSy" not in text and "sk-proj" not in text
+
+
+def test_local_models_are_free_and_ranked_by_size(monkeypatch, settings, answering):
+    catalog._cache.clear()
+    monkeypatch.setattr(backends, "available_providers", lambda: ["local"])
+    monkeypatch.setattr(
+        catalog,
+        "_get",
+        lambda url, headers: {
+            "data": [{"id": "qwen/qwen3.6-27b"}, {"id": "google/gemma-4-e4b"}, {"id": "text-embedding-nomic"}]
+        },
+    )
+    assert catalog.provider_models("local") == ["google/gemma-4-e4b", "qwen/qwen3.6-27b"]
+    assert pick_model(settings, "local", "fast") == "local:google/gemma-4-e4b"
+    assert pick_model(settings, "local", "strong") == "local:qwen/qwen3.6-27b"
+    assert catalog.cost_key(ModelChoice("local", "qwen/qwen3.6-27b"), {})[0] == 0.0
+    assert ModelChoice("local", "google/gemma-4-e4b").label == "google/gemma-4-e4b (on this computer)"
+    catalog._cache.clear()
+
+
+def test_local_specs_use_the_local_server_and_google_is_rate_limited(settings, monkeypatch):
+    from staffpilot.agent.backends import chat_model
+
+    monkeypatch.setenv("GOOGLE_API_KEY", "test")  # building a client needs a key, not a call
+
+    local = chat_model("local:google/gemma-4-e4b", settings)
+    assert local.model_name == "google/gemma-4-e4b"
+    assert str(local.openai_api_base).startswith("http://localhost:1234/v1")
+    limited = settings.with_updates(llm={"requests_per_minute": {"google": 10}})
+    gemini = chat_model("google_genai:gemini-3.5-flash-lite", limited)
+    assert gemini.rate_limiter is not None and gemini.rate_limiter.requests_per_second == pytest.approx(
+        10 / 60
+    )
+
+
+def test_the_local_provider_is_offered_only_while_its_server_runs(monkeypatch):
+    monkeypatch.delenv("STAFFPILOT_OFFLINE", raising=False)
+    for name in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(backends, "load_env_file", list)
+    monkeypatch.setattr(backends, "local_server_running", lambda: True)
+    assert backends.available_providers() == ["local"]
+    monkeypatch.setattr(backends, "local_server_running", lambda: False)
+    assert backends.available_providers() == []

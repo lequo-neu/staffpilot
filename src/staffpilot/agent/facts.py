@@ -14,6 +14,9 @@ import re
 
 _PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z0-9_.]+)\s*\}\}")
 _LEFTOVER = re.compile(r"\{\{(.*?)\}\}")
+_SINGLE = re.compile(r"(?<!\{)\{([^{}\n]+)\}(?!\})")
+_JSON = re.compile(r"^\s*[\[{]\s*\"")
+_EMPTY_BULLET = re.compile(r"^\s*\*[^\w\n]*$", re.MULTILINE)
 _NUMBER = re.compile(
     r"(?<![A-Za-z_])\$?\d[\d,]*(?:\.\d+)?\s*(?:%|percent|million|billion|thousand|[kKmMbB](?![a-z]))?"
 )
@@ -25,6 +28,8 @@ RATE_KEYS = ("rate", "share", "utilization", "change", "index", "cv", "uplift_pc
 
 def _format(key: str, value: float) -> str:
     lowered = key.lower()
+    if lowered.endswith("year"):
+        return f"{value:.0f}"
     if any(k in lowered for k in RATE_KEYS) and abs(value) <= 5:
         return f"{value * 100:.1f}%"
     if any(k in lowered for k in MONEY_KEYS):
@@ -89,6 +94,16 @@ class FactLedger:
         # Anything still in double braces (a number such as {{5,343}}, or text) is not a fact
         # name. The reader must never see braces, so it counts as missing too.
         missing += [m.strip() for m in _LEFTOVER.findall(rendered) if m.strip() not in missing]
+        # The same holds for single braces, for a fact name written without any braces
+        # (France.hires), for a tool call sent back as JSON and for an empty bullet.
+        missing += [f"{{{m}}}" for m in _SINGLE.findall(rendered)]
+        prefixes = "|".join(sorted({re.escape(k.split(".")[0]) for k in formatted} | {"[A-Z][A-Za-z]+"}))
+        file_types = r"(?!(?:md|csv|txt|json|toml|xlsx|pdf|html|py)\b)"
+        missing += re.findall(rf"(?<![\w.{{])(?:{prefixes})\.{file_types}[a-z][a-z_]+(?!\w)", rendered)
+        if _JSON.match(rendered):
+            missing.append("JSON instead of sentences")
+        if _EMPTY_BULLET.search(rendered):
+            missing.append("an empty bullet")
         return rendered, missing
 
     def verify(self, text: str, context: str = "", countries: list[str] | None = None) -> list[str]:

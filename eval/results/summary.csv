@@ -1,4 +1,10 @@
 split,backend,cases,errors,intent_accuracy,country_accuracy,scenario_accuracy,grounded_rate,judge_score,agent_tool_accuracy,tokens_per_question,cost_per_question_usd,mean_seconds
-followups,offline,10.0,0.0,0.9,1.0,0.75,1.0,,,0.0,,0.1140313915675506
-holdout,offline,32.0,0.0,0.28125,0.8125,0.0,1.0,,,0.0,,0.014836727823421825
-main,offline,40.0,0.0,1.0,1.0,1.0,1.0,,,0.0,,0.18264385929796845
+followups,local:google/gemma-4-e4b,10.0,0.0,1.0,1.0,0.875,0.7,4.4,,3213.4,,61.85502925827168
+followups,local:meta-llama-3.1-8b-instruct,10.0,0.0,0.9,0.9,0.6666666666666666,1.0,4.1,,1124.3,,11.559718058188446
+followups,offline,10.0,0.0,0.9,1.0,0.75,1.0,4.45,,0.0,,0.1203323250869289
+holdout,local:google/gemma-4-e4b,32.0,0.0,0.875,0.96875,0.6666666666666666,0.75,4.46875,,3269.90625,,66.34641442583234
+holdout,local:meta-llama-3.1-8b-instruct,32.0,0.0,0.375,0.8125,0.1111111111111111,0.9375,3.46875,,755.625,,11.148506736863055
+holdout,offline,32.0,0.0,0.28125,0.8125,0.0,1.0,4.125,,0.0,,0.020140333217568696
+main,local:google/gemma-4-e4b,40.0,0.0,1.0,0.95,0.8333333333333334,0.625,4.075,,3637.8,,72.38652660111548
+main,local:meta-llama-3.1-8b-instruct,40.0,0.0,1.0,0.875,1.0,0.975,3.275,,1394.25,,11.177502207225189
+main,offline,40.0,0.0,1.0,1.0,1.0,1.0,4.2,,0.0,,0.2008559927577153

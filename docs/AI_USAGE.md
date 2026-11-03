@@ -11,11 +11,11 @@ The course allows AI tools if their use is explained and AI generated parts are 
 
 | Part | AI role | How the team checked it |
 |---|---|---|
-| Package code in `src/staffpilot/` | first drafts of modules | 105 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
+| Package code in `src/staffpilot/` | first drafts of modules | 120 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
 | Tests in `tests/` | drafted from the brief rules | each rule case is small enough to check by hand |
 | Notebook text and `docs/report.md` | drafting of prose; every notebook section carries a marker | every number was copied from an executed cell and rechecked |
 | README | drafting | commands were run on a fresh environment |
-| Evaluation questions | drafted, then edited | labels reviewed by the team; a separate holdout set was written in different words |
+| Evaluation questions | drafted, then edited | Hamad Al Sulaimi and Khoa Tran checked every label in `eval/label_review.csv` on 3 November 2026 and Quoc Hung Le cross checked ten; no label needed a change and six unclear questions carry a comment; a separate holdout set was written in different words |
 
 Every AI assisted part is listed in this table. Team members review each change before it is merged.
 

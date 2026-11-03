@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 import json
 from typing import Any
 
-from staffpilot.agent.backends import _text
+from staffpilot.agent.backends import _text, chat_model
 from staffpilot.agent.facts import FactLedger
 from staffpilot.agent.tools import PlannerTools
 from staffpilot.config import Settings
@@ -37,13 +37,9 @@ class ChatReply:
 
 def build_chat_agent(tools: PlannerTools, model_spec: str, settings: Settings) -> Any:
     from langchain.agents import create_agent
-    from langchain.chat_models import init_chat_model
     from langgraph.checkpoint.memory import InMemorySaver
 
-    kwargs: dict[str, Any] = {"timeout": settings.llm.timeout, "max_retries": settings.llm.max_retries}
-    if model_spec.startswith("anthropic:"):
-        kwargs["max_tokens"] = 4096
-    model = init_chat_model(model_spec, **kwargs)
+    model = chat_model(model_spec, settings)
     return create_agent(
         model, tools.as_langchain_tools(), system_prompt=AGENT_PROMPT, checkpointer=InMemorySaver()
     )

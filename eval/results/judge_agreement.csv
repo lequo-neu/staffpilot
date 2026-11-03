@@ -1,0 +1,4 @@
+comparison,answers,same score,within one point,mean gap,bias (second minus first),rank correlation
+people against mean of the AI judges,30,37%,50%,1.45,0.78,0.35
+people against local:google/gemma-4-e4b,20,35%,50%,1.75,0.95,0.23
+people against local:meta-llama-3.1-8b-instruct,20,45%,55%,1.2,0.2,0.47

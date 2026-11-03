@@ -2,7 +2,7 @@
 
 This guide walks you through checking StaffPilot before a commit or a submission. You do not need to know Python. Follow the parts in order and tick each check. The whole run takes about an hour; Part A alone takes five minutes and is the minimum before any commit.
 
-The expected numbers below come from the public data file `DADS5250_Hackathon_Google_Data.xlsx`. With the official IE5374 file the numbers change, but the behaviour described here stays the same.
+The expected numbers below come from the public data file `IE5374_Hackathon_Google_Data.xlsx`. With the official IE5374 file the numbers change, but the behaviour described here stays the same.
 
 ## Before you start
 
@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `105 passed` |
+| A1 | `python -m pytest -q` | the last line says `120 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -135,6 +135,51 @@ Only with the team's permission, and only with keys in `.env`.
 3. Run `python -m staffpilot chat --agent --backend anthropic_fast`, ask `Which three countries give the most notices this year?`, then `For the first of those, what is its net value?`. Expected: Germany 516, UK 487, USA 439, then Germany's net value of about 24.0 million; the line under each answer names the tool and says every number was found in the tool output. Compare with [AGENT_LIVE_CHECK.md](AGENT_LIVE_CHECK.md).
 4. Switch back to Offline when you finish.
 
+## Part G (optional, free): the multi LLM evaluation with local models
+
+This compares language models running on your own computer through LM Studio or Bionic, at no cost. It needs at least two chat models, each from a different family, and about 16 GB of free memory for two small models. Close other heavy apps first.
+
+| Step | What to do | Expected |
+|---|---|---|
+| G1 | `~/.lmstudio/bin/lms ls` | your downloaded models, for example `google/gemma-4-e4b` |
+| G2 | `~/.lmstudio/bin/lms server start` | `Success! Server is now running on port 1234` (the wording may differ slightly) |
+| G3 | `python -m staffpilot models` | a `local:` section listing the same models |
+| G4 | `python -m staffpilot ask "How many agents does Germany need in March?" --backend local_fast` | an answer about Germany, the same numbers as step B3, and a note naming the local model; the first call can take a minute while the model loads |
+| G5 | `python -m staffpilot --log-level INFO eval --source local gemma llama --skip-agent` (use words that match two of your models) | first `Comparing 2 local models (no cost): ...`, then one `Answered as ...` line per question, and at the end a table with rows for `offline` and each local model on the main, holdout and followups splits |
+| G6 | open `eval/results/summary.csv` | a `judge_score` for each local model (graded by the other one) and an empty cost column |
+| G7 | `~/.lmstudio/bin/lms server stop` | the server stops and the memory is freed |
+
+Leave out `--skip-agent` to include the agent chat; it takes about twice as long.
+
+## Part H (free): grade answers by hand to check the AI judge
+
+The judge score in the results comes from language models. This part checks it against people. Two graders each grade the same 30 answers alone, then the script compares them. It takes about 45 minutes per grader and calls no model.
+
+| Step | What to do | Expected |
+|---|---|---|
+| H1 | `python scripts/judge_review.py sheet` (skip it when `eval/judge_review.xlsx` already exists; it never replaces one without `--force`) | `Wrote eval/judge_review.xlsx with 30 answers to grade`, then the rubric the AI judges use |
+| H2 | open `eval/judge_review.xlsx` in Excel or Google Sheets; do not open `eval/judge_review_key.csv` | one row per answer: the question, the earlier question for a follow up, the facts the planner gave, and the answer |
+| H3 | each grader renames one pair of columns to their own name, for example `Khoa score` and `Khoa reason`, then fills a whole number from 1 to 5 and a reason for every row, without looking at the other grader; save as Excel (.xlsx), not CSV | 30 scores in each column |
+| H4 | `python scripts/judge_review.py compare` | a table comparing the two graders and the people with each AI judge, then the mean score per model from both |
+
+How to grade one row:
+
+1. Read the question and decide what a complete answer must contain, for example a headcount for one country and one month.
+2. Check every number in the answer against the facts column. A number that is not there, or that belongs to another country or month, is wrong.
+3. Give the score from the rubric: 5 exact and complete with nothing invented; 4 correct but missing a part or adding an unneeded detail; 3 one number attached to the wrong thing or the main point buried; 2 answers a different question or a key number is wrong; 1 wrong, invented, off topic or not readable text (for example raw code). A polite refusal of an out of scope question scores 5. A longer answer is not a better answer.
+4. Write the reason in one sentence, naming the wrong number when there is one.
+
+How to read the result:
+
+* The row comparing the two graders is the ceiling: the judges cannot be expected to agree with people more than people agree with each other.
+* `within one point` of 80% or more and a `rank correlation` of 0.7 or more mean the judge can be trusted to compare models.
+* `bias` above 0 means the judge scores higher than people.
+* If the people and the judges put the models in a different order, report the people's order.
+
+Commit the filled sheet, the key and `eval/results/judge_agreement.csv`.
+
+The grades must be your own: comparing AI written grades with AI judges checks nothing. If only one person grades, the comparison still works, and the report says it rests on one grader.
+
 ## Part F: before you commit
 
 Run these and check the results; nothing private may go into the repository.
@@ -143,7 +188,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `105 passed` |
+| F3 | `python -m pytest -q` | `120 passed` |
 
 Then commit as described in the README.
 
@@ -183,5 +228,6 @@ Part C  C1.1 [ ]  C1.2 [ ]  C1.3 [ ]  C1.4 [ ]
         C6.1 [ ]  C6.2 [ ]  C6.3 [ ]
 Part D  none seen [ ]
 Part E  (optional) E1 [ ]  E2 [ ]  E3 [ ]  E4 [ ]
+Part G  (optional) G1 [ ]  G2 [ ]  G3 [ ]  G4 [ ]  G5 [ ]  G6 [ ]  G7 [ ]
 Part F  F1 [ ]  F2 [ ]  F3 [ ]
 ```

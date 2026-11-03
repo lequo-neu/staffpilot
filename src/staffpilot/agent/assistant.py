@@ -23,6 +23,7 @@ from typing import Any
 import pandas as pd
 
 from staffpilot.agent.backends import (
+    ALL_COUNTRIES,
     OfflineBackend,
     ScenarioRangeError,
     _offline_intent,
@@ -106,7 +107,15 @@ class StaffPilot:
 
     def _clean(self, route: RoutedQuery, question: str) -> RoutedQuery:
         countries = [c for c in (self.planner.resolve_country(n) for n in route.countries) if c]
-        unknown = [n for n in route.countries if not self.planner.resolve_country(n)]
+        # A model sometimes fills the country with "All" or a word it read as a name. Only a
+        # name the user actually wrote earns the "no data for" reply; the rest are dropped.
+        unknown = [
+            n
+            for n in route.countries
+            if not self.planner.resolve_country(n)
+            and n.strip().lower() not in ALL_COUNTRIES
+            and n.strip().lower() in question.lower()
+        ]
         if unknown and not countries and not route.clarification:
             names = ", ".join(self.planner.countries)
             route = route.model_copy(
@@ -210,7 +219,10 @@ class StaffPilot:
             if not missing and not unsupported:
                 text = rendered
                 break
-            feedback = f"unknown facts {missing[:5]} and unsupported numbers {unsupported[:5]}."
+            feedback = (
+                f"unknown facts {missing[:5]} and unsupported numbers {unsupported[:5]}. "
+                "Write plain sentences with {{fact_name}} placeholders, never JSON or a tool call."
+            )
             log.warning("%s answer failed the number check: %s", writer.name, feedback)
         fallback = not text and writer.name != "offline"
         if fallback:

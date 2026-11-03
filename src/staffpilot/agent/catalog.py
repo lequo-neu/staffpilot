@@ -36,8 +36,13 @@ from staffpilot.config import Settings
 
 log = logging.getLogger(__name__)
 
-LANGCHAIN_PREFIX = {"openai": "openai", "anthropic": "anthropic", "google": "google_genai"}
-PROVIDER_NAMES = {"openai": "OpenAI", "anthropic": "Anthropic", "google": "Google"}
+LANGCHAIN_PREFIX = {"openai": "openai", "anthropic": "anthropic", "google": "google_genai", "local": "local"}
+PROVIDER_NAMES = {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "google": "Google",
+    "local": "on this computer",
+}
 CACHE_SECONDS = 3600
 # Lower is cheaper. The first matching word decides.
 # Rough blended price (US dollars per million tokens) of each rank, used only to compare a
@@ -79,7 +84,11 @@ NOT_CHAT = (
     "davinci",
     "babbage",
     "customtools",
+    "robotics",
 )
+# On a local server only these mark a model that cannot chat; names such as
+# the Llama 3.1 8B "instruct" build are ordinary chat models there.
+LOCAL_NOT_CHAT = ("embed", "rerank", "whisper", "tts")
 _cache: dict[str, tuple[float, list[str]]] = {}
 
 
@@ -104,13 +113,18 @@ def _key(provider: str) -> str:
 
 def _get(url: str, headers: dict[str, str]) -> dict[str, Any]:
     request = urllib.request.Request(url, headers=headers)  # noqa: S310
-    # Only the fixed https addresses in fetch_models reach this function.
+    # Only the fixed provider addresses and the configured local server reach this function.
     with urllib.request.urlopen(request, timeout=8) as response:  # noqa: S310
         return json.load(response)
 
 
 def fetch_models(provider: str) -> list[str]:
     """Model ids the provider lists for this key. Raises on network or key errors."""
+    if provider == backends.LOCAL:
+        from staffpilot.config import load_settings
+
+        data = _get(load_settings().llm.local_url.rstrip("/") + "/models", {})
+        return [m["id"] for m in data.get("data", [])]
     key = _key(provider)
     if provider == "openai":
         data = _get("https://api.openai.com/v1/models", {"Authorization": f"Bearer {key}"})
@@ -133,6 +147,8 @@ def fetch_models(provider: str) -> list[str]:
 
 def is_chat_model(provider: str, model: str) -> bool:
     name = model.lower()
+    if provider == backends.LOCAL:
+        return not any(word in name for word in LOCAL_NOT_CHAT)
     if any(word in name for word in NOT_CHAT):
         return False
     if provider == "openai":
@@ -158,7 +174,8 @@ def family_rank(model: str) -> int:
 
 def cost_key(choice: ModelChoice, prices: dict[str, list[float]]) -> tuple:
     """Sort key from cheapest to most expensive: a configured price when there is one, else the family estimate."""
-    price = prices.get(choice.spec)
+    # Models on this computer cost nothing per token.
+    price = [0.0, 0.0] if choice.provider == backends.LOCAL else prices.get(choice.spec)
     # A typical question reads about four times more tokens than it writes.
     blended = 0.8 * price[0] + 0.2 * price[1] if price else RANK_PRICE[family_rank(choice.model)]
     # At the same price a model without built in reasoning answers in seconds instead of tens of
@@ -210,7 +227,10 @@ def pick_model(settings: Settings, provider: str, tier: str) -> str | None:
     if configured:
         return configured
     listed = [ModelChoice(provider, m) for m in provider_models(provider)]
-    if tier == "fast":
+    if provider == backends.LOCAL:
+        # All local models are free, so size decides: the smallest is fast, the largest strong.
+        ordered = sorted(listed, key=lambda c: _billions(c.model), reverse=tier != "fast")
+    elif tier == "fast":
         ordered = sorted(listed, key=lambda c: cost_key(c, settings.llm.prices))
     else:
         # The most capable family, then stable names before previews, then the newest version.
@@ -221,6 +241,12 @@ def pick_model(settings: Settings, provider: str, tier: str) -> str | None:
             reverse=True,
         )
     return working_default(settings, ordered) if ordered else None
+
+
+def _billions(model: str) -> float:
+    """Parameter count read from a name such as qwen3.6-27b or gemma-4-e4b (in billions)."""
+    sizes = [float(n) for n in re.findall(r"(\d+(?:\.\d+)?)b\b", model.lower())]
+    return max(sizes) if sizes else 0.0
 
 
 def _unstable(model: str) -> bool:

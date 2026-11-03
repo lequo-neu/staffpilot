@@ -101,7 +101,7 @@ The tests use made up data, so they work before you have the real file:
 python -m pytest -q
 ```
 
-The last line should say `105 passed`. If it does, Python, the solver and every package are working.
+The last line should say `120 passed`. If it does, Python, the solver and every package are working.
 
 ## Step 6: Add the data file
 
@@ -220,6 +220,19 @@ python -m staffpilot eval
 ```
 
 The evaluation sends 82 questions to each model, plus judge and agent calls, so it costs money; check the usage page of your provider after a first run. Use `python -m staffpilot eval --tier fast` for the cheaper models only. Replies are saved in `eval/cache/`, so a second run is free. Never commit `.env`; it is already excluded by `.gitignore`.
+
+### Free option: models on your own computer
+
+If LM Studio or Bionic is installed, you can use its models for free:
+
+1. Start the local server: `~/.lmstudio/bin/lms server start`
+2. Load a model: `~/.lmstudio/bin/lms load google/gemma-4-e4b` (see your models with `~/.lmstudio/bin/lms ls`)
+3. Check that StaffPilot sees it: `python -m staffpilot models` lists a `local:` section
+4. Ask with it: `python -m staffpilot ask "How many agents does Germany need in March?" --backend local_fast`
+
+Local models are slower than cloud models and need memory: a 4B model needs about 7 GB, a 27B model about 16 GB. Stop the server with `~/.lmstudio/bin/lms server stop`.
+
+To compare the local models with each other (free), run `python -m staffpilot eval --source local`. It needs at least two chat models; the [testing guide](TESTING_GUIDE.md) walks through it step by step.
 
 ## See what is going on
 

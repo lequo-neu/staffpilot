@@ -90,6 +90,11 @@ class LlmSettings(BaseModel):
     models: dict[str, str] = Field(default_factory=dict)
     fast_models: dict[str, str] = Field(default_factory=dict)
     prices: dict[str, list[float]] = Field(default_factory=dict)
+    # Local models served by LM Studio (or Bionic, which uses it) through its OpenAI style API.
+    local_url: str = "http://localhost:1234/v1"
+    local_timeout: int = 300
+    # Requests per minute per provider, for free tiers with tight limits; 0 means no limit.
+    requests_per_minute: dict[str, float] = Field(default_factory=dict)
 
 
 class Settings(BaseModel):

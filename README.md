@@ -135,6 +135,20 @@ python -m staffpilot eval
 
 `eval` runs every provider with a key at both tiers (`--tier strong`, `fast` or `both`) and the `create_agent` chat (`--skip-agent` to leave it out). It is the only command that makes many paid calls. Replies and their token counts are cached in `eval/cache/`, so reruns cost nothing; commit that folder so the notebook shows the same results. To stay offline while keys are set, set `STAFFPILOT_OFFLINE=1`.
 
+### Two ways to run the multi LLM evaluation
+
+| | Online (default) | Local |
+|---|---|---|
+| Command | `python -m staffpilot eval` | `python -m staffpilot eval --source local` |
+| Models | GPT, Claude and Gemini through the API keys in `.env`, at the tiers chosen with `--tier` | every chat model of LM Studio or Bionic on this computer, each one on its own |
+| Judges | the strong model of each other provider (a provider without one judges with its fast model) | every other local model; none grades itself |
+| Cost | paid per token (see `[llm.prices]`) | nothing |
+| Speed | fast | slower, limited by the computer |
+
+For the local run, start the server of LM Studio, or of Bionic, which uses it, with `~/.lmstudio/bin/lms server start`; StaffPilot reads it at `http://localhost:1234/v1` (`[llm] local_url`) and waits up to `local_timeout` seconds per call. Words after the command pick models, for example `eval --source local gemma llama`; at least two are needed. Each judge grades all answers after they are in, so the computer keeps one model in memory at a time instead of swapping on every question. In the app and in `ask` and `chat`, local models appear as the provider `local` (`--backend local_fast` is the smallest, `local` the largest).
+
+Online, a Google key without billing can call the Flash and Flash Lite models but not Pro; StaffPilot then judges with the fast model and keeps to `[llm.requests_per_minute] google = 10` so calls wait instead of failing.
+
 ### How the offline mode answers
 
 Without a key (or with `STAFFPILOT_OFFLINE=1`) the assistant still answers, with no model at all:
@@ -204,23 +218,39 @@ Model lists from the three providers are also requested at the same time, and th
 
 ## Assumptions
 
-The brief leaves some points open. Each is a switch in the config; the notebook measures the ones that matter.
+The brief leaves some points open, and the teaching assistant confirmed that each team may set its own assumptions and numbers as long as it explains them logically. We followed two rules when choosing. Where the brief's words point one way, we take the literal reading. Where they do not, we take the reading that makes our result look worse rather than better, so the headline number is not inflated by a convenient choice. Every assumption is a switch in `config/staffpilot.toml` or a scenario, and the notebook (section 11) measures the ones that move the result.
 
-| | Assumption | Effect when changed |
-|---|---|---|
-| A1 | Uplift applies to the projected annual budget, once, for the sign up cohort | Counting only the 60 day window: every policy loses money (hold $-178.3M, optimized $-67.0M); the plan still beats hold by $111M and gives even more notices |
-| A2 | Eligible means budget strictly greater than the threshold | 13 sign ups sit on a threshold |
-| A3 | The pool is empty on 1 January | If the last 60 days of history were waiting: 21,543 extra advertisers, net value $606.3M, 2,576 agents on average |
-| A4 | Agents in ramp up are paid | |
-| A5 | Agents under notice work and are paid; the 40 percent cost is charged in the notice month | |
-| A6 | Capacity is pooled per country | |
-| A7 | First decisions in January take effect in February | Matters for Vietnam |
-| A8 | First in, first out pool | Highest budget first: $478.7M, shorter waits, small advertisers wait longer |
-| A9 | Waiting does not reduce uplift within 60 days; the optimizer prefers early service | Without that preference: $482.8M but the mean wait rises from 1.1 to 3.0 days |
-| A10 | No hiring cap | Testable as a scenario |
-| A11 | Three months of lookahead | |
+| | Assumption | Why | Effect when changed |
+|---|---|---|---|
+| A1 | Uplift applies to the projected annual budget, once, for the sign up cohort | The budget in the data is annual, and setup work done during support keeps paying after it ends | 60 day window only: every policy loses money (minus $178.3M if January headcount is kept, minus $67.0M optimized), yet the optimized plan still wins by $111M |
+| A2 | Eligible means budget strictly greater than the threshold | The brief says "exceeds" | 13 sign ups sit exactly on a threshold |
+| A3 | The pool is empty on 1 January | The brief says agents start the year with no advertisers, and the history does not say who was waiting | Last 60 days still waiting: 21,543 more advertisers, $606.3M, 2,576 agents on average instead of 2,206 |
+| A4 | Agents in ramp up are paid | They are employees in training | Unpaid: $1.2M more value and 428 hires instead of 353 |
+| A5 | Agents under notice are paid for the notice month and keep serving the advertisers they hold, but take no new ones; the 40 percent cost is charged in the notice month | That is what a notice period means, and it keeps every advertiser's 60 days intact | Every notice falls in January, so the month the cost is charged does not change the year's $87.1M; an unpaid notice month would save at most $18.2M |
+| A6 | Capacity is pooled per country | Any agent in a country can take the next advertiser | |
+| A7 | First decisions in January take effect in February | A decision needs a month of notice or ramp up | Matters for Vietnam |
+| A8 | First in, first out pool | The fairest order: whoever signed up first is served first | Highest budget first: $478.7M, shorter waits, small advertisers wait longer |
+| A9 | Waiting does not reduce uplift within 60 days; the optimizer still prefers early service | The brief asks for timely support | Without that preference: $482.8M but the mean wait rises from 1.1 to 3.0 days |
+| A10 | No hiring cap | The brief sets none | Testable as a scenario |
+| A11 | Three months of lookahead | Stops the model from cutting staff in December only because the horizon ends | |
 
-Full text in [src/staffpilot/knowledge/assumptions.md](src/staffpilot/knowledge/assumptions.md). A1, A3, A4 and A5 should be confirmed on the course forum before submission.
+### Why these choices hold up
+
+**A1 is the assumption that decides whether support pays at all, so we state it plainly: if uplift lasts only during the 60 days of support, the support program loses money under every staffing policy.** We still count uplift on the annual budget for three reasons.
+
+* The data gives each advertiser a projected annual budget, and the brief states the uplift as a share of ad spend without naming a shorter period. The annual budget is the only base the data offers.
+* Support is onboarding: an agent helps set up accounts, campaign structure and bidding. Those campaigns keep running after the agent moves on, so the extra spend does not stop on day 61. An advertiser with a $120,000 budget who spends 13.5 percent more gives about $16,200 of uplift; counting only 60 days would give about $2,700.
+* Uplift is counted once, in the advertiser's sign up cohort, so a supported advertiser is never counted twice across years.
+
+More important for the staffing question, the decision does not depend on A1. Under both readings every notice is given in January (4,756 with annual uplift, 4,962 with the window), and the plan beats keeping January headcount by about $109M to $111M. A1 changes how much the program is worth, not how many agents to have.
+
+**A3** is the literal reading of the brief. The carryover alternative needs a guess about who was still waiting on 31 December, which the data does not record. It is also the conservative choice: with the carryover the plan is worth $606.3M instead of $479.7M, so starting empty lowers our headline rather than raising it.
+
+**A4** follows normal employment: a new hire is paid while training. It is again the conservative choice, since an unpaid ramp up would add $1.2M and let the model hire more freely (428 hires instead of 353).
+
+**A5** is what a notice period is for. An agent under notice is still employed for that month and is paid, and finishes the advertisers already assigned, so nobody loses support halfway through. The simulator gives such agents no new advertisers, which is how the plan avoids breaking the ten advertiser limit when headcount falls. Charging the 40 percent cost in the notice month is the simpler bookkeeping, and here it changes nothing: every notice in the plan is given in January, so the year's firing cost is $87.1M either way. The alternative of letting agents go at once without pay would save at most $18.2M, under 4 percent of net value, and would empty the notice rule of meaning.
+
+Full text in [src/staffpilot/knowledge/assumptions.md](src/staffpilot/knowledge/assumptions.md); the assistant cites it when asked about an assumption.
 
 ## Evaluation of the assistant
 
@@ -234,13 +264,48 @@ Full text in [src/staffpilot/knowledge/assumptions.md](src/staffpilot/knowledge/
 
 Strong and fast tiers are compared separately so each model faces its peers. Retrieval is scored on its own: for rule questions labelled with the passage that answers them, BM25 puts that passage in the top three for 6 of 7.
 
-| Split | Backend | Intent accuracy | Country accuracy | Scenario accuracy | Grounded |
-|---|---|---|---|---|---|
-| main (40) | offline | 100% | 100% | 100% | 100% |
-| holdout (32) | offline | 28% | 81% | 0% | 100% |
-| followups (10) | offline | 90% | 100% | 75% | 100% |
+Results of the local run on 3 November 2026 (`python -m staffpilot eval --source local gemma llama --skip-agent`): two open models on this computer through Bionic, `google/gemma-4-e4b` (4B) and `meta-llama-3.1-8b-instruct` (8B), each judged by the other and both judging offline. It took 2 hours 19 minutes and cost nothing.
 
-The offline keywords were written while looking at the main set, so its main score flatters it; the holdout shows the gap a language model router has to close. The follow up rules were written together with the follow up set, so treat that row as a regression check; the one miss ("What would that look like for Italy?") is a follow up without a clear cue, which is where a router that reads the history should do better. **The language model rows need API keys:** run `python -m staffpilot eval` with at least two providers set, then rebuild the notebook. The results also write `eval/results/routing.json`, which recommends a model per intent from the holdout when an intent has at least three questions; the app does not apply it on its own, the user picks the model in Settings.
+| Split | Backend | Intent | Country | Scenario | Grounded | Judge score (1 to 5) | Seconds per question |
+|---|---|---|---|---|---|---|---|
+| main (40) | offline | 100% | 100% | 100% | 100% | 4.20 | 0.2 |
+| main (40) | Gemma 4 E4B | 100% | 95% | 83% | 63% | 4.08 | 72 |
+| main (40) | Llama 3.1 8B | 100% | 88% | 100% | 98% | 3.28 | 11 |
+| **holdout (32)** | offline | 28% | 81% | 0% | 100% | 4.13 | 0.0 |
+| **holdout (32)** | Gemma 4 E4B | **88%** | **97%** | **67%** | 75% | **4.47** | 66 |
+| **holdout (32)** | Llama 3.1 8B | 38% | 81% | 11% | 94% | 3.47 | 11 |
+| followups (10) | offline | 90% | 100% | 75% | 100% | 4.45 | 0.1 |
+| followups (10) | Gemma 4 E4B | 100% | 100% | 88% | 70% | 4.40 | 62 |
+| followups (10) | Llama 3.1 8B | 90% | 90% | 67% | 100% | 4.10 | 12 |
+
+What the numbers say:
+
+* **On new wording (holdout), a language model router is far better than keywords.** Gemma reads 88 percent of the intents and 67 percent of the scenario fields correctly, against 28 and 0 percent for offline.
+* **Grounding holds for every model.** No answer reached the user with an unchecked number: when a model's draft failed the number check twice (Gemma for about a quarter of the answers), the template answer was used instead, which is why its grounded rate is lower while its answers stay correct.
+* **Llama's router output often failed validation.** In 68 of its questions it filled `service_target` with values such as 90 or 10000 although the field is a share between 0 and 1, so the whole request was rejected and the offline router took over; its holdout row is therefore close to offline. This is fixed since that run: the router now keeps a reply and repairs the bad fields (a share written as 90 becomes 0.9, a scenario on a question that is not a what if is dropped, unknown fields are removed). Replaying six holdout questions Llama had missed, it now reads all six intents correctly; the table above is from before the fix.
+* **Grading 30 answers by hand found answers that passed the number check but were unusable.** Llama often sent back a tool call as JSON instead of sentences, and memos left fact names unfilled (`France.hires`) or a bullet empty. Every number in them was right, so the check passed. The check now also rejects JSON, single braces, bare fact names and empty bullets, so the answer is rewritten or falls back to the template. Two router faults were fixed with them: a model that filled the country with "All" got the reply "I do not have data for All", and the offline router took "Indian" and a sentence that starts with "Effect" for unknown places. Country adjectives now map to their country. The words "Indian" and "Spanish" came from holdout questions, so the offline holdout score after this fix is slightly optimistic. Years also print as 2026 instead of 2,026. The table above is from before these fixes.
+* **Speed and cost.** Offline answers in a fraction of a second, Llama in about 11 seconds and Gemma in over a minute on a laptop; all three are free.
+* **Judge scores depend on the judge.** Llama (judging Gemma) was more lenient than Gemma (judging Llama), and both are small models, so the judge column is the least reliable one; the structured accuracies are exact.
+
+The online run with GPT, Claude and Gemini (`python -m staffpilot eval`) uses the same harness and adds the cost column.
+
+The offline keywords were written while looking at the main set, so its main score flatters it; the holdout shows the gap a language model router has to close. The follow up rules were written together with the follow up set, so treat that row as a regression check. The test questions and labels were drafted with AI assistance (see [docs/AI_USAGE.md](docs/AI_USAGE.md)). `python scripts/label_review_sheet.py` writes them to `eval/label_review.csv`, one row per question with columns for a reviewer's verdict. The team checked all 82 labels there on 3 November 2026 and changed none. Six questions carry a comment because they can be read more than one way: "end the year" (p04) is labelled with no month although it implies December, "the summer months" (h01) is read as June to August, and "around Christmas" (h17) as December only. To check the judge score itself, `python scripts/judge_review.py sheet` writes 30 answers to `eval/judge_review.xlsx` for team members to grade by hand on the judges' rubric, and `python scripts/judge_review.py compare` reports how closely the judges match them (steps in [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md), Part H).
+
+**Does the AI judge agree with a person?** Quoc Hung Le graded the 30 answers in `eval/judge_review.xlsx` by hand on 3 November 2026, checking every number against the facts the judges saw. Against these grades the local judges (each grading the other model) did poorly:
+
+| Judge | Answers | Same score | Within one point | Mean gap | Bias (judge minus person) | Rank correlation |
+|---|---|---|---|---|---|---|
+| Mean of both local judges | 30 | 37% | 50% | 1.45 | +0.78 | 0.35 |
+| Gemma | 20 | 35% | 50% | 1.75 | +0.95 | 0.23 |
+| Llama | 20 | 45% | 55% | 1.20 | +0.20 | 0.47 |
+
+| Answers from | Person | Local judges |
+|---|---|---|
+| offline | 3.3 | 3.25 |
+| Gemma | 2.3 | 3.00 |
+| Llama | 1.0 | 2.70 |
+
+Both local judges are lenient and unstable: they gave 5 to two answers that were raw JSON, and only half of their scores fall within one point of the person's. The person ranks the models offline, Gemma, Llama, with a far wider gap than the judges show. So the judge scores of the local run should not be used to rank models; intent accuracy, the number check and the hand grades are the evidence. It rests on one grader and 30 answers, so it shows the direction, not a precise size. The grading also found the faults described in the notes above (JSON answers, unfilled fact names, words read as countries). The results also write `eval/results/routing.json`, which recommends a model per intent from the holdout when an intent has at least three questions; the app does not apply it on its own, the user picks the model in Settings.
 
 ## Requirement trace
 
@@ -265,7 +330,7 @@ The offline keywords were written while looking at the main set, so its main sco
 |---|---|---|
 | Problem statement and vision (15) | Headline finding, open points of the brief turned into measured assumptions | done |
 | LangChain agent design (20) | Six tools, structured outputs, conversation memory with follow ups, `create_agent` with memory, number check with retry, offline fallback | done; the `create_agent` chat was checked live with `claude-haiku-5-5` ([docs/AGENT_LIVE_CHECK.md](docs/AGENT_LIVE_CHECK.md)) |
-| Multi LLM evaluation (20) | 82 labelled questions (10 of them follow ups), judge panel, tiers, tokens, routing table | harness done; **LLM rows need a run with keys** |
+| Multi LLM evaluation (20) | 82 labelled questions (10 of them follow ups), cross model judges, holdout split, tokens, latency, routing table; online (API keys) or local (free) | done for two local models (Gemma 4 E4B, Llama 3.1 8B); online run with GPT, Claude and Gemini optional |
 | Data use (15) | Real budgets per advertiser, backtest on real sign ups, leap day repair, threshold scenarios | done; rerun on the official IE5374 file |
 | Presentation and demo (20) | Executed notebook, Gradio app with plan approval, report | **video still to record** |
 | Innovation (10) | Fact placeholders with attribution check, routing table from the evaluation, plan approval step | done |
@@ -279,14 +344,14 @@ docs/                       setup guide, testing guide, live agent check, report
 eval/                       test sets, cached model replies, results
 notebooks/                  executed submission notebook
 outputs/                    plan, KPIs, policy comparison
-scripts/                    notebook builder, writing style check
+scripts/                    notebook builder, writing style check, label and judge review sheets
 src/staffpilot/             package (core model, agent, app, CLI); ui/ holds the app's theme and styles
-tests/                      105 tests on synthetic data with years 2031 and 2032
+tests/                      120 tests on synthetic data with years 2031 and 2032
 ```
 
 ## Tests and CI
 
-`python -m pytest` runs 105 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
+`python -m pytest` runs 120 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
 
 ## Team contributions
 

@@ -2,8 +2,33 @@
 
 [data]
 # Change this one line to switch to the official IE5374 file from Canvas.
-path = "data/raw/DADS5250_Hackathon_Google_Data.xlsx"
+path = "data/raw/IE5374_Hackathon_Google_Data.xlsx"
 
 [planning]
 # The IE5374 brief asks for a plan for 2025. An alert is raised while another file is loaded.
 expected_year = 2025
+
+[llm.models]
+openai = "openai:gpt-5.4"
+anthropic = "anthropic:claude-sonnet-5-5"
+
+[llm.fast_models]
+openai = "openai:gpt-5-nano"
+anthropic = "anthropic:claude-haiku-5-5"
+google = "google_genai:gemini-flash-lite-latest"
+
+# US dollars per million tokens: [input, output], standard rates for short prompts (no cache,
+# no batch discount). Looked up on 3 November 2026 from public pricing summaries (OpenAI:
+# g2.com and cloudzero.com; Anthropic: metacto.com and benchlm.ai; Google: morphllm.com and
+# tldl.io); check the providers' own pricing pages before relying on them.
+# Used only for the cost column of the evaluation.
+[llm.prices]
+"openai:gpt-5-nano" = [0.05, 0.40]
+"openai:gpt-5.4" = [2.50, 15.00]
+"anthropic:claude-haiku-5-5" = [0.10, 0.50]
+"anthropic:claude-sonnet-5-5" = [2.00, 10.00]
+# Google does not say which model the "latest" alias points to; it is priced as the newest
+# Flash-Lite (3.5), the higher of the two current ones, so the cost is not understated.
+"google_genai:gemini-flash-lite-latest" = [0.30, 2.50]
+"google_genai:gemini-3.5-flash-lite" = [0.30, 2.50]
+"google_genai:gemini-3.1-flash-lite" = [0.25, 1.50]

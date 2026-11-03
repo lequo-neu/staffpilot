@@ -62,7 +62,10 @@ def dataset(signups: pd.DataFrame) -> Dataset:
 
 @pytest.fixture(scope="session")
 def settings():
-    return load_settings().with_updates(planning={"monte_carlo_runs": 3, "lookahead_months": 2})
+    # Models pinned in the project config must not change what the tests expect.
+    return load_settings().with_updates(
+        planning={"monte_carlo_runs": 3, "lookahead_months": 2}, llm={"models": {}, "fast_models": {}}
+    )
 
 
 @pytest.fixture(scope="session")

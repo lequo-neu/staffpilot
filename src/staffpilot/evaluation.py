@@ -165,7 +165,7 @@ def evaluate_backend(
 
         agent = build_chat_agent(pilot.tools, backend.model_spec, planner.settings)
     prices = planner.settings.llm.prices
-    rows = []
+    rows, to_judge = [], []
     for case in cases:
         chat = Conversation() if case.context else None
         try:
@@ -214,18 +214,24 @@ def evaluate_backend(
             "answer": answer.text,
             "error": "",
         }
-        facts = {k: str(v) for k, v in answer.facts.items()}
-        scores = []
-        for grader in graders:
-            try:
-                scores.append(grader.judge(case.question, answer.text, facts).score)
-            except Exception as exc:  # a judge failure only leaves that score out
-                log.warning("judge %s failed on %s: %s", grader.name, case.id, describe_error(exc))
-        row["judge_score"] = sum(scores) / len(scores) if scores else None
-        row["judges"] = len(scores)
         if agent is not None:
             row.update(_agent_row(agent, name, case))
         rows.append(row)
+        to_judge.append((row, case, answer.text, {k: str(v) for k, v in answer.facts.items()}))
+    # Each judge grades every answer in turn, after all answers are in. With local models this
+    # keeps one model loaded at a time instead of swapping answerer and judge on every question.
+    scores: dict[str, list[int]] = {case.id: [] for _, case, _, _ in to_judge}
+    for grader in graders:
+        log.info("Judge %s is grading %d answers from %s", grader.name, len(to_judge), name)
+        for _, case, text, facts in to_judge:
+            try:
+                scores[case.id].append(grader.judge(case.question, text, facts).score)
+            except Exception as exc:  # a judge failure only leaves that score out
+                log.warning("judge %s failed on %s: %s", grader.name, case.id, describe_error(exc))
+    for row, case, _, _ in to_judge:
+        given = scores[case.id]
+        row["judge_score"] = sum(given) / len(given) if given else None
+        row["judges"] = len(given)
     return pd.DataFrame(rows)
 
 
@@ -305,7 +311,15 @@ def run_evaluation(
     splits = testsets if isinstance(testsets, dict) else {"main": testsets}
     # A provider may have no usable model for a tier (a retired model, or no quota on a
     # free key); it is left out with a note instead of stopping the whole run.
-    judges = [j for j in (_build(name, planner, cache_dir) for name in judge_backends or []) if j]
+    # A provider without a strong model judges with its fast one (Gemini's free tier, for example).
+    judges = [
+        j
+        for j in (
+            _build(name, planner, cache_dir) or _build(f"{name}_fast", planner, cache_dir)
+            for name in judge_backends or []
+        )
+        if j
+    ]
     backends = [name for name in backends if name == "offline" or _build(name, planner, cache_dir)]
     frames, retrieval = [], []
     for split, path in splits.items():

@@ -2,7 +2,7 @@
 # Paths are relative to the repository root.
 
 [data]
-path = "data/raw/DADS5250_Hackathon_Google_Data.xlsx"
+path = "data/raw/IE5374_Hackathon_Google_Data.xlsx"
 salary_sheet = "Agent Salary and Threshold"
 signup_sheet = "Advertiser Sign-ups"
 staffing_sheet = "Existing Agent Staffing"
@@ -44,6 +44,13 @@ seed = 7
 default_backend = "offline"
 timeout = 60
 max_retries = 2
+# Local models from LM Studio or Bionic (lms server start); listed as the provider "local".
+local_url = "http://localhost:1234/v1"
+local_timeout = 300
+
+# Google's free tier allows only a few requests a minute; calls wait instead of failing.
+[llm.requests_per_minute]
+google = 10
 
 # No model names are fixed here. For each provider with a key, StaffPilot asks the
 # provider which chat models this account can use (python -m staffpilot models lists

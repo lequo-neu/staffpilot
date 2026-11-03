@@ -10,6 +10,7 @@ Examples (run from the repository root):
     python -m staffpilot memo Germany
     python -m staffpilot models
     python -m staffpilot eval anthropic openai google
+    python -m staffpilot eval --source local
     python -m staffpilot app
 """
 
@@ -238,20 +239,45 @@ def cmd_memo(args: argparse.Namespace) -> None:
     print(_save_chart(answer, f"memo {country}").strip())
 
 
-def cmd_eval(args: argparse.Namespace) -> None:
-    from staffpilot.agent.backends import available_providers, backend_names
-    from staffpilot.evaluation import run_evaluation
-    from staffpilot.planner import Planner
+def _eval_lineup(args: argparse.Namespace) -> tuple[list[str], list[str]] | None:
+    """The backends to compare and the judges, for online (API keys) or local models."""
+    from staffpilot.agent.backends import LOCAL, available_providers, backend_names, local_server_running
 
-    providers = available_providers()
+    if args.source == "local":
+        from staffpilot.agent.catalog import provider_models
+
+        if not local_server_running():
+            print("No local model server is running. Start it with: ~/.lmstudio/bin/lms server start")
+            return None
+        models = provider_models(LOCAL, refresh=True)
+        if args.providers:  # words that pick models, for example: gemma llama
+            models = [m for m in models if any(word.lower() in m.lower() for word in args.providers)]
+        if len(models) < 2:
+            print(f"Found {models or 'no'} local chat models; load at least two to compare them.")
+            return None
+        print(f"Comparing {len(models)} local models (no cost): {', '.join(models)}")
+        # Every local model answers, and judges the others; none grades itself.
+        local = [f"{LOCAL}:{m}" for m in models]
+        return ["offline", *local], local
+
+    providers = [p for p in available_providers() if p != LOCAL]
     requested = args.providers or providers
-    missing = [p for p in requested if p != "offline" and p not in providers]
+    missing = [p for p in requested if p not in providers]
     if missing:
         print(f"Skipping {missing}: no API key in the environment")
     usable = [p for p in requested if p in providers]
-    names = ["offline", *backend_names(usable, args.tier)]
-    # Strong models of every available provider grade the answers; a model never grades its own provider.
-    judges = usable
+    # The strong model of every provider judges; a model never grades its own provider.
+    return ["offline", *backend_names(usable, args.tier)], usable
+
+
+def cmd_eval(args: argparse.Namespace) -> None:
+    from staffpilot.evaluation import run_evaluation
+    from staffpilot.planner import Planner
+
+    lineup = _eval_lineup(args)
+    if lineup is None:
+        return
+    names, judges = lineup
     testsets = {
         "main": EVAL_DIR / "testset.jsonl",
         "holdout": EVAL_DIR / "holdout.jsonl",
@@ -351,7 +377,17 @@ def main(argv: list[str] | None = None) -> None:
     memo.add_argument("--backend", default="offline")
     memo.set_defaults(func=cmd_memo)
     evaluate = sub.add_parser("eval", help="compare the offline backend and LLM providers on the test sets")
-    evaluate.add_argument("providers", nargs="*", help="openai, anthropic, google (default: all with keys)")
+    evaluate.add_argument(
+        "providers",
+        nargs="*",
+        help="online: openai, anthropic, google (default all with keys); local: words that pick models, such as gemma",
+    )
+    evaluate.add_argument(
+        "--source",
+        choices=["online", "local"],
+        default="online",
+        help="online uses the API keys (default); local uses the models of LM Studio or Bionic, for free",
+    )
     evaluate.add_argument("--tier", choices=["strong", "fast", "both"], default="both")
     evaluate.add_argument("--skip-agent", action="store_true", help="do not evaluate the create_agent chat")
     evaluate.set_defaults(func=cmd_eval)

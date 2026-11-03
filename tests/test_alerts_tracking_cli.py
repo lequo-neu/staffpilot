@@ -90,9 +90,14 @@ def test_missing_data_gives_a_message_not_a_traceback(tmp_path, monkeypatch, cap
     assert "Data problem" in capsys.readouterr().err
 
 
-def test_models_command_lists_cheapest_first_and_hides_keys(monkeypatch, capsys):
+def test_models_command_lists_cheapest_first_and_hides_keys(monkeypatch, capsys, tmp_path):
     from staffpilot import cli
     from staffpilot.agent import backends, catalog
+
+    # A config without pinned models, so the tiers come from the listing below.
+    no_pins = tmp_path / "no_pins.toml"
+    no_pins.write_text("", encoding="utf-8")
+    monkeypatch.setenv("STAFFPILOT_CONFIG", str(no_pins))
 
     class Fake:
         def __init__(self, name, spec, settings):
@@ -159,3 +164,33 @@ def test_an_unknown_backend_gives_a_message_not_a_traceback(workbook, monkeypatc
         cli.main(["ask", "How many agents?", "--backend", "nonsense"])
     assert stop.value.code == 2
     assert "Model problem: Unknown backend 'nonsense'" in capsys.readouterr().err
+
+
+def test_eval_lineups_for_online_keys_and_local_models(monkeypatch, capsys):
+    import argparse
+
+    from staffpilot import cli
+    from staffpilot.agent import backends, catalog
+
+    def args(source, *words):
+        return argparse.Namespace(source=source, providers=list(words), tier="fast", skip_agent=True)
+
+    monkeypatch.setattr(backends, "available_providers", lambda: ["anthropic", "google", "local"])
+    names, judges = cli._eval_lineup(args("online"))
+    assert names == ["offline", "anthropic_fast", "google_fast"] and judges == ["anthropic", "google"]
+
+    monkeypatch.setattr(backends, "local_server_running", lambda url=None: True)
+    monkeypatch.setattr(
+        catalog,
+        "provider_models",
+        lambda provider, refresh=False: ["google/gemma-4-e4b", "meta/llama-3.1-8b", "qwen/qwen3.6-27b"],
+    )
+    names, judges = cli._eval_lineup(args("local", "gemma", "llama"))
+    assert names == ["offline", "local:google/gemma-4-e4b", "local:meta/llama-3.1-8b"]
+    assert judges == names[1:] and "no cost" in capsys.readouterr().out
+    assert cli._eval_lineup(args("local", "gemma")) is None
+    assert "load at least two" in capsys.readouterr().out
+
+    monkeypatch.setattr(backends, "local_server_running", lambda url=None: False)
+    assert cli._eval_lineup(args("local")) is None
+    assert "lms server start" in capsys.readouterr().out
