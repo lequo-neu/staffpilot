@@ -7,7 +7,7 @@ IE5374 Applied Generative AI, Module 7 Hackathon, Topic 3: Dynamic Agent Staffin
 
 **Submission links:** GitHub repository [`github.com/lequo-neu/staffpilot`](https://github.com/lequo-neu/staffpilot) · demo video (3 minutes) `<to be added>` · notebook [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb)
 
-**Topic confirmation (R0):** registered for Topic 3 on the sign up sheet on 3 November 2026
+**Topic confirmation (R0):** on 3 November 2026
 
 ## The short version
 
