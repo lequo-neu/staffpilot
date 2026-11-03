@@ -1,0 +1,32 @@
+{"id": "h01", "question": "Roughly what team size should Canada run with in the summer months?", "intent": "plan_lookup", "countries": ["Canada"], "months": [6, 7, 8]}
+{"id": "h02", "question": "Do we let anyone go in Italy, and when?", "intent": "plan_lookup", "countries": ["Italy"]}
+{"id": "h03", "question": "Brazil: give me the numbers for September.", "intent": "plan_lookup", "countries": ["Brazil"], "months": [9]}
+{"id": "h04", "question": "Picture a 40 percent slump in Japanese sign ups during Q2. Impact?", "intent": "what_if", "countries": ["Japan"], "scenario": {"demand_multiplier": 0.6, "months": [4, 5, 6]}}
+{"id": "h05", "question": "Germany's eligibility bar gets cut by 25%. What does that do?", "intent": "what_if", "countries": ["Germany"], "scenario": {"threshold_multiplier": 0.75}}
+{"id": "h06", "question": "Pay in Poland jumps 15 percent next year; rerun the plan.", "intent": "what_if", "countries": ["Poland"], "scenario": {"salary_multiplier": 1.15}}
+{"id": "h07", "question": "Turkey gets twice the usual sign ups in December. How do we cope?", "intent": "what_if", "countries": ["Turkey"], "scenario": {"demand_multiplier": 2.0, "months": [12]}}
+{"id": "h08", "question": "Is all this optimization worth it compared to leaving staffing alone?", "intent": "compare", "countries": []}
+{"id": "h09", "question": "Show me the gap between the smart plan and the naive one for Mexico.", "intent": "compare", "countries": ["Mexico"]}
+{"id": "h10", "question": "If our forecast for South Africa is off by a fifth either way, how bad is it?", "intent": "sensitivity", "countries": ["South Africa"]}
+{"id": "h11", "question": "Where are sign ups the least predictable?", "intent": "insight", "countries": [], "insight_kind": "volatility"}
+{"id": "h12", "question": "Which month brings the most new eligible advertisers?", "intent": "insight", "countries": [], "insight_kind": "seasonality"}
+{"id": "h13", "question": "Put together a short note for the Indonesia lead on headcount.", "intent": "memo", "countries": ["Indonesia"]}
+{"id": "h14", "question": "Once an agent picks up an advertiser, for how many days do they work together?", "intent": "rules", "countries": [], "source": "Support length"}
+{"id": "h15", "question": "Who counts as eligible for an agent?", "intent": "rules", "countries": [], "source": "Eligibility"}
+{"id": "h16", "question": "Translate this paragraph into French for me.", "intent": "out_of_scope", "countries": []}
+{"id": "h17", "question": "For Australia, what does the workforce look like around Christmas?", "intent": "plan_lookup", "countries": ["Australia"], "months": [12]}
+{"id": "h18", "question": "Net value of the Indian team over the year?", "intent": "plan_lookup", "countries": ["India"]}
+{"id": "h19", "question": "How lean does the Thai team get?", "intent": "plan_lookup", "countries": ["Thailand"]}
+{"id": "h20", "question": "Imagine Spanish salaries climbing by a tenth. Effect on the plan?", "intent": "what_if", "countries": ["Spain"], "scenario": {"salary_multiplier": 1.1}}
+{"id": "h21", "question": "Say a Canadian agent could only juggle 8 accounts at once. Then what?", "intent": "what_if", "countries": ["Canada"], "scenario": {"capacity_per_agent": 8}}
+{"id": "h22", "question": "We can onboard no more than 3 new people a month in South Korea. Does the plan survive?", "intent": "what_if", "countries": ["South Korea"], "scenario": {"max_hires_per_month": 3}}
+{"id": "h23", "question": "Assume ad spend uplift in China is really 20 percent on average.", "intent": "what_if", "countries": ["China"], "scenario": {"expected_uplift": 0.2}}
+{"id": "h24", "question": "Hold the current Argentina plan fixed and let demand climb 35%. How does it do?", "intent": "what_if", "countries": ["Argentina"], "scenario": {"demand_multiplier": 1.35, "replan": false}}
+{"id": "h25", "question": "What would we lose by sticking with today's headcount everywhere?", "intent": "compare", "countries": []}
+{"id": "h26", "question": "Rank our planning approaches for the UK by value.", "intent": "compare", "countries": ["UK"]}
+{"id": "h27", "question": "How exposed is the USA plan if demand swings plus or minus 30 percent?", "intent": "sensitivity", "countries": ["USA"]}
+{"id": "h28", "question": "Is there a clear growth trend in eligible sign ups?", "intent": "insight", "countries": [], "insight_kind": "growth"}
+{"id": "h29", "question": "What fraction of Mexican sign ups qualify for an agent?", "intent": "insight", "countries": ["Mexico"], "insight_kind": "eligibility"}
+{"id": "h30", "question": "Draft talking points for the France team lead on next year's staffing.", "intent": "memo", "countries": ["France"]}
+{"id": "h31", "question": "When a new hire joins, how soon can they take advertisers?", "intent": "rules", "countries": [], "source": "Hiring"}
+{"id": "h32", "question": "Book me a flight to Seattle.", "intent": "out_of_scope", "countries": []}

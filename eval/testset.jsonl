@@ -1,0 +1,40 @@
+{"id": "p01", "question": "How many agents does Germany need in March and why?", "intent": "plan_lookup", "countries": ["Germany"], "months": [3]}
+{"id": "p02", "question": "What is the hiring plan for Vietnam this year?", "intent": "plan_lookup", "countries": ["Vietnam"]}
+{"id": "p03", "question": "How many notices will the UK give, and when?", "intent": "plan_lookup", "countries": ["UK"]}
+{"id": "p04", "question": "What headcount does the USA end the year with?", "intent": "plan_lookup", "countries": ["USA"]}
+{"id": "p05", "question": "Give me the total staffing cost and net value of the plan across all countries.", "intent": "plan_lookup", "countries": []}
+{"id": "p06", "question": "How many active agents will India have in October?", "intent": "plan_lookup", "countries": ["India"], "months": [10]}
+{"id": "p07", "question": "What service rate does the plan reach in the UAE?", "intent": "plan_lookup", "countries": ["UAE"]}
+{"id": "p08", "question": "Staffing for Japan and South Korea in Q4?", "intent": "plan_lookup", "countries": ["Japan", "South Korea"], "months": [10, 11, 12]}
+{"id": "c01", "question": "Compare the optimized plan with keeping January headcount.", "intent": "compare", "countries": []}
+{"id": "c02", "question": "Is the optimized plan better than doing nothing for France?", "intent": "compare", "countries": ["France"]}
+{"id": "c03", "question": "How does our plan stack up against the baseline policies?", "intent": "compare", "countries": []}
+{"id": "c04", "question": "Optimized versus hold policy for Brazil: which earns more?", "intent": "compare", "countries": ["Brazil"]}
+{"id": "w01", "question": "What if sign ups in Brazil drop 30% in Q3?", "intent": "what_if", "countries": ["Brazil"], "scenario": {"demand_multiplier": 0.7, "months": [7, 8, 9]}}
+{"id": "w02", "question": "What happens if demand rises 20 percent in the USA?", "intent": "what_if", "countries": ["USA"], "scenario": {"demand_multiplier": 1.2}}
+{"id": "w03", "question": "What if we lower the eligibility threshold in the UK by 20 percent?", "intent": "what_if", "countries": ["UK"], "scenario": {"threshold_multiplier": 0.8}}
+{"id": "w04", "question": "Suppose salaries in Germany go up 10%. How does the plan change?", "intent": "what_if", "countries": ["Germany"], "scenario": {"salary_multiplier": 1.1}}
+{"id": "w05", "question": "What if each agent could handle 12 advertisers in India?", "intent": "what_if", "countries": ["India"], "scenario": {"capacity_per_agent": 12}}
+{"id": "w06", "question": "What if we cap hiring at 5 agents per month in Vietnam?", "intent": "what_if", "countries": ["Vietnam"], "scenario": {"max_hires_per_month": 5}}
+{"id": "w07", "question": "What if the expected uplift is only 8 percent in Mexico?", "intent": "what_if", "countries": ["Mexico"], "scenario": {"expected_uplift": 0.08}}
+{"id": "w08", "question": "What if we serve high budget advertisers first in Canada?", "intent": "what_if", "countries": ["Canada"], "scenario": {"queue_policy": "budget_priority"}}
+{"id": "w09", "question": "What if sign ups in Spain fall 25% but we keep the current plan?", "intent": "what_if", "countries": ["Spain"], "scenario": {"demand_multiplier": 0.75, "replan": false}}
+{"id": "w10", "question": "What if the advertisers from late December are already waiting on 1 January in Australia?", "intent": "what_if", "countries": ["Australia"], "scenario": {"initial_pool": "carryover"}}
+{"id": "w11", "question": "What if we must serve at least 99% of eligible advertisers in the UAE?", "intent": "what_if", "countries": ["UAE"], "scenario": {"service_target": 0.99}}
+{"id": "w12", "question": "If demand in Italy surges 50% in November and December, what changes?", "intent": "what_if", "countries": ["Italy"], "scenario": {"demand_multiplier": 1.5, "months": [11, 12]}}
+{"id": "s01", "question": "How sensitive is the Germany plan to sign up volume?", "intent": "sensitivity", "countries": ["Germany"]}
+{"id": "s02", "question": "Is the plan for Poland robust if sign ups are 20% higher or lower?", "intent": "sensitivity", "countries": ["Poland"]}
+{"id": "s03", "question": "Show how net value in Turkey moves across a range of demand levels.", "intent": "sensitivity", "countries": ["Turkey"]}
+{"id": "i01", "question": "Which countries have the most volatile demand?", "intent": "insight", "countries": [], "insight_kind": "volatility"}
+{"id": "i02", "question": "When is the seasonal peak in sign ups?", "intent": "insight", "countries": [], "insight_kind": "seasonality"}
+{"id": "i03", "question": "What share of sign ups in India is eligible for support?", "intent": "insight", "countries": ["India"], "insight_kind": "eligibility"}
+{"id": "i04", "question": "Which country has the largest eligible budgets?", "intent": "insight", "countries": [], "insight_kind": "budget"}
+{"id": "i05", "question": "Did eligible sign ups grow between the two years?", "intent": "insight", "countries": [], "insight_kind": "growth"}
+{"id": "m01", "question": "Write a staffing memo for the France country manager.", "intent": "memo", "countries": ["France"]}
+{"id": "m02", "question": "Draft a briefing for the manager in Vietnam about next year's staffing.", "intent": "memo", "countries": ["Vietnam"]}
+{"id": "r01", "question": "How long can an advertiser wait in the pool before being removed?", "intent": "rules", "countries": [], "source": "Waiting pool"}
+{"id": "r02", "question": "What does it cost to fire an agent?", "intent": "rules", "countries": [], "source": ["Firing", "Firing cost"]}
+{"id": "r03", "question": "How is the service rate defined?", "intent": "rules", "countries": [], "source": "Service rate"}
+{"id": "r04", "question": "Explain the assumption about the waiting pool on 1 January.", "intent": "rules", "countries": [], "source": "A3 Pool on 1 January"}
+{"id": "o01", "question": "What will the weather be in Boston tomorrow?", "intent": "out_of_scope", "countries": []}
+{"id": "o02", "question": "Can you recommend a good stock to buy?", "intent": "out_of_scope", "countries": []}

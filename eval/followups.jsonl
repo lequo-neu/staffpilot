@@ -1,0 +1,10 @@
+{"id": "f01", "context": ["What if sign ups in Brazil drop 30% in Q3?"], "question": "And Mexico?", "intent": "what_if", "countries": ["Mexico"], "scenario": {"demand_multiplier": 0.7, "months": [7, 8, 9], "countries": ["Mexico"]}}
+{"id": "f02", "context": ["What if sign ups in Brazil drop 30% in Q3?"], "question": "What about 50 percent instead?", "intent": "what_if", "countries": ["Brazil"], "scenario": {"demand_multiplier": 0.5, "months": [7, 8, 9], "countries": ["Brazil"]}}
+{"id": "f03", "context": ["How many agents does Germany need in March?"], "question": "And in July?", "intent": "plan_lookup", "countries": ["Germany"], "months": [7]}
+{"id": "f04", "context": ["How many agents does Germany need in March?"], "question": "France too", "intent": "plan_lookup", "countries": ["France"], "months": [3]}
+{"id": "f05", "context": ["Write a memo"], "question": "Japan", "intent": "memo", "countries": ["Japan"]}
+{"id": "f06", "context": ["What if we lower the eligibility threshold in the UK by 20 percent?"], "question": "Same for Canada", "intent": "what_if", "countries": ["Canada"], "scenario": {"threshold_multiplier": 0.8, "countries": ["Canada"]}}
+{"id": "f07", "context": ["Compare the optimized plan with keeping January headcount for India."], "question": "How about Vietnam?", "intent": "compare", "countries": ["Vietnam"]}
+{"id": "f08", "context": ["What if sign ups in Brazil drop 30% in Q3?"], "question": "How long can an advertiser wait in the pool?", "intent": "rules", "countries": [], "source": "Waiting pool"}
+{"id": "f09", "context": ["What if sign ups in Spain rise 20%?"], "question": "What would that look like for Italy?", "intent": "what_if", "countries": ["Italy"], "scenario": {"demand_multiplier": 1.2, "countries": ["Italy"]}}
+{"id": "f10", "context": ["How many agents does Australia need in Q4?"], "question": "How many agents do we need overall?", "intent": "plan_lookup", "countries": []}

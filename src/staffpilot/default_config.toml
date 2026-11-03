@@ -1,0 +1,64 @@
+# StaffPilot default settings. Copy this file to config/staffpilot.toml to override values.
+# Paths are relative to the repository root.
+
+[data]
+path = "data/raw/DADS5250_Hackathon_Google_Data.xlsx"
+salary_sheet = "Agent Salary and Threshold"
+signup_sheet = "Advertiser Sign-ups"
+staffing_sheet = "Existing Agent Staffing"
+
+[rules]
+# Values stated in the topic brief.
+capacity_per_agent = 10
+support_days = 60
+max_wait_days = 60
+ramp_months = 1
+notice_months = 1
+fire_cost_share = 0.40
+uplift_levels = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25]
+uplift_probabilities = [0.05, 0.15, 0.25, 0.25, 0.20, 0.10]
+eligibility = "greater"            # "greater" or "greater_or_equal"
+
+[assumptions]
+# Points the brief leaves open. Each one is a switch so its effect can be measured.
+uplift_base = "annual_budget"      # "annual_budget" or "support_window"
+initial_pool = "empty"             # "empty" or "carryover"
+queue_policy = "fifo"              # "fifo" or "budget_priority"
+pay_during_ramp = true
+
+[planning]
+planning_year = 0                  # 0 means one year after the last year in the data
+expected_year = 0                  # year the brief asks for; 0 turns the check off
+lookahead_months = 3
+occupancy_weeks = 9
+wait_weeks = 8
+service_target = 0.0               # 0 means maximize net value without a service floor
+safety_buffer = 0.0
+repair_rounds = 6
+wait_penalty_per_week = 0.01     # optimizer tie breaker: serve earlier when it costs nothing extra
+solver_time_limit = 60
+monte_carlo_runs = 30
+seed = 7
+
+[llm]
+default_backend = "offline"
+timeout = 60
+max_retries = 2
+
+# No model names are fixed here. For each provider with a key, StaffPilot asks the
+# provider which chat models this account can use (python -m staffpilot models lists
+# them) and picks the cheapest for the fast tier and the most capable for the strong
+# tier. The app lets the user pick any listed model and starts on the cheapest.
+# To pin a model, for example to keep an evaluation repeatable, set it here or in
+# config/staffpilot.toml:
+#   [llm.fast_models]
+#   anthropic = "anthropic:claude-haiku-5-5"
+[llm.models]
+
+[llm.fast_models]
+
+# US dollars per million tokens (input, output), used for the cost column of the evaluation.
+# Leave a model out if you do not know its price; its cost is then left empty.
+[llm.prices]
+"anthropic:claude-opus-5-5" = [4.00, 20.00]
+"anthropic:claude-haiku-5-5" = [0.10, 0.50]

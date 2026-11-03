@@ -1,0 +1,68 @@
+[project]
+name = "staffpilot"
+version = "0.1.0"
+description = "Monthly support agent staffing planner with a GenAI planning assistant (IE5374 Hackathon, Topic 3)"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Seven Team-5374" }]
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "openpyxl>=3.1",
+    "pulp==2.9.0",
+    "pydantic>=2.7",
+    "matplotlib>=3.8",
+    "langchain==1.4.8",
+    "langchain_openai==1.7.3",
+    "langchain_anthropic==1.7.9",
+    "langchain_google_genai==4.4.2",
+    "gradio==6.31.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "nbclient>=0.10", "nbformat>=5.10", "ipykernel>=6.29"]
+notebook = ["jupyterlab>=4"]
+
+[project.scripts]
+staffpilot = "staffpilot.cli:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+staffpilot = ["knowledge/*.md", "default_config.toml", "ui/*.css"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+future-annotations = true
+extend-select = ["E", "F", "B", "S", "RUF", "N", "W", "I", "T", "PERF", "PIE", "TID", "RET", "UP"]
+# BLE001: model and network failures are caught on purpose so the app falls back instead of crashing.
+# RUF046: int(round(x)) is kept because round() on numpy floats does not always return int.
+ignore = ["E501", "S101", "RUF001", "RUF002", "RUF003", "BLE001", "RUF046"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "T"]
+"scripts/*" = ["T", "S"]
+"src/staffpilot/cli.py" = ["T201"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+lines-after-imports = 2
+known-first-party = ["staffpilot"]

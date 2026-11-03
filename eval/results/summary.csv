@@ -1,0 +1,4 @@
+split,backend,cases,errors,intent_accuracy,country_accuracy,scenario_accuracy,grounded_rate,judge_score,agent_tool_accuracy,tokens_per_question,cost_per_question_usd,mean_seconds
+followups,offline,10.0,0.0,0.9,1.0,0.75,1.0,,,0.0,,0.1140313915675506
+holdout,offline,32.0,0.0,0.28125,0.8125,0.0,1.0,,,0.0,,0.014836727823421825
+main,offline,40.0,0.0,1.0,1.0,1.0,1.0,,,0.0,,0.18264385929796845

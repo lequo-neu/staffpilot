@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Python syntax
+        run: python -m compileall -q src scripts tests
+      - name: Lint
+        run: python -m ruff check .
+      - name: Writing style
+        run: python scripts/check_style.py .
+      - name: Tests
+        run: python -m pytest -q
+      - name: Command line tools on a synthetic workbook
+        env:
+          STAFFPILOT_CONFIG: config/sample.toml
+        run: |
+          python scripts/make_sample_data.py
+          python -m staffpilot plan
+          python -m staffpilot ask "What if sign ups in Alpha drop 30% in Q3?"
+          python -m staffpilot memo Beta
+          python -m staffpilot eda
+          python -m staffpilot history
+      - name: Chat with a follow up
+        shell: bash
+        env:
+          STAFFPILOT_CONFIG: config/sample.toml
+        run: printf 'What if sign ups in Alpha drop 30%% in Q3?\nAnd Beta?\n\n' | python -m staffpilot chat
+      - name: App and agent import
+        run: python -c "import staffpilot.app, staffpilot.agent.chat_agent; print('imports ok')"

@@ -1,0 +1,11 @@
+{
+  "router": "offline",
+  "compare": "offline",
+  "insight": "offline",
+  "memo": "offline",
+  "out_of_scope": "offline",
+  "plan_lookup": "offline",
+  "rules": "offline",
+  "sensitivity": "offline",
+  "what_if": "offline"
+}

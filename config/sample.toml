@@ -1,0 +1,3 @@
+# Settings for the synthetic sample workbook used by CI (python scripts/make_sample_data.py).
+[data]
+path = "data/sample/sample_staffing_data.xlsx"
