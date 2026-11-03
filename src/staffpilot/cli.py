@@ -6,6 +6,7 @@ Examples (run from the repository root):
     python -m staffpilot eda
     python -m staffpilot ask "What if sign ups in Brazil drop 30% in Q3?"
     python -m staffpilot chat
+    python -m staffpilot chat --agent --backend anthropic_fast
     python -m staffpilot memo Germany
     python -m staffpilot models
     python -m staffpilot eval anthropic openai google
@@ -122,9 +123,51 @@ def cmd_ask(args: argparse.Namespace) -> None:
     print(f"\n{_footer(answer)}{_save_chart(answer, question)}")
 
 
+def _agent_chat(backend: str) -> None:
+    """The LangChain create_agent chat: the model picks and chains the planner tools itself."""
+    from staffpilot.agent import backends, chat_agent
+    from staffpilot.agent.tools import PlannerTools
+    from staffpilot.planner import Planner
+
+    if backend == "offline":
+        print(
+            "The agent needs a language model, for example: python -m staffpilot chat --agent --backend anthropic_fast"
+        )
+        return
+    planner = Planner()
+    spec = backends.make_backend(backend, planner.settings).model_spec
+    agent = chat_agent.build_chat_agent(PlannerTools(planner), spec, planner.settings)
+    thread = 1
+    print(f"Agent chat with {spec}. The model chooses the planner tools; it remembers this conversation.")
+    print("Type 'new' to start over, or press Enter on an empty line to quit.")
+    while True:
+        try:
+            question = input("\nYou: ").strip()
+        except EOFError:
+            break
+        if question.lower() in {"", "exit", "quit"}:
+            break
+        if question.lower() == "new":
+            thread += 1
+            print("Started a new conversation.")
+            continue
+        reply = chat_agent.chat(agent, question, thread_id=f"cli_{thread}")
+        tools = ", ".join(reply.tools_called) or "no tool"
+        check = (
+            f"numbers not found in the tool output: {', '.join(reply.unsupported)}"
+            if reply.unsupported
+            else "every number found in the tool output"
+        )
+        print(f"\nStaffPilot agent: {_ascii(reply.text)}")
+        print(f"\n({spec}; tools called: {tools}; {check}.)")
+
+
 def cmd_chat(args: argparse.Namespace) -> None:
     from staffpilot.agent.memory import Conversation, describe
 
+    if args.agent:
+        _agent_chat(args.backend)
+        return
     pilot = _pilot(args.backend)
     memory = Conversation()
     print("Ask a question. Follow ups such as 'And Mexico?' use the earlier questions.")
@@ -296,6 +339,9 @@ def main(argv: list[str] | None = None) -> None:
     ask.set_defaults(func=cmd_ask)
     chat = sub.add_parser("chat", help="talk to the assistant with follow up questions")
     chat.add_argument("--backend", default="offline")
+    chat.add_argument(
+        "--agent", action="store_true", help="let the model choose the planner tools (needs a key)"
+    )
     chat.set_defaults(func=cmd_chat)
     models = sub.add_parser("models", help="list the language models each provider offers to your keys")
     models.add_argument("--ping", action="store_true", help="also send one tiny request to the chosen models")
@@ -316,6 +362,7 @@ def main(argv: list[str] | None = None) -> None:
     app.add_argument("--port", type=int, default=7860)
     app.set_defaults(func=cmd_app)
     args = parser.parse_args(argv)
+    from staffpilot.agent.backends import ModelUnavailableError
     from staffpilot.data import DatasetError
     from staffpilot.logs import configure_logging
 
@@ -325,6 +372,9 @@ def main(argv: list[str] | None = None) -> None:
         args.func(args)
     except DatasetError as error:
         print(f"Data problem: {error}", file=sys.stderr)
+        raise SystemExit(2) from None
+    except ModelUnavailableError as error:
+        print(f"Model problem: {error}", file=sys.stderr)
         raise SystemExit(2) from None
 
 

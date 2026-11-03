@@ -52,3 +52,29 @@ def test_follow_up_cases_are_asked_after_their_context(planner, tmp_path):
     assert loaded.context == case["context"]
     row = evaluate_backend(planner, "offline", [loaded], None).iloc[0]
     assert row["intent_ok"] and row["countries_ok"] and row["scenario_score"] == 1.0
+
+
+def test_a_backend_without_a_usable_model_is_left_out(planner, tmp_path, monkeypatch):
+    from staffpilot import evaluation
+
+    def make(name, settings, cache_dir=None):
+        if name != "offline":
+            raise ValueError(f"No {name} model is available")
+        return evaluation.make_backend(name, settings, cache_dir)
+
+    case = {
+        "id": "a",
+        "question": "How many agents does Alpha need?",
+        "intent": "plan_lookup",
+        "countries": ["Alpha"],
+    }
+    path = tmp_path / "cases.jsonl"
+    path.write_text(json.dumps(case), encoding="utf-8")
+    real = evaluation.make_backend
+    monkeypatch.setattr(
+        evaluation, "make_backend", lambda n, s, c=None: real(n, s, c) if n == "offline" else make(n, s, c)
+    )
+    results, summary = run_evaluation(
+        planner, ["offline", "google"], path, tmp_path / "out", None, ["google"]
+    )
+    assert set(results["backend"]) == {"offline"} and len(summary) == 1

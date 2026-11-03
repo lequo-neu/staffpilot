@@ -200,22 +200,27 @@ def available_models(settings: Settings, refresh: bool = False) -> list[ModelCho
 
 
 def pick_model(settings: Settings, provider: str, tier: str) -> str | None:
-    """The model spec for a provider and tier: the config when set, else the cheapest or the strongest listed."""
+    """The model spec for a provider and tier.
+
+    The config wins when it names one. Otherwise the provider's models are put in order
+    (cheapest first for the fast tier, most capable first for the strong tier) and the
+    first one that answers a tiny check is used, so a retired model is never picked.
+    """
     configured = (settings.llm.fast_models if tier == "fast" else settings.llm.models).get(provider)
     if configured:
         return configured
     listed = [ModelChoice(provider, m) for m in provider_models(provider)]
-    if not listed:
-        return None
-    ordered = sorted(listed, key=lambda c: cost_key(c, settings.llm.prices))
     if tier == "fast":
-        return ordered[0].spec
-    # Strong: the most capable family, then stable names before previews, then the newest version.
-    # OpenAI's "pro" models are a premium tier priced far above the rest, so they are skipped.
-    usable = [c for c in ordered if not (provider == "openai" and "pro" in c.model.lower())] or ordered
-    return max(
-        usable, key=lambda c: (family_rank(c.model), not _unstable(c.model), _version(c.model), -len(c.model))
-    ).spec
+        ordered = sorted(listed, key=lambda c: cost_key(c, settings.llm.prices))
+    else:
+        # The most capable family, then stable names before previews, then the newest version.
+        # OpenAI's "pro" models are a premium tier priced far above the rest, so they are skipped.
+        ordered = sorted(
+            [c for c in listed if not (provider == "openai" and "pro" in c.model.lower())] or listed,
+            key=lambda c: (family_rank(c.model), not _unstable(c.model), _version(c.model), -len(c.model)),
+            reverse=True,
+        )
+    return working_default(settings, ordered) if ordered else None
 
 
 def _unstable(model: str) -> bool:
@@ -262,7 +267,8 @@ def usable_models(settings: Settings, refresh: bool = False) -> list[ModelChoice
 
 
 def working_default(settings: Settings, choices: list[ModelChoice] | None = None) -> str | None:
-    """The cheapest model that answers a tiny request (a few tokens, checked once a day)."""
+    """The first of `choices` (by default every usable model, cheapest first) that answers a
+    tiny request. Each model is checked at most once a day; failures are skipped."""
     from staffpilot.agent.backends import LangChainBackend
 
     checks = _load_checks()

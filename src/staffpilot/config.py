@@ -135,7 +135,11 @@ def load_env_file(path: str | Path | None = None) -> list[str]:
 
     Values already set in the shell win, so a key exported in the terminal is never
     replaced. Returns the names that were added. Lines starting with # are ignored.
+    With STAFFPILOT_OFFLINE=1 the repository's own .env is left unread, so offline runs
+    (and the tests) never pick up real keys.
     """
+    if path is None and os.environ.get("STAFFPILOT_OFFLINE", "").strip() in {"1", "true", "yes"}:
+        return []
     env_path = Path(path) if path else REPO_ROOT / ".env"
     if not env_path.is_file():
         return []

@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `100 passed` |
+| A1 | `python -m pytest -q` | the last line says `105 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -132,7 +132,8 @@ Only with the team's permission, and only with keys in `.env`.
 
 1. `python -m staffpilot models --ping` lists the models and sends one tiny request to two of them; each should end in `ok`.
 2. In the app, pick the model marked `cheapest working` and repeat steps C2.2 to C2.4. Answers may take a few seconds. They must still show `Numbers checked`, or fall back to the same text as Offline; they must never show braces.
-3. Switch back to Offline when you finish.
+3. Run `python -m staffpilot chat --agent --backend anthropic_fast`, ask `Which three countries give the most notices this year?`, then `For the first of those, what is its net value?`. Expected: Germany 516, UK 487, USA 439, then Germany's net value of about 24.0 million; the line under each answer names the tool and says every number was found in the tool output. Compare with [AGENT_LIVE_CHECK.md](AGENT_LIVE_CHECK.md).
+4. Switch back to Offline when you finish.
 
 ## Part F: before you commit
 
@@ -142,7 +143,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `100 passed` |
+| F3 | `python -m pytest -q` | `105 passed` |
 
 Then commit as described in the README.
 
@@ -181,6 +182,6 @@ Part C  C1.1 [ ]  C1.2 [ ]  C1.3 [ ]  C1.4 [ ]
         C5.1 [ ]  C5.2 [ ]  C5.3 [ ]
         C6.1 [ ]  C6.2 [ ]  C6.3 [ ]
 Part D  none seen [ ]
-Part E  (optional) E1 [ ]  E2 [ ]  E3 [ ]
+Part E  (optional) E1 [ ]  E2 [ ]  E3 [ ]  E4 [ ]
 Part F  F1 [ ]  F2 [ ]  F3 [ ]
 ```

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 from staffpilot.agent import backends, catalog
@@ -20,6 +22,12 @@ LISTS = {
     "anthropic": ["claude-opus-5-5", "claude-haiku-5-5", "claude-sonnet-5-5"],
     "google": ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3-pro-image"],
 }
+
+
+@pytest.fixture(autouse=True)
+def fresh_checks(tmp_path, monkeypatch):
+    # Each test starts with no remembered model checks.
+    monkeypatch.setattr(catalog, "_checks_file", lambda: tmp_path / "model_checks.json")
 
 
 @pytest.fixture
@@ -51,11 +59,37 @@ def test_a_configured_price_overrides_the_name_guess(listed, settings):
     assert available_models(priced)[0].spec == "anthropic:claude-opus-5-5"
 
 
-def test_tiers_pick_cheapest_and_strongest(listed, settings):
+@pytest.fixture
+def answering(monkeypatch):
+    """Every model answers the tiny check, except the ones listed in `answering.down`."""
+
+    class Fake:
+        down: ClassVar[set[str]] = set()
+
+        def __init__(self, name, spec, settings):
+            self.spec = spec
+
+        def ping(self):
+            if self.spec in Fake.down:
+                raise RuntimeError("404 model not found")
+            return "OK"
+
+    Fake.down = set()
+    monkeypatch.setattr(backends, "LangChainBackend", Fake)
+    return Fake
+
+
+def test_tiers_pick_cheapest_and_strongest(listed, settings, answering):
     assert pick_model(settings, "google", "fast") == "google_genai:gemini-3.1-flash-lite"
     assert pick_model(settings, "anthropic", "strong") == "anthropic:claude-opus-5-5"
     # The premium "pro" tier of OpenAI is never picked automatically.
     assert pick_model(settings, "openai", "strong") == "openai:gpt-5"
+
+
+def test_a_retired_model_is_never_picked_for_a_tier(listed, settings, answering):
+    answering.down = {"google_genai:gemini-3.1-flash-lite", "google_genai:gemini-3.1-pro-preview"}
+    assert pick_model(settings, "google", "fast") != "google_genai:gemini-3.1-flash-lite"
+    assert pick_model(settings, "google", "strong") == "google_genai:gemini-3.5-flash"
 
 
 def test_the_config_wins_over_discovery(listed, settings):
@@ -119,3 +153,12 @@ def test_default_skips_retired_models_and_remembers_the_checks(listed, settings,
     assert first != "openai:gpt-5-nano" and calls[0] == "openai:gpt-5-nano"
     assert catalog.working_default(settings) == first and len(calls) == 2  # read from the stored checks
     assert "openai:gpt-5-nano" not in [c.spec for c in catalog.usable_models(settings)]
+
+
+def test_error_messages_never_show_api_keys():
+    from staffpilot.agent.backends import describe_error
+
+    text = describe_error(
+        RuntimeError("404 not found for key AIzaSyA1b2C3d4E5f6G7h8I9j0 and sk-proj1234567890abcdef")
+    )
+    assert text.startswith("RuntimeError: 404") and "AIzaSy" not in text and "sk-proj" not in text

@@ -933,6 +933,10 @@ def backend_names(providers: list[str], tier: str = "both") -> list[str]:
     return names
 
 
+class ModelUnavailableError(ValueError):
+    """No usable model for the requested backend (unknown name, no key, or nothing answers)."""
+
+
 def make_backend(name: str, settings: Settings, cache_dir: Path | None = None) -> Any:
     """Build a backend by name.
 
@@ -943,6 +947,7 @@ def make_backend(name: str, settings: Settings, cache_dir: Path | None = None) -
     """
     if name == "offline":
         return OfflineBackend()
+    load_env_file()  # keys in .env count even when nothing has read the file yet
     if ":" in name:
         spec = name
     else:
@@ -950,10 +955,10 @@ def make_backend(name: str, settings: Settings, cache_dir: Path | None = None) -
 
         provider, tier = (name[: -len("_fast")], "fast") if name.endswith("_fast") else (name, "strong")
         if provider not in PROVIDER_KEYS:
-            raise ValueError(f"Unknown backend {name!r}")
+            raise ModelUnavailableError(f"Unknown backend {name!r}; use offline, openai, anthropic or google")
         spec = pick_model(settings, provider, tier)
         if spec is None:
-            raise ValueError(
+            raise ModelUnavailableError(
                 f"No {provider} model is available; check the API key with python -m staffpilot models"
             )
     backend = LangChainBackend(name, spec, settings)

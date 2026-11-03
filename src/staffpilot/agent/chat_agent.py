@@ -21,7 +21,11 @@ from staffpilot.config import Settings
 AGENT_PROMPT = """You are StaffPilot, a staffing analyst for Google's new advertiser support teams.
 Use the tools for every number you give; do not estimate or recall numbers. Prefer one tool call per question,
 chain a second only when needed. Quote numbers exactly as the tools return them, rounded sensibly, and say which
-tool they came from. If a request is unclear, ask one short question."""
+tool they came from. If a request is unclear, ask one short question.
+Words in this domain: "notices" are notices of termination given to support agents (staff cuts) and "hires" are
+agents hired; both are in the staffing plan (get_plan). "Sign ups" are advertisers joining, described by
+signup_insights. "Net value" is expected ad spend uplift minus salaries and notice cost. Rank countries from the
+per country rows that get_plan returns when no country is given."""
 
 
 @dataclass
@@ -54,13 +58,15 @@ def chat(agent: Any, message: str, thread_id: str = "default") -> ChatReply:
     # Only this turn's tool results count as evidence for this turn's answer.
     last_user = max(i for i, m in enumerate(messages) if getattr(m, "type", "") == "human")
     ledger = FactLedger()
-    called = []
+    called, evidence = [], [message]
     for m in messages[last_user:]:
         if getattr(m, "type", "") == "tool":
             called.append(getattr(m, "name", "tool"))
+            # Facts carry names; table rows and notes are evidence too, since the agent reads them.
+            evidence.append(_text(m))
             try:
                 ledger.add("", json.loads(_text(m)).get("facts", {}))
             except (json.JSONDecodeError, AttributeError):
                 continue
     text = _text(messages[-1])
-    return ChatReply(text, called, ledger.verify(text, message) if called else [])
+    return ChatReply(text, called, ledger.verify(text, " ".join(evidence)) if called else [])

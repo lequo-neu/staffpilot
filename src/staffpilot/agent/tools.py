@@ -52,6 +52,18 @@ class ToolOutput:
     chart: Figure | None = None
 
 
+SUMMARY_COLUMNS = [
+    "country",
+    "start_agents",
+    "end_agents",
+    "avg_active",
+    "hires",
+    "notices",
+    "total_cost",
+    "net_value",
+    "service_rate",
+    "mean_wait_days",
+]
 INSIGHT_METRIC = {
     "volatility": ("monthly_cv", "Month to month variation", False),
     "eligibility": ("eligible_rate", "Share of sign ups that are eligible", True),
@@ -155,7 +167,10 @@ class PlannerTools:
             f"{label}: recommended headcount for {self.planner.year}",
             self.planner.settings.rules.capacity_per_agent,
         )
-        return ToolOutput("get_plan", facts, table, notes, chart=chart)
+        # One country: its month by month plan. All countries: one row per country, so a
+        # reader (or the chat agent) can rank countries without paging through 264 rows.
+        shown = table if chosen else kpis[SUMMARY_COLUMNS]
+        return ToolOutput("get_plan", facts, shown, notes, chart=chart)
 
     def compare_policies(self, countries: list[str] | None = None) -> ToolOutput:
         chosen = self._countries(countries or []) or None
@@ -250,14 +265,19 @@ class PlannerTools:
         def wrap(output: ToolOutput) -> str:
             payload = {"notes": output.notes, "facts": output.facts}
             if output.table is not None:
-                payload["table"] = output.table.head(15).to_dict(orient="records")
+                # 30 rows fit one country's months and every country's summary.
+                payload["table"] = output.table.head(30).round(4).to_dict(orient="records")
             return json.dumps(payload, default=float)
 
         return [
             StructuredTool.from_function(
                 lambda countries=None, months=None: wrap(self.get_plan(countries, months)),
                 name="get_plan",
-                description="Optimized monthly plan and KPIs for countries.",
+                description=(
+                    "The recommended staffing plan. With no countries: one row per country with start and end agents, "
+                    "hires, notices given to agents, cost, net value and service. With countries: their month by month "
+                    "plan; add months for the agents at work, hires and notices in those months."
+                ),
                 args_schema=CountryArgs,
             ),
             StructuredTool.from_function(
@@ -281,7 +301,10 @@ class PlannerTools:
             StructuredTool.from_function(
                 lambda kind, country=None: wrap(self.signup_insights(kind, country)),
                 name="signup_insights",
-                description="Descriptive statistics of the sign up data.",
+                description=(
+                    "Patterns in advertiser sign ups (volatility, seasonality, eligibility, budget, growth); "
+                    "not about agents or notices."
+                ),
                 args_schema=InsightArgs,
             ),
             StructuredTool.from_function(

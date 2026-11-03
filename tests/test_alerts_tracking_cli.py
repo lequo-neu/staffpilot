@@ -117,5 +117,45 @@ def test_models_command_lists_cheapest_first_and_hides_keys(monkeypatch, capsys)
     lines = [line.strip() for line in out.splitlines() if line.strip().startswith("google_genai:")]
     assert lines[0].startswith("google_genai:gemini-3.1-flash-lite") and "fast tier" in lines[0]
     assert not any("tts" in line for line in lines)
-    assert "ok ('OK')" in out and "FAILED RuntimeError: 404" in out
-    assert "<key>" in out and "AIzaSy" not in out
+    # The strong tier skips the model that does not answer and uses the next best one.
+    assert "google_genai:gemini-3.5-flash   <- strong tier" in out
+    assert "ok ('OK')" in out and "FAILED" not in out and "AIzaSy" not in out
+
+
+def test_agent_chat_shows_tools_and_the_number_check(workbook, monkeypatch, capsys):
+    from staffpilot import cli
+    from staffpilot.agent import backends, chat_agent
+
+    class Spec:
+        model_spec = "anthropic:test-model"
+
+    seen = []
+
+    def fake_chat(agent, message, thread_id):
+        seen.append(thread_id)
+        return chat_agent.ChatReply("Alpha gives 12 notices.", ["get_plan"], ["99"])
+
+    monkeypatch.setenv("STAFFPILOT_CONFIG", str(workbook))
+    monkeypatch.setattr(backends, "make_backend", lambda name, settings, cache_dir=None: Spec())
+    monkeypatch.setattr(chat_agent, "build_chat_agent", lambda tools, spec, settings: object())
+    monkeypatch.setattr(chat_agent, "chat", fake_chat)
+    replies = iter(["Which country cuts most?", "new", "And next?", ""])
+    monkeypatch.setattr("builtins.input", lambda _: next(replies))
+    cli.main(["chat", "--agent", "--backend", "anthropic_fast"])
+    out = capsys.readouterr().out
+    assert "Agent chat with anthropic:test-model" in out and "tools called: get_plan" in out
+    assert "numbers not found in the tool output: 99" in out
+    assert seen == ["cli_1", "cli_2"]  # 'new' starts a fresh thread
+
+    cli.main(["chat", "--agent"])
+    assert "The agent needs a language model" in capsys.readouterr().out
+
+
+def test_an_unknown_backend_gives_a_message_not_a_traceback(workbook, monkeypatch, capsys):
+    from staffpilot import cli
+
+    monkeypatch.setenv("STAFFPILOT_CONFIG", str(workbook))
+    with pytest.raises(SystemExit) as stop:
+        cli.main(["ask", "How many agents?", "--backend", "nonsense"])
+    assert stop.value.code == 2
+    assert "Model problem: Unknown backend 'nonsense'" in capsys.readouterr().err

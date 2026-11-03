@@ -103,6 +103,7 @@ python -m staffpilot plan
 python -m staffpilot eda
 python -m staffpilot ask "What if sign ups in Brazil drop 30% in Q3?"
 python -m staffpilot chat
+python -m staffpilot chat --agent --backend anthropic_fast
 python -m staffpilot memo Vietnam
 python -m staffpilot app
 python -m staffpilot history
@@ -111,7 +112,7 @@ python -m pytest
 
 Add `--log-level INFO` (or `DEBUG`) before the command, or set `STAFFPILOT_LOG_LEVEL`, to see what the planner and the assistant are doing; every run also writes its own file in `logs/`.
 
-`eda` writes a data quality and exploration report with six charts to `outputs/eda/`. `ask` and `memo` print a plain English answer and save a chart that illustrates it to `outputs/answers/`. `chat` is the same assistant in a conversation: follow ups use the earlier questions, `new` starts over, `save` writes the conversation to `outputs/conversations/chat.md`, and an empty line quits. `plan` prints the alerts that need attention and writes `outputs/plan.csv` (the recommended plan: 22 countries by 12 months with hires, notices, agents in ramp up and in notice, and payroll), `outputs/kpis.csv` and `outputs/policy_comparison.csv`. `app` starts the Gradio interface at http://127.0.0.1:7860.
+`eda` writes a data quality and exploration report with six charts to `outputs/eda/`. `ask` and `memo` print a plain English answer and save a chart that illustrates it to `outputs/answers/`. `chat --agent` (with a key) switches to the LangChain `create_agent` chat, where the model chooses and chains the planner tools itself and every number is checked against the tool output; a recorded live run is in [docs/AGENT_LIVE_CHECK.md](docs/AGENT_LIVE_CHECK.md). `chat` is the same assistant in a conversation: follow ups use the earlier questions, `new` starts over, `save` writes the conversation to `outputs/conversations/chat.md`, and an empty line quits. `plan` prints the alerts that need attention and writes `outputs/plan.csv` (the recommended plan: 22 countries by 12 months with hires, notices, agents in ramp up and in notice, and payroll), `outputs/kpis.csv` and `outputs/policy_comparison.csv`. `app` starts the Gradio interface at http://127.0.0.1:7860.
 
 To rebuild and execute the notebook: `python scripts/build_notebook.py`. The build is offline even when API keys are set, so it never costs money; the evaluation section reads `eval/results/` instead of calling models. `--live` lets the demo cells call the models, after you type yes.
 
@@ -263,7 +264,7 @@ The offline keywords were written while looking at the main set, so its main sco
 | Criterion (points) | Evidence | Status |
 |---|---|---|
 | Problem statement and vision (15) | Headline finding, open points of the brief turned into measured assumptions | done |
-| LangChain agent design (20) | Six tools, structured outputs, conversation memory with follow ups, `create_agent` with memory, number check with retry, offline fallback | done; chat agent needs keys to show live |
+| LangChain agent design (20) | Six tools, structured outputs, conversation memory with follow ups, `create_agent` with memory, number check with retry, offline fallback | done; the `create_agent` chat was checked live with `claude-haiku-5-5` ([docs/AGENT_LIVE_CHECK.md](docs/AGENT_LIVE_CHECK.md)) |
 | Multi LLM evaluation (20) | 82 labelled questions (10 of them follow ups), judge panel, tiers, tokens, routing table | harness done; **LLM rows need a run with keys** |
 | Data use (15) | Real budgets per advertiser, backtest on real sign ups, leap day repair, threshold scenarios | done; rerun on the official IE5374 file |
 | Presentation and demo (20) | Executed notebook, Gradio app with plan approval, report | **video still to record** |
@@ -274,27 +275,28 @@ The offline keywords were written while looking at the main set, so its main sco
 ```
 config/staffpilot.toml      project settings (dataset path)
 data/raw/                   put the teaching team file here (not committed)
-docs/                       setup guide, testing guide, report, AI usage
+docs/                       setup guide, testing guide, live agent check, report, AI usage
 eval/                       test sets, cached model replies, results
 notebooks/                  executed submission notebook
 outputs/                    plan, KPIs, policy comparison
 scripts/                    notebook builder, writing style check
 src/staffpilot/             package (core model, agent, app, CLI); ui/ holds the app's theme and styles
-tests/                      100 tests on synthetic data with years 2031 and 2032
+tests/                      105 tests on synthetic data with years 2031 and 2032
 ```
 
 ## Tests and CI
 
-`python -m pytest` runs 100 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
+`python -m pytest` runs 105 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
 
 ## Team contributions
 
-| Member | Main contributions |
-|---|---|
-| `<name>` | `<for example: data loading, forecast, backtest>` |
-| `<name>` | `<for example: simulator, optimizer, sensitivity>` |
-| `<name>` | `<for example: agent, tools, number check, app>` |
-| `<name>` | `<for example: evaluation, report, video>` |
+Seven Team-5374, *Trio Intelligence*. Each member worked where their background is strongest; all three reviewed the plan, the assumptions and the final report.
+
+| Member | Role | Main contributions |
+|---|---|---|
+| **Quoc Hung Le (Kevin)** | Team lead, solution architect and lead engineer | Chose Topic 3 and set the strategy against the brief and rubric. Designed the architecture and built most of the code: data loading with the date repair and caching, the forecast and backtest, the planning pipeline end to end, the GenAI assistant (structured routing, planner tools, BM25 retrieval, the fact placeholder number check, conversation memory, model discovery), the Gradio app and its design, the evaluation harness, logging, alerts, CI on three systems and the executed notebook. Kept the repository, documentation and submission together. Background: data analytics and BI at Viettel and Samsung (ETL, workforce dashboards, forecasting). |
+| **Hamad Al Sulaimi** | Optimization and process analysis | Reviewed the planning model against the brief's rules (capacity, waiting pool, ramp up, notice), helped shape the assumptions A1 to A11 and their sensitivity tests, defined the KPIs shown on the Plan page, and wrote the process improvement view in the report. Background: Industrial Engineering, Lean process improvement and Power BI. |
+| **Khoa Tran** | Operations and business validation | Checked the plan against real capacity planning practice, designed the what if scenarios and the labelled test questions, interpreted the sensitivity and Monte Carlo results, ran the testing guide before submission, and led the business recommendations and the demo video. Background: supply chain and transportation operations, capacity planning and fleet utilization. |
 
 ## AI use
 

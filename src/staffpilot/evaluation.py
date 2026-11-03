@@ -284,6 +284,14 @@ def routing_table(results: pd.DataFrame) -> dict[str, str]:
     return table
 
 
+def _build(name: str, planner: Planner, cache_dir: Path | None) -> Any | None:
+    try:
+        return make_backend(name, planner.settings, cache_dir)
+    except ValueError as error:
+        log.warning("Leaving %s out of the evaluation: %s", name, error)
+        return None
+
+
 def run_evaluation(
     planner: Planner,
     backends: list[str],
@@ -295,7 +303,10 @@ def run_evaluation(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Evaluate each backend on each test set; write cases.csv, summary.csv, retrieval.csv and routing.json."""
     splits = testsets if isinstance(testsets, dict) else {"main": testsets}
-    judges = [make_backend(j, planner.settings, cache_dir) for j in judge_backends or []]
+    # A provider may have no usable model for a tier (a retired model, or no quota on a
+    # free key); it is left out with a note instead of stopping the whole run.
+    judges = [j for j in (_build(name, planner, cache_dir) for name in judge_backends or []) if j]
+    backends = [name for name in backends if name == "offline" or _build(name, planner, cache_dir)]
     frames, retrieval = [], []
     for split, path in splits.items():
         cases = load_cases(path)
