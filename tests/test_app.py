@@ -19,7 +19,7 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
         "What if sign ups in Alpha drop 30% in Q3?", [], "offline", None
     )
     assert history[1]["content"].startswith("If sign ups fall 30%")
-    assert chart is not None and "Numbers checked" in details
+    assert chart is not None and "Numbers checked" in details and "planner facts" in details
     assert json.loads(route)["intent"] == "what_if"
     history, _, details, *_, memory = app.ask("And Beta?", history, "offline", memory)
     assert "it kept the" in details and len(memory.turns) == 2
@@ -29,19 +29,35 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     assert app.start_chat({})[5].turns == []
 
     cards, figure, table = app.plan_view("Beta")
-    assert "Net value" in cards and "<svg" in cards and figure is not None and len(table) == 12
+    assert "Net value" in cards and "<svg" in cards and figure is not None and len(table.data) == 12
+    # Months with a decision are tinted: hires in teal, notices in red.
+    assert "rgba(" in app.plan_view("All countries")[2].to_html()
     assert "Agent utilization" in app.plan_view("All countries")[0]
 
     params, understood, proposal = app.parse_scenario("Gamma sign ups rise 20%", "offline")
     summary, scenario_chart, diff = app.run_scenario(params, proposal)
     assert scenario_chart is not None
-    assert "Understood as" in understood and "net value moves" in summary and len(diff) == 1
+    assert "Understood as" in understood and "net value moves" in summary and len(diff.data) == 1
 
+    assert app.open_memo("Plan", False, "Alpha", "offline")[0] is False
+    seen, opened, _ = app.open_memo("Memo", False, "Alpha", "offline")
+    assert seen and "Staffing memo: Alpha" in opened
+    assert "Answered by <b>Offline" in app.composer_note(
+        "offline", [("Offline (free, no API key)", "offline")]
+    )
+    preview = app.run_scenario(params, proposal, record=False)
+    assert "net value moves" in preview[0]
     text, memo_chart = app.memo("Alpha", "offline")
     assert "Staffing memo: Alpha" in text and memo_chart is not None
     assert "Approved" in app.approve("Alpha")
-    findings, *plots, quality = app.eda_view()
-    assert findings and all(p is not None for p in plots) and len(quality) > 3
+    facts, *plots, checks, quality = app.eda_view()
+    assert "sp-fact" in facts and all(p is not None for p in plots) and len(quality) > 3
+    assert "checks pass" in checks and "Fail" not in checks
+    # The committed evaluation results are read; runs exist only where the plan command was run.
+    lead, chart, scores, retrieval, retrieval_rows, run_facts, _ = app.eval_view()
+    assert "holdout" in lead and chart is not None and len(scores.data) >= 3
+    assert "rule questions find the right passage" in retrieval and len(retrieval_rows.data) >= 1
+    assert run_facts == "" or "recorded plan runs" in run_facts
     assert "Nothing needs attention" in components.alert_list([])
 
 

@@ -23,10 +23,11 @@ import pandas as pd
 from staffpilot import audit, cache, charts, checks
 from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
+from staffpilot.agent.facts import checked_numbers
 from staffpilot.agent.memory import Conversation, describe
 from staffpilot.alerts import plan_alerts
 from staffpilot.cli import EVAL_DIR, OUTPUTS
-from staffpilot.eda import budget_figure, figures, profile
+from staffpilot.eda import budget_figure, facts, figures, profile, quality_checks
 from staffpilot.monthly import MONTH_NAMES, MonthlyUpdate
 from staffpilot.planner import RECOMMENDED_POLICY, SERVICE_GOALS, Planner
 from staffpilot.scenarios import ScenarioParams
@@ -55,12 +56,12 @@ NAV_GROUPS = [
 PAGES = [page for _, names in NAV_GROUPS for page in names]
 # The page that comes next in the manager's year, and why.
 NEXT = {
-    "Data": ("Plan", "Next: choose the service goal, check the plan and approve it."),
-    "Plan": ("Scenario", "Next: stress test the plan before the year starts."),
-    "Scenario": ("Memo", "Next: brief each country manager."),
-    "Memo": (HOME, "The plan for the year is ready. Each month, start from This year."),
-    "Monthly update": ("Decision log", "Next: see what the update changed, month by month."),
-    "Decision log": (HOME, "Back to the year at a glance."),
+    "Data": ("Plan", "Next: set the goal and approve."),
+    "Plan": ("Scenario", "Next: stress test the plan."),
+    "Scenario": ("Memo", "Next: brief the countries."),
+    "Memo": (HOME, "The plan for the year is ready."),
+    "Monthly update": ("Decision log", "Next: see what changed."),
+    "Decision log": (HOME, "Back to the year."),
 }
 # The service goal is a business choice: profit only, or profit with a service level agreement.
 GOAL_NAMES = {
@@ -239,6 +240,8 @@ def _trace(answer) -> str:
         answer.backend,
         describe(answer.carried) if answer.carried else "",
         answer.guardrails,
+        checked_numbers(answer.text) if answer.verified else 0,
+        len(answer.facts),
     )
 
 
@@ -368,7 +371,14 @@ def plan_view(country: str, goal: str = RECOMMENDED_POLICY):
         "fire_cost",
     ]
     shown = plan if chosen else plan.groupby("month", as_index=False)[columns].sum()
-    return plan_kpis(p, chosen, goal), components.sharp(figure), _readable(shown)
+    shown = shown.reset_index(drop=True)
+    hires, notices = list(shown["hires_decided"] > 0), list(shown["notices_given"] > 0)
+    styled = _tinted(
+        _readable(shown),
+        {"Hires decided": hires, "Notices given": notices, "Fire cost": notices},
+        {"Hires decided": "teal", "Notices given": "red", "Fire cost": "red"},
+    )
+    return plan_kpis(p, chosen, goal), components.sharp(figure), styled
 
 
 def _chosen(country: str) -> str | None:
@@ -479,6 +489,14 @@ def tradeoff_view(goal: str = RECOMMENDED_POLICY):
     return text, components.sharp(charts.service_tradeoff(frame, goal)), _readable(shown)
 
 
+def _slug(text: str) -> str:
+    return "".join(ch if ch.isalnum() else "_" for ch in text).strip("_")
+
+
+def _stamp() -> str:
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
 def approve(country: str, goal: str = RECOMMENDED_POLICY) -> str:
     bundle = planner().run(goal)
     plan = bundle.plan_table()
@@ -486,15 +504,15 @@ def approve(country: str, goal: str = RECOMMENDED_POLICY) -> str:
     if country != "All countries":
         plan, countries = plan[plan["country"] == country], [country]
     OUTPUTS.mkdir(exist_ok=True)
-    path = OUTPUTS / "approved_plan.csv"
+    # One file per approval, named by scope, goal and time, so any approval can be traced back.
+    scope = "all" if country == "All countries" else _slug(country)
+    path = OUTPUTS / f"approved_plan_{scope}_{goal}_{_stamp()}.csv"
     plan.to_csv(path, index=False)
     rows = audit.plan_rows(bundle, countries, GOAL_NAMES[goal], GOAL_NAMES[RECOMMENDED_POLICY])
+    rows[0]["note"] = f"saved as {path.name}"
     audit.record(rows, OUTPUTS)
     log.info("Plan approved for %s with goal %s (%d rows)", country, goal, len(plan))
-    return (
-        f"Approved with the goal *{GOAL_NAMES[goal]}*. {len(plan)} rows saved to `{path.name}` and "
-        f"{len(rows)} rows added to the decision log. Nothing is sent to anyone until a manager acts on it."
-    )
+    return f"Approved with the goal *{GOAL_NAMES[goal]}*. Saved `{path.name}`; {len(rows)} rows in the decision log."
 
 
 def _as_of(month: str) -> int:
@@ -519,40 +537,18 @@ def home_steps(moment: str) -> list[tuple[str, str]]:
     now = _moment_month(moment)
     if now == 1:
         return [
-            ("**1. Check the data.** See how clean the sign up history is and when demand peaks.", "Data"),
-            (
-                (
-                    "**2. Choose the service goal and approve the plan.** Read the checks first: every rule is "
-                    "tested with its numbers, and you can score a headcount of your own."
-                ),
-                "Plan",
-            ),
-            (
-                "**3. Stress test it.** Try fewer sign ups in the peak, a hiring cap or a lower threshold.",
-                "Scenario",
-            ),
-            ("**4. Brief the countries.** Write a one page memo for each country manager.", "Memo"),
+            ("**1. Check the data.** Quality and seasonality.", "Data"),
+            ("**2. Set the goal, check, approve.** Every rule is tested.", "Plan"),
+            ("**3. Stress test.** Fewer sign ups, a hiring cap.", "Scenario"),
+            ("**4. Brief the countries.** One memo each.", "Memo"),
         ]
-    month, before = MONTH_NAMES[now - 1], MONTH_NAMES[now - 2]
+    month = MONTH_NAMES[now - 1]
     upcoming = MONTH_NAMES[min(now, 11)]
-    done = {2: "January", 3: "January and February"}.get(now, f"January to {before}")
     return [
-        (
-            (
-                f"**1. Enter what happened.** Type the actual eligible sign ups for {done} and the agents on staff, "
-                f"check them, then plan {month} to December again."
-            ),
-            "Monthly update",
-        ),
-        (
-            "**2. See what changed.** The decision log lists every month the update moved, and why.",
-            "Decision log",
-        ),
-        (
-            f"**3. Ask why.** For example: How many agents does Germany need in {upcoming} and why?",
-            "Assistant",
-        ),
-        ("**4. Test what could come next.** What if sign ups keep running above the forecast?", "Scenario"),
+        (f"**1. Enter what happened.** Actual sign ups and staff; plan {month} onward.", "Monthly update"),
+        ("**2. See what changed.** Every month the update moved.", "Decision log"),
+        (f"**3. Ask why.** For example: Germany in {upcoming}?", "Assistant"),
+        ("**4. Test what comes next.** What if sign ups keep rising?", "Scenario"),
     ]
 
 
@@ -584,6 +580,7 @@ def home_view(moment: str, goal: str = RECOMMENDED_POLICY):
     steps = home_steps(moment)
     month = gr.update(value=MONTH_NAMES[now - 1]) if now > 1 else gr.update()
     return (
+        home_verdict(goal),
         components.year_rail(p.year, months),
         *[text for text, _ in steps],
         *[gr.Button(value=f"Open {page}") for _, page in steps],
@@ -594,7 +591,50 @@ def home_view(moment: str, goal: str = RECOMMENDED_POLICY):
 
 def home_if_open(name: str, moment: str, goal: str):
     """Refresh This year when it is opened, since an approval elsewhere may have changed it."""
-    return home_view(moment, goal) if name == HOME else [gr.update()] * 11
+    return home_view(moment, goal) if name == HOME else [gr.update()] * 12
+
+
+def _last_approval() -> tuple[str, str] | None:
+    """(time, goal) of the latest plan approval in the decision log, if any."""
+    log_frame = audit.read(OUTPUTS)
+    if log_frame.empty:
+        return None
+    rows = log_frame[(log_frame["decision"] == "plan approved") & (log_frame["item"] == "service goal")]
+    if rows.empty:
+        return None
+    return rows.iloc[0]["time"].replace("T", " ")[:16], rows.iloc[0]["applied"]
+
+
+def home_verdict(goal: str = RECOMMENDED_POLICY) -> str:
+    """The year in four facts: the value, the team, the service, and whether the plan is approved."""
+    p = planner()
+    t, h = p.run(goal).totals(), p.run("hold").totals()
+    approval = _last_approval()
+    status = (
+        (f"Approved {approval[0]}", approval[1], "good")
+        if approval
+        else ("Not approved", "open Plan to check and approve it", "warn")
+    )
+    return components.facts(
+        [
+            (
+                charts.money(t["net_value"]),
+                f"net value, {charts.money(t['net_value'] - h['net_value'])} more than keeping the January team",
+                "accent",
+            ),
+            (
+                f"{t['start_agents']:,.0f} → {t['avg_active']:,.0f}",
+                "agents: the January team, then the average month",
+                "",
+            ),
+            (
+                f"{t['service_rate']:.1%}",
+                f"advertisers served, after {t['mean_wait_days']:.1f} days on average",
+                "good",
+            ),
+            status,
+        ]
+    )
 
 
 def check_inputs(country: str, month: str, actuals: pd.DataFrame, change: float) -> str:
@@ -693,13 +733,16 @@ def approve_update(update) -> str:
     if update is None:
         return "Update the plan first, then approve it."
     OUTPUTS.mkdir(exist_ok=True)
-    path = OUTPUTS / "approved_update.csv"
+    month = f"{update.year}-{update.as_of:02d}"
+    path = OUTPUTS / f"approved_update_{_slug(update.country)}_{month}_{_stamp()}.csv"
     update.table().assign(country=update.country).to_csv(path, index=False)
     _APPROVED[update.country] = update
     rows = audit.update_rows(update)
+    if rows:
+        rows[0]["note"] = f"saved as {path.name}"
     audit.record(rows, OUTPUTS)
     log.info("Monthly update approved for %s in month %d", update.country, update.as_of)
-    return f"Approved. The updated plan is saved to `{path.name}` and {len(rows)} rows are added to the decision log."
+    return f"Approved. Saved `{path.name}`; {len(rows)} rows in the decision log."
 
 
 def _reader(name: str) -> str:
@@ -716,10 +759,17 @@ def parse_scenario(text: str, backend: str) -> tuple[str, str, dict]:
         return "{}", route.clarification, proposal
     params = route.scenario or ScenarioParams(countries=route.countries)
     proposal["params"] = params.model_dump(mode="json")
-    return json.dumps(proposal["params"], indent=2), f"Understood as: {params.plain()}.", proposal
+    return json.dumps(proposal["params"], indent=2), f"**Understood as:** {params.plain()}.", proposal
 
 
-def run_scenario(params_json: str, proposal: dict | None = None):
+SCENARIO_EXAMPLES = [
+    "Sign ups in Germany drop 30% in Q3",
+    "Hiring in Brazil is capped at 5 agents a month",
+    "The eligibility threshold in the UK is lowered by 20%",
+]
+
+
+def run_scenario(params_json: str, proposal: dict | None = None, record: bool = True):
     try:
         params = ScenarioParams.model_validate_json(params_json)
     except ValueError as error:
@@ -729,12 +779,13 @@ def run_scenario(params_json: str, proposal: dict | None = None):
     t = result.totals()
     proposal = proposal or {}
     proposed = ScenarioParams.model_validate(proposal["params"]) if proposal.get("params") else None
-    audit.record(
-        audit.scenario_rows(
-            proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t
-        ),
-        OUTPUTS,
-    )
+    if record:
+        audit.record(
+            audit.scenario_rows(
+                proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t
+            ),
+            OUTPUTS,
+        )
     change = t["net_value_change"]
     sign = "+" if change >= 0 else "-"
     summary = (
@@ -748,17 +799,20 @@ def run_scenario(params_json: str, proposal: dict | None = None):
     figure = charts.scenario_lines(
         base[base["country"].isin(affected)], result.plan, f"{where}: headcount under the scenario", change
     )
-    columns = [
-        "country",
-        "avg_active_base",
-        "avg_active_scenario",
-        "net_value_base",
-        "net_value_scenario",
-        "net_value_change",
-        "service_rate_base",
-        "service_rate_scenario",
-    ]
-    return summary, components.sharp(figure), _readable(result.comparison[columns])
+    names = {
+        "country": "country",
+        "avg_active_base": "agents_now",
+        "avg_active_scenario": "agents_with_change",
+        "net_value_base": "net_value_now",
+        "net_value_scenario": "net_value_with_change",
+        "net_value_change": "net_value_change",
+        "service_rate_base": "served_rate_now",
+        "service_rate_scenario": "served_rate_with_change",
+    }
+    shown = result.comparison[list(names)].rename(columns=names)
+    worse = list(shown["net_value_change"] < 0)
+    styled = _tinted(_readable(shown), {"Net value change": worse}, {"Net value change": "red"})
+    return summary, components.sharp(figure), styled
 
 
 def memo(country: str, backend: str):
@@ -771,46 +825,215 @@ def memo(country: str, backend: str):
     return f"{answer.text}\n\n*{check}*", components.sharp(answer.chart)
 
 
+TINT = {
+    "teal": "background-color: rgba(15, 110, 117, 0.22); font-weight: 600;",
+    "red": "background-color: rgba(181, 67, 44, 0.13); font-weight: 600;",
+    "amber": "background-color: rgba(201, 138, 27, 0.16); font-weight: 600;",
+}
+
+
+def _tinted(shown: pd.DataFrame, marks: dict[str, list[bool]], tint: dict[str, str]):
+    """`shown` with the cells of each named column tinted where its mark is true."""
+
+    def paint(column: pd.Series) -> list[str]:
+        flags = marks.get(column.name)
+        return [TINT[tint[column.name]] if flags and flags[i] else "" for i in range(len(column))]
+
+    return shown.style.apply(paint).format(precision=1, thousands=",")
+
+
 def eda_view():
     p = planner()
     report = profile(p.dataset, p.settings.rules.capacity_per_agent)
     figs = figures(report)
-    findings = "\n".join(f"* {f}" for f in report.findings)
     return (
-        findings,
+        components.facts(facts(report)),
         components.sharp(figs["monthly_trend"]),
         components.sharp(figs["staff_vs_need"]),
         components.sharp(figs["seasonality_heatmap"]),
         components.sharp(budget_figure(p.dataset)),
+        components.checklist(quality_checks(report)),
         report.quality,
     )
 
 
-def eval_tables():
+def eval_view():
+    """Charts and short facts first; the full tables sit below them for anyone who wants detail."""
     from staffpilot.tracking import history
 
     results = EVAL_DIR / "results"
-    summary = (
-        pd.read_csv(results / "summary.csv").round(3)
-        if (results / "summary.csv").exists()
-        else pd.DataFrame({"note": ["Run: python -m staffpilot eval"]})
+    if not (results / "summary.csv").exists():
+        empty = "No evaluation yet. Run `python -m staffpilot eval`, then open this page again."
+        return empty, None, pd.DataFrame(), "", pd.DataFrame(), "", pd.DataFrame()
+    summary = pd.read_csv(results / "summary.csv")
+    holdout = summary[summary["split"] == "holdout"].sort_values("intent_accuracy", ascending=False)
+    lead = ""
+    if not holdout.empty:
+        best = holdout.iloc[0]
+        offline = holdout[holdout["backend"] == "offline"]
+        lead = (
+            f"On new wording (holdout), **{best['backend'].split(':', 1)[-1]}** reads "
+            f"**{best['intent_accuracy']:.0%}** of questions right"
+            + (
+                f"; the offline keywords read {offline['intent_accuracy'].iloc[0]:.0%}."
+                if len(offline)
+                else "."
+            )
+        )
+    view = summary[
+        [
+            "split",
+            "backend",
+            "cases",
+            "intent_accuracy",
+            "scenario_accuracy",
+            "grounded_rate",
+            "judge_score",
+            "mean_seconds",
+        ]
+    ].rename(
+        columns={
+            "intent_accuracy": "intent_rate",
+            "scenario_accuracy": "scenario_rate",
+            "mean_seconds": "seconds",
+        }
     )
+    best_rows = view.groupby("split")["intent_rate"].transform("max") == view["intent_rate"]
+    shown = _readable(view)
+    scores = _tinted(shown, {"Intent rate": list(best_rows)}, {"Intent rate": "teal"})
+
     retrieval = (
         pd.read_csv(results / "retrieval.csv") if (results / "retrieval.csv").exists() else pd.DataFrame()
     )
-    return summary, retrieval, history(15)
+    retrieval_facts, retrieval_table = "", pd.DataFrame()
+    if not retrieval.empty:
+        hits = int(retrieval["hit"].sum())
+        retrieval_facts = components.facts(
+            [
+                (
+                    f"{hits} of {len(retrieval)}",
+                    "rule questions find the right passage in the top three",
+                    "accent",
+                ),
+                (
+                    str(len(retrieval) - hits),
+                    "missed; marked in red below",
+                    "bad" if hits < len(retrieval) else "good",
+                ),
+            ]
+        )
+        missed = list(~retrieval["hit"].astype(bool))
+        shown_r = retrieval[["id", "split", "source", "top3", "hit"]].rename(
+            columns={"source": "right passage", "top3": "top three found"}
+        )
+        retrieval_table = _tinted(shown_r, {"hit": missed, "id": missed}, {"hit": "red", "id": "red"})
+
+    runs = history(15)
+    run_facts, run_table = "", pd.DataFrame()
+    if not runs.empty:
+        latest = runs.iloc[-1]
+        same = runs["net_value"].round(0).nunique() == 1
+        run_facts = components.facts(
+            [
+                (str(len(runs)), "recorded plan runs", ""),
+                (str(runs["dataset_sha"].nunique()), "data fingerprints", ""),
+                (charts.money(float(latest["net_value"])), "net value in the latest run", "accent"),
+                ("Same" if same else "Changed", "result across the runs", "good" if same else "warn"),
+            ]
+        )
+        columns = [
+            c
+            for c in ("time_utc", "kind", "dataset", "git_commit", "net_value", "service_rate", "avg_active")
+            if c in runs
+        ]
+        shown_runs = _readable(runs[columns].iloc[::-1].reset_index(drop=True))
+        first = [i == 0 for i in range(len(shown_runs))]
+        run_table = _tinted(
+            shown_runs, {c: first for c in shown_runs.columns}, {c: "teal" for c in shown_runs.columns}
+        )
+    return (
+        lead,
+        components.sharp(charts.evaluation_bars(summary)),
+        scores,
+        retrieval_facts,
+        retrieval_table,
+        run_facts,
+        run_table,
+    )
+
+
+LOG_FILTERS = [
+    "All decisions",
+    "Only changes",
+    "Plan approved",
+    "Monthly update approved",
+    "Scenario run",
+    "Assistant answer",
+]
+
+
+def log_view(choice: str = "All decisions"):
+    """The decision log: what changed at a glance, then the rows, with every change marked."""
+    frame = audit.read(OUTPUTS, 500)
+    path = OUTPUTS / audit.FILE_NAME
+    file = gr.File(value=str(path) if path.exists() else None, visible=path.exists())
+    if frame.empty:
+        return components.facts([("0", "decisions logged yet", "")]), frame, file
+    changed = frame["adjusted_by"].str.len() > 0
+    by_you = frame["adjusted_by"].str.startswith("manager")
+    genai = frame["proposed_by"].str.contains(
+        "GenAI|router|local:|anthropic|openai|google", case=False, regex=True
+    )
+    guarded = (frame["decision"] == "assistant answer") & (frame["note"] != "no guardrail had to act")
+    decisions = frame.groupby(["time", "decision"]).ngroups
+    tiles = components.facts(
+        [
+            (str(decisions), "decisions logged", ""),
+            (
+                str(int(changed.sum())),
+                "values changed after the first proposal",
+                "warn" if changed.any() else "",
+            ),
+            (str(int(by_you.sum())), "changed by you", "accent"),
+            (
+                str(int(guarded.sum())),
+                "answers where a GenAI guardrail acted",
+                "warn" if guarded.any() else "good",
+            ),
+        ]
+    )
+    if choice == "Only changes":
+        keep = changed
+    elif choice in LOG_FILTERS[2:]:
+        keep = frame["decision"] == choice.lower()
+    else:
+        keep = pd.Series(True, index=frame.index)
+    rows = frame[keep].reset_index(drop=True)
+    marks_changed = list(changed[keep])
+    marks_genai = list(genai[keep])
+    styled = _tinted(
+        rows,
+        {
+            "adjusted": marks_changed,
+            "adjusted_by": marks_changed,
+            "applied": marks_changed,
+            "proposed_by": marks_genai,
+        },
+        {"adjusted": "amber", "adjusted_by": "amber", "applied": "amber", "proposed_by": "teal"},
+    )
+    return tiles, styled, file
 
 
 PAGE_TEXT = {
-    HOME: "Where you are in the staffing year, and what to do next.",
-    "Data": "Before the year starts: how clean the sign up history is and the patterns the plan is built on.",
-    "Plan": "Before the year starts: choose a service goal, check the plan, then approve it.",
-    "Scenario": "Before or during the year: describe a change in words, check how it was read, then run it.",
-    "Memo": "Before the year starts: a one page staffing memo for each country manager.",
-    "Monthly update": "Every month: enter the real numbers so far, check them, and plan the remaining months again.",
-    "Decision log": "Every month: what was proposed, what changed it and what was applied.",
-    "Assistant": "Any time: ask in plain English. Each answer shows its chart and how it was worked out.",
-    "Evaluation": "Behind the numbers: how each assistant scored on labelled questions, and every recorded run.",
+    HOME: "Where you are in the year, and what to do next.",
+    "Data": "The sign up history the plan is built on.",
+    "Plan": "Choose a service goal, check the plan, approve it.",
+    "Scenario": "Describe a change, check how it was read, run it.",
+    "Memo": "A one page memo for each country manager.",
+    "Monthly update": "Enter the real numbers, check them, plan the rest of the year.",
+    "Decision log": "What was proposed, what changed it, what was applied.",
+    "Assistant": "Ask in plain English; every number is checked.",
+    "Evaluation": "How each assistant scores, and every recorded run.",
 }
 # Hover text for sidebar items and buttons, set once the page has loaded.
 TIPS = {
@@ -821,13 +1044,13 @@ TIPS = {
     "Decision log": "What the optimizer, a language model and the manager each decided",
     "Update the plan": "Keeps the months already done and plans the remaining months again",
     "Score my plan": "Runs your headcount through the same simulator and compares it with the optimized plan",
-    "Approve the update": "Saves the updated plan and records every change in the decision log",
+    "Approve the update": "Saves a CSV named by country, month and time, and logs every change",
     "Scenario": "Test a change, such as fewer sign ups or a hiring cap",
     "Memo": "Write a staffing memo for one country",
     "Data": "Data quality checks and patterns in the sign ups",
     "Evaluation": "Assistant accuracy and the run history",
     "New chat": "Start a conversation with an empty memory",
-    "Approve this plan": "Saves the plan to outputs/approved_plan.csv and logs the decision; nothing is sent",
+    "Approve this plan": "Saves a CSV named by country, goal and time, and logs the decision",
     "Read the scenario": "Turns your sentence into scenario parameters you can check and edit",
     "Run the scenario": "Rebuilds the plan with the change and compares it with the current plan",
     "Write the memo": "Writes the memo from the plan's numbers; every number is checked",
@@ -844,14 +1067,40 @@ PAGE_JS = """() => {
     });
     // Recent chat titles are cut to one line, so the full question is the hover text.
     document.querySelectorAll('.sp-history label').forEach((el) => { el.title = label(el); });
+    document.querySelectorAll('.sp-plot img').forEach((el) => { if (!el.title) el.title = 'Click to enlarge'; });
   };
   apply();
   new MutationObserver(apply).observe(document.body, { childList: true, subtree: true });
+  // A chart opens at full size over the page; a click or Escape closes it.
+  const close = () => document.querySelectorAll('.sp-zoom').forEach((box) => box.remove());
+  document.addEventListener('click', (event) => {
+    const chart = event.target.closest('.sp-plot img');
+    if (!chart) return;
+    const box = document.createElement('div');
+    box.className = 'sp-zoom';
+    box.innerHTML = '<span>Click or press Escape to close</span>';
+    const big = document.createElement('img');
+    big.src = chart.src;
+    big.alt = 'Chart at full size';
+    box.appendChild(big);
+    box.addEventListener('click', close);
+    document.body.appendChild(box);
+  });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
 }""".replace("TIPS_JSON", json.dumps(TIPS))
 
 
 def page_head(name: str) -> str:
     return components.page_head(name, PAGE_TEXT[name])
+
+
+def composer_note(spec: str, choices: list[tuple[str, str]]) -> str:
+    """The line under the chat box: which model answers, and that its numbers are checked."""
+    name = next((label for label, value in choices if value == spec), spec)
+    return (
+        '<div class="sp-composer-foot"><span>Answered by <b>' + name.replace("<", "") + "</b>. "
+        "Change it in Settings.</span><span>Every number is checked against the planner</span></div>"
+    )
 
 
 def refresh_models(current: str):
@@ -881,7 +1130,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             # One hidden list holds the open page; the visible groups only choose from it.
             nav = gr.Radio(PAGES, value=HOME, visible=False)
             groups = []
-            for title, names in NAV_GROUPS:
+            for index, (title, names) in enumerate(NAV_GROUPS):
                 if title:
                     gr.HTML(f'<div class="sp-nav-group">{title}</div>')
                 groups.append(
@@ -890,7 +1139,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         value=HOME if HOME in names else None,
                         show_label=False,
                         container=False,
-                        elem_classes="sp-nav",
+                        elem_classes=["sp-nav", f"sp-nav-{index}"],
                     )
                 )
             gr.HTML(components.section("Recent chats"))
@@ -901,7 +1150,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     choices,
                     value=default_model,
                     label="Language model",
-                    info="Offline is free. The models below come from your API keys, cheapest first.",
+                    info="Offline is free; others use your API keys",
                 )
                 refresh_btn = gr.Button("Refresh models", size="sm")
                 gr.Markdown(
@@ -926,15 +1175,16 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 button.click(lambda: target, None, nav)
 
             with gr.Column(visible=True, elem_classes=["sp-page", "sp-home"]) as pages[HOME]:
+                verdict = gr.HTML()
                 with gr.Column(elem_classes="sp-panel"):
                     rail = gr.HTML()
-                with gr.Row(equal_height=False):
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
                         moment = gr.Dropdown(
                             MOMENTS,
                             value=MOMENTS[0],
                             label="Where are you in the year?",
-                            info="Pick the month you are deciding in; the steps below follow",
+                            info="The steps below follow",
                         )
                         step_text, step_btns = [], []
                         with gr.Column(elem_classes="sp-steps"):
@@ -944,8 +1194,9 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                                     step_btns.append(gr.Button("Open", size="sm", scale=0, min_width=190))
                         step_pages = gr.State([page for _, page in home_steps(MOMENTS[0])])
                     with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
-                        gr.HTML('<div class="sp-panel-title">Which page for which moment</div>')
-                        gr.HTML(components.cycle())
+                        urgent = [a for a in alerts if a.level != "info"]
+                        gr.HTML(f'<div class="sp-panel-title">{components.alert_summary(alerts)}</div>')
+                        gr.HTML(components.alert_list(urgent))
 
             with (
                 gr.Column(visible=False, elem_classes="sp-page") as pages["Assistant"],
@@ -970,15 +1221,12 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         max_lines=6,
                         elem_classes="sp-composer",
                     )
-                    gr.HTML(
-                        '<div class="sp-composer-foot"><span>Press Enter to send. Shift and Enter adds a line.</span>'
-                        "<span>Numbers are checked against the planner</span></div>"
-                    )
+                    composer_foot = gr.HTML(composer_note(default_model, choices))
                 with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
                     gr.HTML('<div class="sp-panel-title">How this answer was built</div>')
                     details = gr.Markdown(components.trace_empty(), elem_classes="sp-trace")
                     with gr.Accordion("Tool output", open=False, elem_classes="sp-block"):
-                        table = gr.Dataframe(show_label=False, wrap=True)
+                        table = gr.Dataframe(show_label=False)
                     with gr.Accordion("How the question was read", open=False, elem_classes="sp-block"):
                         route = gr.Code(language="json", show_label=False)
 
@@ -991,7 +1239,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         GOALS,
                         value=RECOMMENDED_POLICY,
                         label="Service goal",
-                        info="Profit only, or profit with a service level for advertisers",
+                        info="Profit only, or with a service level",
                         scale=3,
                     )
                     approve_btn = gr.Button("Approve this plan", variant="primary", scale=0, min_width=180)
@@ -1009,20 +1257,23 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             tradeoff_text = gr.Markdown(elem_classes="sp-prose")
                             tradeoff_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
                             with gr.Accordion("Every service goal", open=False, elem_classes="sp-block"):
-                                tradeoff_table = gr.Dataframe(show_label=False, wrap=True)
-                        with gr.Column(elem_classes="sp-panel"):
-                            plan_table = gr.Dataframe(label="Month by month", wrap=True)
+                                tradeoff_table = gr.Dataframe(show_label=False)
+                        with gr.Accordion(
+                            "Month by month detail: hires in teal, notices in red",
+                            open=False,
+                            elem_classes="sp-block",
+                        ):
+                            plan_table = gr.Dataframe(show_label=False)
                     with gr.Tab("Check the plan"), gr.Column(elem_classes="sp-panel"):
                         check_html = gr.HTML()
                     with gr.Tab("How it is calculated"), gr.Column(elem_classes="sp-panel"):
                         breakdown_text = gr.Markdown(elem_classes="sp-prose")
-                        breakdown_table = gr.Dataframe(label="Month by month, from the simulator", wrap=True)
+                        breakdown_table = gr.Dataframe(label="Month by month, from the simulator")
                         breakdown_file = gr.File(label="Download the month by month detail", visible=False)
-                    with gr.Tab("Try your own plan"), gr.Row(equal_height=False):
+                    with gr.Tab("Try your own plan"), gr.Row(equal_height=True, elem_classes="sp-even"):
                         with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
                             gr.Markdown(
-                                "Type the agents you would keep in each month of the country picked above, "
-                                "or change every month at once. The same simulator scores your plan.",
+                                "Your headcount for the country above, scored by the same simulator.",
                                 elem_classes="sp-note",
                             )
                             manual_percent = gr.Slider(
@@ -1037,20 +1288,20 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             manual_btn = gr.Button("Score my plan", variant="primary")
                         with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
                             manual_text = gr.Markdown(
-                                "Pick a country above, then score your plan.", elem_classes="sp-prose"
+                                "Pick a country, then score your plan.", elem_classes="sp-prose"
                             )
                             manual_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
                 next_row("Plan")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"]:
-                with gr.Row(equal_height=False):
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
                         up_country = gr.Dropdown(p.countries, value=p.countries[0], label="Country")
                         up_month = gr.Dropdown(
                             MONTH_NAMES[1:],
                             value=MONTH_NAMES[2],
                             label="Update made in",
-                            info="The months before it are done and keep their decisions",
+                            info="Earlier months are done",
                         )
                         up_percent = gr.Slider(
                             -50,
@@ -1058,12 +1309,11 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             value=20,
                             step=5,
                             label="Sign ups so far against the forecast (percent)",
-                            info="Fills the Actual column; edit any month by hand",
+                            info="Fills Actual; edit any cell",
                         )
                         up_actuals = gr.Dataframe(
                             label="Actual eligible sign ups",
                             interactive=True,
-                            wrap=True,
                             column_count=3,
                             static_columns=[0, 1],
                         )
@@ -1071,7 +1321,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             0,
                             precision=0,
                             label="Agents on staff against the plan",
-                            info="For example -2 when two agents resigned",
+                            info="For example -2 after two resignations",
                         )
                         input_check = gr.Markdown(elem_classes="sp-note")
                         with gr.Row():
@@ -1080,8 +1330,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         update_status = gr.Markdown(elem_classes="sp-note")
                     with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
                         update_summary = gr.Markdown(
-                            "Enter the actual sign ups so far, then update the plan. The approved plan's decisions "
-                            "in the months already done stay as they were.",
+                            "Enter the actual sign ups, then update the plan.",
                             elem_classes="sp-prose",
                         )
                         update_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
@@ -1090,13 +1339,12 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                                 columns=["Month", "Status", "Sign ups", "Agents at work", "Hires", "Notices"]
                             ),
                             label="Approved plan → update (forecast → actual for sign ups)",
-                            wrap=True,
                         )
                     update_state = gr.State(None)
                 next_row("Monthly update")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Scenario"]:
-                with gr.Row(equal_height=False):
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
                         text = gr.Textbox(
                             label="Describe the change", value="Sign ups in Germany drop 30% in Q3"
@@ -1104,12 +1352,17 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         with gr.Row():
                             read_btn = gr.Button("Read the scenario")
                             run_btn = gr.Button("Run the scenario", variant="primary")
+                        examples = [
+                            gr.Button(example, size="sm", elem_classes="sp-example")
+                            for example in SCENARIO_EXAMPLES
+                        ]
                         understood = gr.Markdown(elem_classes="sp-note")
-                        params = gr.Code(language="json", label="Parameters, which you can edit")
+                        with gr.Accordion("Edit the parameters", open=False, elem_classes="sp-block"):
+                            params = gr.Code(language="json", show_label=False)
                         proposal = gr.State({})
                     with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
                         summary = gr.Markdown(
-                            "Read a scenario, then run it to compare it with the current plan.",
+                            "Read a scenario, then run it.",
                             elem_classes="sp-prose",
                         )
                         scenario_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
@@ -1117,13 +1370,12 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             value=pd.DataFrame(
                                 columns=[
                                     "Country",
-                                    "Net value base",
-                                    "Net value scenario",
+                                    "Agents now",
+                                    "Agents with change",
                                     "Net value change",
                                 ]
                             ),
                             label="Current plan against the scenario",
-                            wrap=True,
                         )
                 next_row("Scenario")
 
@@ -1131,7 +1383,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 with gr.Row(elem_classes="sp-toolbar"):
                     memo_country = gr.Dropdown(p.countries, value=p.countries[0], label="Country", scale=3)
                     memo_btn = gr.Button("Write the memo", variant="primary", scale=0, min_width=180)
-                with gr.Row(equal_height=False):
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(scale=1, min_width=320, elem_classes="sp-panel"):
                         memo_text = gr.Markdown("Pick a country and write its memo.", elem_classes="sp-prose")
                     with gr.Column(scale=1, min_width=320, elem_classes="sp-panel"):
@@ -1139,46 +1391,65 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 next_row("Memo")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Data"]:
-                with gr.Column(elem_classes="sp-panel"):
-                    findings = gr.Markdown(elem_classes="sp-prose")
-                with gr.Row():
+                findings = gr.HTML()
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(elem_classes="sp-panel", min_width=320):
                         trend = gr.Plot(show_label=False, elem_classes="sp-plot")
                     with gr.Column(elem_classes="sp-panel", min_width=320):
                         need = gr.Plot(show_label=False, elem_classes="sp-plot")
-                with gr.Row():
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(elem_classes="sp-panel", min_width=320):
                         season = gr.Plot(show_label=False, elem_classes="sp-plot")
                     with gr.Column(elem_classes="sp-panel", min_width=320):
                         budgets = gr.Plot(show_label=False, elem_classes="sp-plot")
                 with gr.Column(elem_classes="sp-panel"):
-                    quality = gr.Dataframe(label="Data quality checks")
+                    gr.HTML('<div class="sp-panel-title">Data quality</div>')
+                    quality = gr.HTML()
+                    with gr.Accordion("Every check, as a table", open=False, elem_classes="sp-block"):
+                        quality_table = gr.Dataframe(show_label=False)
                 next_row("Data")
 
-            with (
-                gr.Column(visible=False, elem_classes="sp-page") as pages["Evaluation"],
-                gr.Column(elem_classes="sp-panel"),
-            ):
-                gr.Markdown(
-                    "Scores on 40 labelled questions, a 32 question holdout and 10 follow ups, then retrieval "
-                    "hits on rule questions and the run history.",
-                    elem_classes="sp-note",
-                )
-                eval_summary = gr.Dataframe(label="Assistants")
-                eval_retrieval = gr.Dataframe(label="Retrieval")
-                runs = gr.Dataframe(label="Runs")
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Evaluation"]:
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.HTML('<div class="sp-panel-title">Assistants</div>')
+                    eval_lead = gr.Markdown(elem_classes="sp-prose")
+                    eval_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                    with gr.Accordion(
+                        "Every score: best per test set in teal", open=False, elem_classes="sp-block"
+                    ):
+                        eval_summary = gr.Dataframe(show_label=False)
+                with gr.Row(equal_height=True, elem_classes="sp-even"):
+                    with gr.Column(elem_classes="sp-panel", min_width=320):
+                        gr.HTML('<div class="sp-panel-title">Rule retrieval</div>')
+                        retrieval_facts = gr.HTML()
+                        with gr.Accordion("Every rule question", open=False, elem_classes="sp-block"):
+                            eval_retrieval = gr.Dataframe(show_label=False)
+                    with gr.Column(elem_classes="sp-panel", min_width=320):
+                        gr.HTML('<div class="sp-panel-title">Plan runs</div>')
+                        run_facts = gr.HTML()
+                        with gr.Accordion("Run history: latest in teal", open=False, elem_classes="sp-block"):
+                            runs = gr.Dataframe(show_label=False)
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Decision log"]:
                 with gr.Column(elem_classes="sp-panel"):
                     gr.Markdown(
-                        "Each row keeps apart what was **proposed** (by the optimizer, the forecast or a language "
-                        "model reading your words), what **adjusted** it (the simulator check, a monthly update, "
-                        "a GenAI guardrail or you) and what was finally **applied**. No language model writes a "
-                        "staffing number: numbers come from the planner.",
+                        "**Proposed** by the optimizer, forecast or a language model; **adjusted** by a check or "
+                        "by you; **applied**. Staffing numbers always come from the planner.",
                         elem_classes="sp-note",
                     )
-                    log_summary = gr.Markdown(elem_classes="sp-note")
-                    log_table = gr.Dataframe(show_label=False, wrap=True)
+                    log_summary = gr.HTML()
+                    log_filter = gr.Radio(
+                        LOG_FILTERS,
+                        value=LOG_FILTERS[0],
+                        show_label=False,
+                        container=False,
+                        elem_classes="sp-filter",
+                    )
+                    gr.Markdown(
+                        "Changed values in amber; proposals by a language model in teal.",
+                        elem_classes="sp-note",
+                    )
+                    log_table = gr.Dataframe(show_label=False)
                     log_file = gr.File(label="decision_audit.csv", visible=False)
                 next_row("Decision log")
 
@@ -1201,6 +1472,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         recent.input(open_chat, [recent, chats], [chat, memory, current]).then(lambda: "Assistant", None, nav)
         export_btn.click(export_conversation, memory, saved)
         refresh_btn.click(refresh_models, backend, backend)
+        backend.change(lambda spec: composer_note(spec, model_choices()[0]), backend, composer_foot)
 
         # Pages. Data and evaluation tables load when their page is first opened.
         for control in (pick, goal):
@@ -1216,7 +1488,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             control.change(actual_inputs, [up_country, up_month, up_percent], up_actuals)
         for control in (up_actuals, up_change):
             control.change(check_inputs, [up_country, up_month, up_actuals, up_change], input_check)
-        home_out = [rail, *step_text, *step_btns, step_pages, up_month]
+        home_out = [verdict, rail, *step_text, *step_btns, step_pages, up_month]
         for control in (moment, goal):
             control.change(home_view, [moment, goal], home_out)
         demo.load(home_view, [moment, goal], home_out)
@@ -1232,45 +1504,62 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             check_inputs, [up_country, up_month, up_actuals, up_change], input_check
         )
         read_btn.click(parse_scenario, [text, backend], [params, understood, proposal])
+        for example, sentence in zip(examples, SCENARIO_EXAMPLES, strict=True):
+            example.click(lambda s=sentence: s, None, text).then(
+                parse_scenario, [text, backend], [params, understood, proposal]
+            ).then(run_scenario, [params, proposal], [summary, scenario_plot, diff])
+        # The page opens with the first example already read and run; this preview is not a decision.
+        demo.load(parse_scenario, [text, backend], [params, understood, proposal]).then(
+            lambda pj, pr: run_scenario(pj, pr, record=False),
+            [params, proposal],
+            [summary, scenario_plot, diff],
+        )
         run_btn.click(run_scenario, [params, proposal], [summary, scenario_plot, diff])
         memo_btn.click(memo, [memo_country, backend], [memo_text, memo_plot])
+        memo_seen = gr.State(False)
+        nav.change(open_memo, [nav, memo_seen, memo_country, backend], [memo_seen, memo_text, memo_plot])
         demo.load(plan_view, [pick, goal], [cards, figure, plan_table])
         demo.load(check_view, [pick, goal], check_html)
         demo.load(breakdown_view, [pick, goal], [breakdown_text, breakdown_table, breakdown_file])
         demo.load(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
-        demo.load(actual_inputs, [up_country, up_month, up_percent], up_actuals)
-        nav.change(open_log, nav, [log_summary, log_table, log_file])
-        loaded = gr.State(set())
-        nav.change(
-            load_page,
-            [nav, loaded],
-            [loaded, findings, trend, need, season, budgets, quality, eval_summary, eval_retrieval, runs],
+        # The page opens with the default inputs already worked through, so it is never empty.
+        demo.load(actual_inputs, [up_country, up_month, up_percent], up_actuals).then(
+            update_view,
+            [up_country, up_month, up_actuals, up_change, goal],
+            [update_summary, update_plot, update_table, update_state],
         )
+        nav.change(open_log, [nav, log_filter], [log_summary, log_table, log_file])
+        log_filter.change(log_view, log_filter, [log_summary, log_table, log_file])
+        loaded = gr.State(set())
+        data_out = [findings, trend, need, season, budgets, quality, quality_table]
+        eval_out = [eval_lead, eval_plot, eval_summary, retrieval_facts, eval_retrieval, run_facts, runs]
+        nav.change(load_page, [nav, loaded], [loaded, *data_out, *eval_out])
     return demo
 
 
-def open_log(name: str):
+def open_memo(name: str, seen: bool, country: str, backend: str):
+    """Write the memo for the chosen country the first time the page opens, so it is never empty."""
+    if name != "Memo" or seen:
+        return seen, gr.update(), gr.update()
+    return True, *memo(country, backend)
+
+
+def open_log(name: str, choice: str = "All decisions"):
     """The decision log is read again each time its page opens, since every approval adds to it."""
     if name != "Decision log":
         return gr.update(), gr.update(), gr.update()
-    frame = audit.read(OUTPUTS, 500)
-    path = OUTPUTS / audit.FILE_NAME
-    return (
-        audit.summary(frame),
-        frame,
-        gr.File(value=str(path) if path.exists() else None, visible=path.exists()),
-    )
+    return log_view(choice)
 
 
 def load_page(name: str, loaded: set):
     """Fill the Data or Evaluation page the first time it is opened; later visits keep what is shown."""
-    keep = [gr.update()] * 9
+    keep = [gr.update()] * 7
     if name in loaded or name not in {"Data", "Evaluation"}:
-        return loaded, *keep
+        return loaded, *keep, *keep
     loaded = {*loaded, name}
     if name == "Data":
-        return loaded, *eda_view(), *keep[:3]
-    return loaded, *keep[:6], *eval_tables()
+        return loaded, *eda_view(), *keep
+    return loaded, *keep, *eval_view()
 
 
 def favicon() -> str | None:
@@ -1284,4 +1573,5 @@ def favicon() -> str | None:
 
 
 def launch(port: int = 7860) -> None:
-    build_app().launch(server_port=port, share=False, theme=theme(), css=CSS, favicon_path=favicon())
+    css = CSS + "\n" + icon.nav_css(NAV_GROUPS)
+    build_app().launch(server_port=port, share=False, theme=theme(), css=css, favicon_path=favicon())

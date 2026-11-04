@@ -141,6 +141,20 @@ class FactLedger:
         return unsupported
 
 
+def checked_numbers(text: str) -> int:
+    """How many numbers in `text` the number check tests (small counts, months and years are not tested)."""
+    count = 0
+    for token in _NUMBER.findall(text):
+        parsed = _parse_number(token)
+        if parsed is None:
+            continue
+        value = parsed[0]
+        if value.is_integer() and (abs(value) <= 12 or 1990 <= value <= 2100):
+            continue
+        count += 1
+    return count
+
+
 def _close(value: float, precision: float, allowed: float) -> bool:
     """True when `value`, printed with `precision`, could be a rounding of `allowed`.
 

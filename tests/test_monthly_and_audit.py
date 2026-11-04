@@ -148,7 +148,8 @@ def test_monthly_update_page_and_decision_log(planner, tmp_path, monkeypatch):
     assert "Decide in April" in summary and chart is not None and len(table) == 12
     assert "→" in "".join(table["Agents at work"])
     assert "Approved" in app.approve_update(update)
-    assert (tmp_path / "approved_update.csv").exists()
+    saved = list(tmp_path.glob("approved_update_Alpha_*_*.csv"))
+    assert len(saved) == 1 and f"{update.year}-04" in saved[0].name
     assert "Update the plan first" in app.approve_update(None)
     bad = app.update_view("Alpha", "April", pd.DataFrame({"Actual": ["x", 1, 2]}), 0, RECOMMENDED_POLICY)
     assert bad[0].startswith("Those inputs do not work") and bad[3] is None
@@ -158,15 +159,20 @@ def test_monthly_update_page_and_decision_log(planner, tmp_path, monkeypatch):
     cards, *_ = app.plan_view("All countries", "optimized")
     assert "Net value" in cards
     assert "Profit only" in app.approve("Alpha", "optimized")
+    assert list(tmp_path.glob("approved_plan_Alpha_optimized_*.csv"))
     app.ask("How many agents does Alpha need?", [], "offline", None)
     params, _, proposal = app.parse_scenario("Gamma sign ups rise 20%", "offline")
     assert proposal["reader"].startswith("offline") and proposal["params"]["demand_multiplier"] == 1.2
     app.run_scenario(params, proposal)
 
     summary, log, file = app.open_log("Decision log")
-    decisions = set(log["decision"])
+    decisions = set(log.data["decision"])
     assert {"monthly update approved", "plan approved", "assistant answer", "scenario run"} <= decisions
-    assert file.visible and "rows" in summary
+    assert file.visible and "decisions logged" in summary and "changed by you" in summary
+    _, changes, _ = app.log_view("Only changes")
+    assert len(changes.data) and (changes.data["adjusted_by"] != "").all()
+    _, scenarios, _ = app.log_view("Scenario run")
+    assert set(scenarios.data["decision"]) == {"scenario run"}
     assert app.open_log("Plan")[1] == app.gr.update()
 
 
@@ -186,16 +192,18 @@ def test_this_year_shows_the_steps_for_each_moment(planner):
     from staffpilot import app
 
     app.build_app(planner)
-    rail, *rest = app.home_view("Before the year starts")
+    verdict, rail, *rest = app.home_view("Before the year starts")
+    assert "Not approved" in verdict or "Approved" in verdict
+    assert "more than keeping the January team" in verdict
     texts, buttons, pages, month = rest[:4], rest[4:8], rest[8], rest[9]
     assert rail.count("sp-rail-month") == 12 and "Decide now" in rail and "Notice" in rail
     assert pages == ["Data", "Plan", "Scenario", "Memo"] and texts[0].startswith("**1. Check the data")
     assert buttons[1].value == "Open Plan" and month == app.gr.update()
-    rail, *rest = app.home_view("Start of April")
+    _, rail, *rest = app.home_view("Start of April")
     assert rest[8] == ["Monthly update", "Decision log", "Assistant", "Scenario"]
-    assert "January to March" in rest[0] and rest[9]["value"] == "April"
+    assert "plan April onward" in rest[0] and rest[9]["value"] == "April"
     assert rail.count("Carried out") == 3
-    assert app.home_if_open("Plan", "Start of April", RECOMMENDED_POLICY) == [app.gr.update()] * 11
+    assert app.home_if_open("Plan", "Start of April", RECOMMENDED_POLICY) == [app.gr.update()] * 12
 
 
 def test_monthly_inputs_are_checked_and_updates_build_on_each_other(planner, tmp_path, monkeypatch):
@@ -220,6 +228,6 @@ def test_monthly_inputs_are_checked_and_updates_build_on_each_other(planner, tmp
     # April starts from March's approved update, so March's new decisions are now carried out.
     assert april.original.hires[2] == march.updated.plan.hires[2]
     assert april.updated.plan.hires[:3].tolist() == march.updated.plan.hires[:3].tolist()
-    rail = app.home_view("Start of April")[0]
+    rail = app.home_view("Start of April")[1]
     assert "updated" in rail or march.changes() == []
     app._APPROVED.clear()

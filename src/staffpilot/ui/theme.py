@@ -13,7 +13,7 @@ import gradio as gr
 
 CSS = (Path(__file__).parent / "style.css").read_text(encoding="utf-8")
 
-INK = "#17202b"
+INK = "#142130"
 ACCENT = "#0f6e75"
 ACCENT_DARK = "#5fb8be"
 
@@ -29,7 +29,7 @@ def theme() -> gr.themes.Base:
         font_mono=["ui-monospace", "Menlo", "monospace"],
     )
     return base.set(
-        body_background_fill="#eef1f4",
+        body_background_fill="#e6ebef",
         body_background_fill_dark="#101418",
         body_text_color=INK,
         body_text_color_dark="#e8edf1",
@@ -39,23 +39,23 @@ def theme() -> gr.themes.Base:
         background_fill_primary_dark="#171c21",
         background_fill_secondary="#f7f9fa",
         background_fill_secondary_dark="#1c2228",
-        border_color_primary="#e2e6eb",
+        border_color_primary="#cdd5dc",
         border_color_primary_dark="#29313a",
         block_background_fill="#ffffff",
         block_background_fill_dark="#171c21",
-        block_border_width="1px",
-        block_border_color="#e2e6eb",
+        block_border_width="1.5px",
+        block_border_color="#cdd5dc",
         block_border_color_dark="#29313a",
         block_shadow="none",
         block_shadow_dark="none",
         block_radius="8px",
-        block_label_text_color="#71717a",
-        block_label_text_weight="500",
+        block_label_text_color="#45505e",
+        block_label_text_weight="600",
         block_label_text_size="12px",
-        block_title_text_weight="500",
+        block_title_text_weight="600",
         input_background_fill="#ffffff",
         input_background_fill_dark="#1c2228",
-        input_border_color="#cfd6dd",
+        input_border_color="#b9c3cc",
         input_border_color_dark="#36404a",
         input_border_color_focus=ACCENT,
         input_border_color_focus_dark=ACCENT_DARK,
@@ -76,16 +76,16 @@ def theme() -> gr.themes.Base:
         button_secondary_background_fill_hover="#e4e9ed",
         button_secondary_background_fill_dark="#1c2228",
         button_secondary_background_fill_hover_dark="#222a31",
-        button_secondary_border_color="#cfd6dd",
+        button_secondary_border_color="#b9c3cc",
         button_secondary_border_color_dark="#36404a",
         button_secondary_text_color=INK,
         button_secondary_text_color_dark="#ededef",
         button_secondary_shadow="none",
-        button_border_width="1px",
+        button_border_width="1.5px",
         button_transition="background 120ms ease",
         color_accent_soft="#e2f0f1",
         color_accent_soft_dark="#17343a",
-        table_border_color="#e2e6eb",
+        table_border_color="#d5dce2",
         table_border_color_dark="#29313a",
         table_even_background_fill="#f7f9fa",
         table_even_background_fill_dark="#1a2026",

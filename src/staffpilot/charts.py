@@ -206,25 +206,43 @@ def policy_bars(comparison: pd.DataFrame, highlight: str) -> Figure:
 
 
 def scenario_lines(base: pd.DataFrame, scenario: pd.DataFrame, title: str, change: float) -> Figure:
-    b = base.groupby("month")["active_agents"].sum().to_numpy()
-    s = scenario.groupby("month")["active_agents"].sum().to_numpy()
-    x = np.arange(1, len(b) + 1)
+    """Agents at work under the current plan and under the scenario, February to December.
+
+    January keeps the January team in both and would flatten every later difference, so the
+    chart starts in February; the months where the scenario moves headcount are shaded.
+    """
+    b = base.groupby("month")["active_agents"].sum().to_numpy()[1:]
+    s = scenario.groupby("month")["active_agents"].sum().to_numpy()[1:]
+    x = np.arange(2, len(b) + 2)
     fig, (ax,) = new_figure()
+    moved = b != s
+    for xi, flag in zip(x, moved, strict=True):
+        if flag:
+            ax.axvspan(xi - 0.5, xi + 0.5, color=SOFT, alpha=0.45, linewidth=0)
     ax.plot(x, b, color=SLATE, linewidth=1.8, linestyle=(0, (4, 3)), label="current plan")
-    ax.plot(
-        x,
-        s,
-        color=NAVY,
-        linewidth=2.6,
-        marker="o",
-        markersize=4,
-        label="under the scenario",
-    )
-    ax.set_xticks(x, MONTHS[: len(x)])
-    ax.set_ylabel("active agents", color=MUTED, fontsize=9)
-    ax.legend(frameon=False, fontsize=8)
+    ax.plot(x, s, color=NAVY, linewidth=2.6, marker="o", markersize=4, label="under the scenario")
+    for xi, before, after in zip(x, b, s, strict=True):
+        if after != before:
+            ax.annotate(
+                f"{int(after - before):+d}",
+                (xi, after),
+                xytext=(0, 8),
+                textcoords="offset points",
+                ha="center",
+                fontsize=8,
+                color=TEAL if after > before else RED,
+            )
+    values = np.concatenate([b, s])
+    ax.set_ylim(max(0, values.min() * 0.85 - 2), values.max() * 1.15 + 2)
+    ax.set_xticks(x, MONTHS[1 : len(b) + 1])
+    ax.set_ylabel("agents at work", color=MUTED, fontsize=9)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
     sign = "+" if change >= 0 else "-"
-    return finish(fig, title, f"Net value change {sign}{money(abs(change))} against the current plan.")
+    return finish(
+        fig,
+        title,
+        f"February to December; shaded months change. Net value {sign}{money(abs(change))} against the current plan.",
+    )
 
 
 def service_tradeoff(frame: pd.DataFrame, chosen: str) -> Figure:
@@ -339,6 +357,61 @@ def manual_plan(table: pd.DataFrame, title: str, change: float) -> Figure:
         fig,
         title,
         f"Scored by the same day by day simulator: net value {sign}{money(abs(change))} against the optimized plan.",
+    )
+
+
+def evaluation_bars(summary: pd.DataFrame) -> Figure:
+    """Questions read right per assistant on each test set, and seconds per answer.
+
+    The holdout, written in words the offline keywords never saw, is the fair test, so it
+    is drawn in the plan colour and the other sets in a pale one.
+    """
+    splits = [s for s in ("main", "holdout", "followups") if s in set(summary["split"])]
+    names = {"main": "main set", "holdout": "holdout (new wording)", "followups": "follow ups"}
+    backends = list(dict.fromkeys(summary["backend"]))
+    short = [b.split(":", 1)[-1].split("/")[-1] for b in backends]
+    fig, (left, right) = new_figure(width=8.8, height=3.8, ncols=2)
+    height = 0.8 / max(len(splits), 1)
+    y = np.arange(len(backends))[::-1]
+    colours = {"main": SOFT, "holdout": NAVY, "followups": SLATE}
+    for i, split in enumerate(splits):
+        rows = summary[summary["split"] == split].set_index("backend").reindex(backends)
+        offset = (i - (len(splits) - 1) / 2) * height
+        bars = left.barh(
+            y - offset, rows["intent_accuracy"], height=height * 0.9, color=colours[split], label=names[split]
+        )
+        if split == "holdout":
+            for bar, value in zip(bars, rows["intent_accuracy"], strict=True):
+                if pd.notna(value):
+                    left.text(
+                        bar.get_width(),
+                        bar.get_y() + bar.get_height() / 2,
+                        f" {value:.0%}",
+                        va="center",
+                        fontsize=8,
+                        color=INK,
+                        fontweight="bold",
+                    )
+    left.set_yticks(y, short, fontsize=8)
+    left.set_xlim(0, 1.15)
+    left.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.0%}"))
+    left.yaxis.grid(False)
+    left.xaxis.grid(True, color=GRID)
+    left.set_title("Questions read right (intent accuracy)", fontsize=9, color=MUTED, loc="left")
+    left.legend(frameon=False, fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
+    speed = summary.groupby("backend")["mean_seconds"].mean().reindex(backends)
+    right.barh(y, speed, color=SLATE, height=0.55)
+    for yi, value in zip(y, speed, strict=True):
+        right.text(value, yi, f" {value:.1f} s", va="center", fontsize=8, color=INK)
+    right.set_yticks(y, [""] * len(y))
+    right.set_xscale("log")
+    right.set_xlim(max(float(speed.min()) / 2, 0.005), float(speed.max()) * 6)
+    right.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g} s"))
+    right.yaxis.grid(False)
+    right.xaxis.grid(True, color=GRID)
+    right.set_title("Seconds per answer (log scale)", fontsize=9, color=MUTED, loc="left")
+    return finish(
+        fig, "How each assistant scores", "The holdout is the fair test: its wording was written apart."
     )
 
 

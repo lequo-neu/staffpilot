@@ -72,11 +72,12 @@ def sparkline(values: Sequence[float], width: int = 84, height: int = 30) -> str
     step = (width - 4) / (len(points) - 1)
     coords = [(2 + i * step, height - 3 - (v - low) / span * (height - 6)) for i, v in enumerate(points)]
     path = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
-    x, y = coords[-1]
+    # The line stretches to the card's width; the stroke keeps its thickness when it does.
     return (
-        f'<svg class="spark" width="{width}" height="{height}" viewBox="0 0 {width} {height}" aria-hidden="true">'
-        f'<polyline points="{path}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
-        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.4" fill="currentColor"/></svg>'
+        f'<svg class="spark" width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
+        'preserveAspectRatio="none" aria-hidden="true">'
+        f'<polyline points="{path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" '
+        'vector-effect="non-scaling-stroke"/></svg>'
     )
 
 
@@ -153,18 +154,20 @@ def year_rail(year: int, months: list[dict]) -> str:
             f"Notice {m['notices']:,.0f}" if m["notices"] else "",
         ]
         decision = ", ".join(x for x in moves if x) or "No change"
+        # Notices are the year's hardest decision, so they are set in red.
+        notice = f"Notice {m['notices']:,.0f}"
+        shown = _e(decision).replace(notice, f'<em class="cut">{notice}</em>')
         word = RAIL_WORDS[m["status"]] + (", updated" if m.get("updated") else "")
         cells.append(
             f'<div class="sp-rail-month {m["status"]}" title="{_e(m["label"])}: {m["agents"]:,.0f} agents at work; '
             f'{_e(decision.lower())} decided">'
             f'<span class="sp-rail-name">{_e(m["label"])}</span><b>{m["agents"]:,.0f}</b>'
-            f'<span class="sp-rail-move">{_e(decision)}</span>'
+            f'<span class="sp-rail-move">{shown}</span>'
             f'<span class="sp-rail-state">{_e(word)}</span></div>'
         )
     return (
         f'<div class="sp-rail" aria-label="Agents at work and decisions in each month of {year}">{"".join(cells)}</div>'
-        '<p class="sp-rail-note">Agents at work each month under the approved plan, all countries, and the hires and '
-        "notices decided in that month. A hire works from the next month; a notice ends the next month.</p>"
+        '<p class="sp-rail-note">Agents at work, all countries. Hires and notices act the next month.</p>'
     )
 
 
@@ -175,7 +178,7 @@ def cycle() -> str:
             "Before the year starts",
             [
                 ("Data", "check the sign up history"),
-                ("Plan", "choose the service goal, check and approve"),
+                ("Plan", "set the goal, check, approve"),
                 ("Scenario", "stress test the plan"),
                 ("Memo", "brief each country manager"),
             ],
@@ -183,15 +186,15 @@ def cycle() -> str:
         (
             "Every month",
             [
-                ("Monthly update", "enter the real numbers, plan the rest again"),
-                ("Decision log", "see what changed and who changed it"),
+                ("Monthly update", "real numbers in, rest replanned"),
+                ("Decision log", "what changed, and who"),
             ],
         ),
         (
             "Any time",
             [
-                ("Assistant", "ask about the plan in plain English"),
-                ("Scenario", "test a change before it happens"),
+                ("Assistant", "ask in plain English"),
+                ("Scenario", "test a change first"),
             ],
         ),
     ]
@@ -200,6 +203,15 @@ def cycle() -> str:
         items = "".join(f"<li><b>{_e(page)}</b> {_e(job)}</li>" for page, job in pages)
         html.append(f'<div class="sp-cycle-col"><h3>{_e(title)}</h3><ul>{items}</ul></div>')
     return f'<div class="sp-cycle">{"".join(html)}</div>'
+
+
+def facts(items: list[tuple[str, str, str]]) -> str:
+    """Short facts as tiles: a value, what it means, and a tone (bad, warn, good or none) that marks it."""
+    cells = "".join(
+        f'<div class="sp-fact {tone}"><b>{_e(value)}</b><span>{_e(label)}</span></div>'
+        for value, label, tone in items
+    )
+    return f'<div class="sp-facts">{cells}</div>'
 
 
 def checklist(checks: list) -> str:
@@ -239,6 +251,8 @@ def trace(
     backend: str,
     carried: str = "",
     guardrails: list[str] | None = None,
+    checked: int = 0,
+    facts: int = 0,
 ) -> str:
     """How an answer was built, for the details panel (Markdown with a little HTML)."""
     if verified:
@@ -250,6 +264,11 @@ def trace(
         f'<span class="sp-chip" data-tip="Time to answer">{seconds:.1f} s</span>'
     )
     lines = [chips, f"Answered with **{_e(tools)}** using **{_e(backend)}**."]
+    if checked:
+        lines.append(
+            f"**{checked}** number{'s' if checked != 1 else ''} in the answer, each matched to one of "
+            f"**{facts}** planner facts; the language model wrote none of them."
+        )
     if carried:
         lines.append(f"This was a follow up, so it kept the {_e(carried)} from your last question.")
     if guardrails:

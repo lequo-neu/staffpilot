@@ -137,6 +137,68 @@ def _findings(report: EdaReport) -> list[str]:
     return found
 
 
+def facts(report: EdaReport) -> list[tuple[str, str, str]]:
+    """The findings as short facts for the app: (value, what it means, tone: bad, warn, good or none)."""
+    c = report.countries.set_index("country")
+    o = report.overview
+    total_by_month = report.monthly.groupby("month")["eligible"].sum()
+    peak, low = int(total_by_month.idxmax()), int(total_by_month.idxmin())
+    short = c[c["staff_to_need"] < 1].index.tolist()
+    ratio = o["january_agents"] / max(o["peak_need"], 1)
+    items = [
+        (f"{o['eligible_rate']:.1%}", f"of {o['signups']:,} sign ups are eligible", ""),
+        (
+            f"{ratio:.1f}×",
+            f"January team ({o['january_agents']:,}) over the busiest need ({o['peak_need']:,})",
+            "bad",
+        ),
+        (
+            f"{charts.MONTHS[peak - 1]} / {charts.MONTHS[low - 1]}",
+            f"busiest and quietest month, {total_by_month.max() / total_by_month.min():.1f}× apart",
+            "",
+        ),
+        (f"{c['daily_cv'].median():.2f}", "daily noise (median CV): the waiting pool matters", "warn"),
+        (", ".join(short) or "None", "understaffed in January", "warn" if short else "good"),
+    ]
+    if "yearly_change" in c:
+        items.append((f"{c['yearly_change'].median():+.1%}", "eligible sign ups, year on year", ""))
+    spread = report.weekday["index"].max() - report.weekday["index"].min()
+    items.append((f"{spread:.0%}", "gap between weekdays: small enough to ignore", "good"))
+    return items
+
+
+def quality_checks(report: EdaReport) -> list:
+    """The data quality table as checks: a pass for each clean count, a note for each repair."""
+    from staffpilot.checks import Check
+
+    value = dict(zip(report.quality["check"], report.quality["value"], strict=True))
+    found = []
+    for name, title in (
+        ("Missing values", "No missing values"),
+        ("Duplicate advertiser ids", "No advertiser appears twice"),
+        ("Budgets at or below zero", "Every budget is above zero"),
+    ):
+        if name in value:
+            found.append(Check(title, int(value[name]) == 0, f"{int(value[name]):,} found."))
+    if value.get("Impossible dates repaired"):
+        found.append(
+            Check(
+                "Impossible dates were repaired",
+                None,
+                f"{int(value['Impossible dates repaired']):,} dates such as 29 February in a normal year moved to the month's last day.",
+            )
+        )
+    if value.get("Budgets exactly on the threshold"):
+        found.append(
+            Check(
+                "Some budgets sit exactly on the threshold",
+                None,
+                f"{int(value['Budgets exactly on the threshold']):,}; ineligible under the strict rule (A2).",
+            )
+        )
+    return found
+
+
 def figures(report: EdaReport) -> dict[str, Figure]:
     c = report.countries
     out: dict[str, Figure] = {}

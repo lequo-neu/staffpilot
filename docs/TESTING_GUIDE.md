@@ -64,10 +64,12 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C1.2 | Look at the left sidebar | New chat, This year, then the groups Before the year starts (Data, Plan, Scenario, Memo), Every month (Monthly update, Decision log), Any time (Assistant) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
 | C1.3 | Hover over each sidebar item | a short explanation appears for each |
 | C1.4 | Look at the top of the page | the page title and one line explaining it; there is **no** line naming the data file or the planning year |
-| C1.5 | Read This year | a strip of twelve months: January shows `6,474`, `Hire 11, Notice 4,741` and `Decide now`; September shows `Hire 213`; four steps start with `1. Check the data` |
+| C1.5 | Read This year | four tiles: `$479.7M` with `$109.3M more than keeping the January team`, `6,474 → 2,220`, `100.0%` and `Not approved`; a strip of twelve months where January shows `6,474`, `Hire 11, Notice 4,741` (the notice in red) and `Decide now`; four steps start with `1. Check the data`; on the right the alerts that need action |
 | C1.6 | Pick `Start of March` in Where are you in the year? | January and February say `Carried out`, March says `Decide now`, and the steps start with `1. Enter what happened` |
 | C1.7 | Click `Open Monthly update` on the first step | the Monthly update page opens with `March` already picked, and Monthly update is marked in the sidebar |
 | C1.8 | Scroll to the end of Data, Plan, Scenario, Memo, Monthly update and Decision log | each ends with a line saying what comes next and a button that opens it |
+| C1.9 | Look at the sidebar and the page | the groups are teal bands in capitals, each page has an icon, panel titles, field names, tabs and buttons are in capitals, and every area has a clear edge |
+| C1.10 | Click any chart | it opens at full size over the page; a click or Escape closes it |
 
 ### C2. Assistant
 
@@ -75,7 +77,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 |---|---|---|
 | C2.1 | Read the empty chat | `What do you want to know about the plan?` and six example questions in two columns |
 | C2.2 | Click the example `What if sign ups in Brazil drop 30% in Q3?` | the answer says net value goes from `$44.9M` to `$41.7M`, and a sharp chart appears inside the answer |
-| C2.3 | Look at the right panel | `How this answer was built` with a green `Numbers checked` chip, the intent, the time, the tool `run_scenario` and the model `offline` |
+| C2.3 | Look at the right panel | `How this answer was built` with a green `Numbers checked` chip, the intent, the time, the tool `run_scenario` and the model `offline`, and a line saying how many numbers were matched to planner facts; under the chat box `Answered by Offline (free, no API key)` |
 | C2.4 | Type `And Mexico?` and press Enter | the answer is about Mexico, and the right panel says `This was a follow up, so it kept the kind of question, months and scenario from your last question.` |
 | C2.5 | Look at Recent chats | one entry starting `What if sign ups in Brazil drop`; hover shows the full question |
 | C2.6 | Click New chat, then ask `How long can an advertiser wait in the pool?` | the chat starts empty, the answer quotes the waiting pool rule, and Recent chats now has two entries |
@@ -93,10 +95,11 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C3.4 | Open `5 items need attention, 1 of them critical` | the same alerts as in step B2 |
 | C3.5 | Choose `Germany` in Country | the cards, the chart and the table switch to Germany; the chart title says Germany |
 | C3.6 | Check the chart closely | text and lines are sharp, not blurry; labels do not sit on top of the line |
-| C3.7 | Click Approve this plan | a message `Approved with the goal Profit, 98% served (recommended). 12 rows saved to approved_plan.csv` and a number of rows added to the decision log; the file exists in `outputs/` |
+| C3.7 | Click Approve this plan | `Approved with the goal Profit, 98% served (recommended). Saved approved_plan_Germany_service_98_<date>_<time>.csv`; the file is in `outputs/`, and the decision log names it |
 | C3.8 | Set Country back to `All countries`, scroll to `Profit against service level` | two bar charts: net value given up (`$0` for profit only, `$31k` for the recommended goal, `$3.6M` for 7 days) and advertisers served within 7 days (`91.4%` up to `100.0%`) |
 | C3.9 | Pick the service goal `Profit, 98% served within 7 days` | the cards change (Net value `$476.1M`), the chart title names the goal, and the text says how much net value the goal gives up |
 
+| C3.9b | Open `Month by month detail` at the end of the overview | the table, with hires in teal and notices and their cost in red |
 | C3.10 | Click the tab Check the plan (Country: All countries) | `8 of 8 checks pass`, each with a line of numbers, and one `Note` saying that 5% fewer agents would earn about $1.8M more while the wait goes from 1.1 to 2.1 days |
 | C3.11 | Click How it is calculated | uplift, salaries and notice cost written as sums of their inputs that add up to `$479.7M`; a month by month table and a CSV to download |
 | C3.12 | Pick Germany, click Try your own plan, then Score my plan | the table holds the optimized headcount and a copy 5% lower; the result says your plan earns about `$106k more` by making advertisers wait longer (1.9 instead of 1.3 days) |
@@ -110,7 +113,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C3b.1 | Click Monthly update, pick `Germany` and the month `February` | the table `Actual eligible sign ups` shows January with its forecast and an actual count 20 percent higher |
 | C3b.2 | Set the slider to `40`, click Update the plan | four bullets that match step B11, a chart of the approved and the updated headcount from February, and a table where changed cells read like `86 → 117` |
 | C3b.3 | Type a different number in the Actual column, and `-2` in Agents on staff against the plan, then update again | the summary says `2 agents fewer than planned are on staff now` and the numbers change |
-| C3b.4 | Click Approve the update | `Approved. The updated plan is saved to approved_update.csv` and rows are added to the decision log |
+| C3b.4 | Click Approve the update | `Approved. Saved approved_update_Germany_2026-02_<date>_<time>.csv`, and rows are added to the decision log |
 | C3b.5 | Pick the month `January` | not possible: the list starts in February, because January has no months done yet |
 | C3b.6 | Look at `Input check` under the table | each month read back against its forecast; type a number three times the forecast and it says `Check this count` |
 | C3b.7 | After approving, pick the month `April` | January keeps the count you approved, the input check says `Starts from the update approved in` the earlier month, and the update keeps that month's new hires as carried out |
@@ -119,12 +122,12 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 
 | Step | What to do | Expected |
 |---|---|---|
-| C4.1 | Scenario: click Read the scenario | `Understood as: If sign ups fall 30% from July to September in Germany, ...` and the parameters below |
-| C4.2 | Change `"demand_multiplier": 0.7` to `0.5` in the parameters, then click Run the scenario | a summary, a chart and a one row table; the change in net value is larger than at 0.7 |
-| C4.3 | Memo: pick Vietnam and click Write the memo | the memo from step B7 with `Every number matches the planner.` and a chart |
-| C4.4 | Data: open the page | a list of findings, four charts and a data quality table; the charts are sharp |
-| C4.5 | Evaluation: open the page | three tables: assistants, retrieval and runs |
-| C4.6 | Decision log: open the page | the newest decisions first: the scenario from C4.2 with `demand_multiplier` proposed `0.7` by the reader and applied `0.5` after your edit (adjusted by `manager`), then the result rows marked as computed by the planner; the monthly update and plan approvals from C3; one `assistant answer` row per question with the guardrails that acted; a `decision_audit.csv` file to download |
+| C4.1 | Scenario: open the page | the Germany example is already read and run, with a chart from February where the changed months are shaded; click `Hiring in Brazil is capped at 5 agents a month` and it is read and run in one click |
+| C4.2 | Open `Edit the parameters`, change `"demand_multiplier": 0.7` to `0.5`, then click Run the scenario | a summary, a chart and a one row table; the change in net value is larger than at 0.7 |
+| C4.3 | Memo: open the page | a memo for the first country is already written; pick Vietnam and click Write the memo for the memo from step B7, with `Every number matches the planner.` and a chart |
+| C4.4 | Data: open the page | seven fact tiles first (`2.8×` in red, `Vietnam` in amber), four sharp charts, then `Data quality` with `3 of 3 checks pass` and two notes; the table opens from `Every check, as a table` |
+| C4.5 | Evaluation: open the page | one line on the holdout, a chart of questions read right and seconds per answer, then tiles for rule retrieval (`7 of 8`, `1` missed) and plan runs; each table opens below its tiles, with the best scores, the missed question and the latest run tinted |
+| C4.6 | Decision log: open the page | four tiles (decisions, values changed, changed by you, answers where a guardrail acted) and filter buttons; the newest decisions first: the scenario from C4.2 with `demand_multiplier` proposed `0.7` by the reader and applied `0.5` after your edit (adjusted by `manager`), then the result rows marked as computed by the planner; the monthly update and plan approvals from C3; one `assistant answer` row per question with the guardrails that acted; a `decision_audit.csv` file to download | Click `Only changes`: only rows with an adjustment remain, tinted amber |
 
 ### C5. Settings and models
 

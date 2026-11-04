@@ -258,3 +258,9 @@ def test_a_model_reply_that_misses_the_schema_is_repaired_not_rejected(monkeypat
     )
     route = backend.route("Compare the plans for Alpha", ["Alpha"])
     assert route.intent == Intent.compare and route.countries == ["Alpha"] and route.scenario is None
+
+
+def test_the_trace_counts_only_the_numbers_the_check_tests():
+    from staffpilot.agent.facts import checked_numbers
+
+    assert checked_numbers("In March 2026, 86 agents cost $1.2M and serve 99.1% of 3 groups.") == 3

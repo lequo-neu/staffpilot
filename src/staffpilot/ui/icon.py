@@ -8,6 +8,7 @@ a PNG drawn from the same points, because some browsers still ignore SVG tab ico
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
 
 from matplotlib.figure import Figure
 from matplotlib.patches import FancyBboxPatch
@@ -53,3 +54,39 @@ def write_png(path: Path, pixels: int = 64) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=pixels, transparent=True)
     return path
+
+
+# Line icons for the sidebar, drawn on a 24 unit grid with a 2 unit stroke. They are used as
+# CSS masks, so each one takes the colour of its menu item.
+NAV_ICONS = {
+    "This year": '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+    "Data": '<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13'
+    'M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    "Plan": '<path d="M3 21h18M6 17V11M11 17V5M16 17v-8M21 17v-4"/>',
+    "Scenario": '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/>'
+    '<circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    "Memo": '<path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/>'
+    '<path d="M14 3v5h5M8.5 13h7M8.5 17h5"/>',
+    "Monthly update": '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/><path d="M12 8v4l3 2"/>',
+    "Decision log": '<path d="M10 6h11M10 12h11M10 18h11"/><path d="M3 6l1.5 1.5L7 4.5M3 12l1.5 1.5L7 10.5'
+    'M3 18l1.5 1.5L7 16.5"/>',
+    "Assistant": '<path d="M20.5 11.5a8 8 0 0 1-11.8 7L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>'
+    '<path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01"/>',
+    "Evaluation": '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9"/>',
+}
+
+
+def nav_css(groups: list[tuple[str, list[str]]]) -> str:
+    """CSS that puts each page's icon before its sidebar item; each group's radio has its index in a class."""
+    rules = []
+    for index, (_, names) in enumerate(groups):
+        for position, name in enumerate(names, start=1):
+            svg = (
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" '
+                f'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{NAV_ICONS.get(name, "")}</svg>'
+            )
+            data = quote(svg)
+            rules.append(
+                f'.sp-nav-{index} label:nth-of-type({position}) {{ --sp-icon: url("data:image/svg+xml,{data}"); }}'
+            )
+    return "\n".join(rules)
