@@ -250,12 +250,3 @@ def answer_rows(answer: Answer) -> list[dict[str, Any]]:
             "note": "; ".join(answer.guardrails) or "no guardrail had to act",
         }
     ]
-
-
-def summary(frame: pd.DataFrame) -> str:
-    """A one line count for the page header."""
-    if frame.empty:
-        return "No decisions recorded yet. Approve a plan, run a scenario or ask a question."
-    counts = frame["decision"].value_counts()
-    parts = [f"{n} {name}" for name, n in counts.items()]
-    return f"{len(frame)} rows: " + ", ".join(parts) + "."

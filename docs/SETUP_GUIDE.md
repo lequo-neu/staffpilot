@@ -164,7 +164,7 @@ python -m staffpilot app
 
 The terminal prints `Starting StaffPilot at http://127.0.0.1:7860`. Open that address in your browser; the very first start takes about 15 seconds while the plan is built and saved in `.cache/`; later starts take about 5. The sidebar on the left has:
 
-* **New chat**, to start a conversation; the chats you have had in this browser tab are listed under **Recent chats**, and clicking one reopens it.
+* **Assistant** at the top, to chat about the plan; **New chat** above the conversation starts a new one, and the chats you have had in this browser tab are listed under **Recent chats**, where clicking one reopens it.
 * The pages: **Assistant** (chat; follow up questions work), **Plan** (monthly headcount per country, with an approval button), **Scenario** (describe a change in words, check the parameters, run it), **Memo** (a staffing memo for one country), **Data** (the exploratory analysis) and **Evaluation** (how the assistant scored).
 * **Settings**: the language model to use, **Refresh models** and **Save conversation**. The app always starts on **Offline**, which is free. With API keys the list also shows every model your keys can use, cheapest first; on start the app checks the cheapest ones with a tiny request, hides models that no longer work and marks the cheapest working one. Picking a model makes each question cost a fraction of a cent.
 

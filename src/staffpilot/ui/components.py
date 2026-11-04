@@ -171,40 +171,6 @@ def year_rail(year: int, months: list[dict]) -> str:
     )
 
 
-def cycle() -> str:
-    """Which page serves which moment of the manager's year."""
-    columns = [
-        (
-            "Before the year starts",
-            [
-                ("Data", "check the sign up history"),
-                ("Plan", "set the goal, check, approve"),
-                ("Scenario", "stress test the plan"),
-                ("Memo", "brief each country manager"),
-            ],
-        ),
-        (
-            "Every month",
-            [
-                ("Monthly update", "real numbers in, rest replanned"),
-                ("Decision log", "what changed, and who"),
-            ],
-        ),
-        (
-            "Any time",
-            [
-                ("Assistant", "ask in plain English"),
-                ("Scenario", "test a change first"),
-            ],
-        ),
-    ]
-    html = []
-    for title, pages in columns:
-        items = "".join(f"<li><b>{_e(page)}</b> {_e(job)}</li>" for page, job in pages)
-        html.append(f'<div class="sp-cycle-col"><h3>{_e(title)}</h3><ul>{items}</ul></div>')
-    return f'<div class="sp-cycle">{"".join(html)}</div>'
-
-
 def facts(items: list[tuple[str, str, str]]) -> str:
     """Short facts as tiles: a value, what it means, and a tone (bad, warn, good or none) that marks it."""
     cells = "".join(

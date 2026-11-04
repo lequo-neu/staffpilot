@@ -107,7 +107,7 @@ def test_the_audit_keeps_proposed_adjusted_and_applied_apart(planner, tmp_path):
     audit.record(update_rows, tmp_path)
     frame = audit.read(tmp_path)
     assert list(frame.columns) == audit.COLUMNS and len(frame) == len(rows) + len(update_rows)
-    assert "scenario run" in audit.summary(frame) and audit.read(tmp_path / "none").empty
+    assert "scenario run" in set(frame["decision"]) and audit.read(tmp_path / "none").empty
 
 
 def test_answers_record_the_guardrails_that_acted(planner):
@@ -180,10 +180,12 @@ def test_the_sidebar_follows_the_managers_year(planner):
     from staffpilot import app
 
     app.build_app(planner)
-    assert app.PAGES[0] == app.HOME and app.PAGES.index("Data") < app.PAGES.index("Monthly update")
+    assert app.PAGES[:2] == ["Assistant", app.HOME] and app.PAGES.index("Data") < app.PAGES.index(
+        "Monthly update"
+    )
     synced = app.nav_sync("Monthly update")
     groups = [names for _, names in app.NAV_GROUPS]
-    assert [s.value for s in synced] == [None, None, "Monthly update", None, None]
+    assert [s.value for s in synced] == [None, None, "Monthly update", None]
     assert len(synced) == len(groups)
     assert all(target in app.PAGES for target, _ in app.NEXT.values())
 

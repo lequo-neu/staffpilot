@@ -45,12 +45,12 @@ EXAMPLES = [
     "How long can an advertiser wait in the pool?",
 ]
 HOME = "This year"
-# The sidebar follows the manager's year: plan before it starts, update every month, ask any time.
+# The sidebar opens with the assistant, which serves any moment, and the year at a glance; then
+# it follows the manager's year: plan before it starts, update every month.
 NAV_GROUPS = [
-    ("", [HOME]),
+    ("", ["Assistant", HOME]),
     ("Before the year starts", ["Data", "Plan", "Scenario", "Memo"]),
     ("Every month", ["Monthly update", "Decision log"]),
-    ("Any time", ["Assistant"]),
     ("Behind the numbers", ["Evaluation"]),
 ]
 PAGES = [page for _, names in NAV_GROUPS for page in names]
@@ -764,7 +764,7 @@ def parse_scenario(text: str, backend: str) -> tuple[str, str, dict]:
 
 SCENARIO_EXAMPLES = [
     "Sign ups in Germany drop 30% in Q3",
-    "Hiring in Brazil is capped at 5 agents a month",
+    "Sign ups in the USA rise 20% in Q4",
     "The eligibility threshold in the UK is lowered by 20%",
 ]
 
@@ -1126,7 +1126,6 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
 
         with gr.Sidebar(open=True, width=256, elem_id="sp-sidebar"):
             gr.HTML(components.brand())
-            new_btn = gr.Button("New chat", size="sm", elem_classes="sp-new")
             # One hidden list holds the open page; the visible groups only choose from it.
             nav = gr.Radio(PAGES, value=HOME, visible=False)
             groups = []
@@ -1203,8 +1202,11 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 gr.Row(equal_height=False, elem_classes="sp-chat-row"),
             ):
                 with gr.Column(scale=3, min_width=340, elem_classes="sp-panel"):
+                    with gr.Row(elem_classes="sp-chat-head"):
+                        gr.HTML('<div class="sp-panel-title">Conversation</div>')
+                        new_btn = gr.Button("New chat", size="sm", scale=0, min_width=130)
                     chat = gr.Chatbot(
-                        height="calc(100vh - 300px)",
+                        height="calc(100vh - 340px)",
                         min_height=380,
                         show_label=False,
                         placeholder=components.chat_empty(),
@@ -1461,14 +1463,13 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         for group in groups:
             group.input(lambda name: name, group, nav)
         nav.change(nav_sync, nav, groups)
-        new_btn.click(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
         nav.change(show_page, nav, [pages[name] for name in PAGES]).then(page_head, nav, head)
         chat_out = [chat, box, details, table, route, memory, chats, current, recent]
         box.submit(send, [box, chat, backend, memory, chats, current], chat_out)
         chat.example_select(example_text, None, box).then(
             send, [box, chat, backend, memory, chats, current], chat_out
         )
-        new_btn.click(start_chat, chats, chat_out).then(lambda: "Assistant", None, nav)
+        new_btn.click(start_chat, chats, chat_out)
         recent.input(open_chat, [recent, chats], [chat, memory, current]).then(lambda: "Assistant", None, nav)
         export_btn.click(export_conversation, memory, saved)
         refresh_btn.click(refresh_models, backend, backend)

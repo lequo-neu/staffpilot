@@ -61,7 +61,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | Step | What to do | Expected |
 |---|---|---|
 | C1.1 | Look at the browser tab | the title is `StaffPilot` and the icon is a teal square with a white curve, the same as the logo at the top of the sidebar |
-| C1.2 | Look at the left sidebar | New chat, This year, then the groups Before the year starts (Data, Plan, Scenario, Memo), Every month (Monthly update, Decision log), Any time (Assistant) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
+| C1.2 | Look at the left sidebar | Assistant and This year at the top, then the groups Before the year starts (Data, Plan, Scenario, Memo), Every month (Monthly update, Decision log) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line; there is no separate New chat button |
 | C1.3 | Hover over each sidebar item | a short explanation appears for each |
 | C1.4 | Look at the top of the page | the page title and one line explaining it; there is **no** line naming the data file or the planning year |
 | C1.5 | Read This year | four tiles: `$479.7M` with `$109.3M more than keeping the January team`, `6,474 → 2,220`, `100.0%` and `Not approved`; a strip of twelve months where January shows `6,474`, `Hire 11, Notice 4,741` (the notice in red) and `Decide now`; four steps start with `1. Check the data`; on the right the alerts that need action |
@@ -80,7 +80,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C2.3 | Look at the right panel | `How this answer was built` with a green `Numbers checked` chip, the intent, the time, the tool `run_scenario` and the model `offline`, and a line saying how many numbers were matched to planner facts; under the chat box `Answered by Offline (free, no API key)` |
 | C2.4 | Type `And Mexico?` and press Enter | the answer is about Mexico, and the right panel says `This was a follow up, so it kept the kind of question, months and scenario from your last question.` |
 | C2.5 | Look at Recent chats | one entry starting `What if sign ups in Brazil drop`; hover shows the full question |
-| C2.6 | Click New chat, then ask `How long can an advertiser wait in the pool?` | the chat starts empty, the answer quotes the waiting pool rule, and Recent chats now has two entries |
+| C2.6 | Click New chat above the conversation, then ask `How long can an advertiser wait in the pool?` | the chat starts empty, the answer quotes the waiting pool rule, and Recent chats now has two entries |
 | C2.7 | Click the first entry in Recent chats, then ask `What about 50 percent instead?` | the old conversation comes back and the answer uses a **50** percent drop for **Mexico** |
 | C2.8 | Open Settings and click Save conversation | a Markdown file to download appears, listing the questions and answers |
 | C2.9 | Send an empty message, then `thanks`, then `!!!` | nothing breaks; the last two get a polite answer that says what the assistant can help with |
@@ -122,7 +122,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 
 | Step | What to do | Expected |
 |---|---|---|
-| C4.1 | Scenario: open the page | the Germany example is already read and run, with a chart from February where the changed months are shaded; click `Hiring in Brazil is capped at 5 agents a month` and it is read and run in one click |
+| C4.1 | Scenario: open the page | the Germany example is already read and run, with a chart from February where the changed months are shaded; click `Sign ups in the USA rise 20% in Q4` and it is read and run in one click: net value $117.6M to $126.9M |
 | C4.2 | Open `Edit the parameters`, change `"demand_multiplier": 0.7` to `0.5`, then click Run the scenario | a summary, a chart and a one row table; the change in net value is larger than at 0.7 |
 | C4.3 | Memo: open the page | a memo for the first country is already written; pick Vietnam and click Write the memo for the memo from step B7, with `Every number matches the planner.` and a chart |
 | C4.4 | Data: open the page | seven fact tiles first (`2.8×` in red, `Vietnam` in amber), four sharp charts, then `Data quality` with `3 of 3 checks pass` and two notes; the table opens from `Every check, as a table` |

@@ -32,12 +32,6 @@ class Check:
     detail: str
 
 
-def wait_penalty(planner: Planner, outcome: CountryOutcome) -> float:
-    """The optimizer's price on waiting (assumption A9), measured on the simulated year."""
-    weekly = planner.settings.planning.wait_penalty_per_week
-    return weekly * float(outcome.simulation.monthly["uplift_wait_days"].iloc[:12].sum()) / 7
-
-
 def margin(planner: Planner, policy: str, country: str | None = None, cut: float = 0.05) -> dict[str, float]:
     """What `cut` fewer agents from February would do, scored day by day with the same simulator."""
     rows = []
