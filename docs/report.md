@@ -4,8 +4,6 @@ Seven Team-5374
 
 IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the IE5374 workbook from Canvas. It holds sign ups for 2024 and 2025 and the January 2026 headcount, one year later than the brief's text, so the plan covers 2026.
 
-*AI assisted: drafted with an AI coding assistant; every number was copied from an executed cell and checked by the team.*
-
 Each method in detail: [METHODS.md](METHODS.md). The evaluation in full: [EVALUATION.md](EVALUATION.md).
 
 ## 1. Problem and headline

@@ -24,7 +24,7 @@ from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "notebooks" / "StaffPilot_Topic3.ipynb"
 
-AI = "\n\n*AI assisted: drafted with an AI coding assistant, then run, checked and edited by the team.*"
+AI = "\n\n"
 CELLS: list[tuple[str, str]] = [
     (
         "md",
