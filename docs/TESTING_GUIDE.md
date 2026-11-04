@@ -2,7 +2,7 @@
 
 This guide walks you through checking StaffPilot before a commit or a submission. You do not need to know Python. Follow the parts in order and tick each check. The whole run takes about an hour; Part A alone takes five minutes and is the minimum before any commit.
 
-The expected numbers below come from the public data file `IE5374_Hackathon_Google_Data.xlsx`. With the official IE5374 file the numbers change, but the behaviour described here stays the same.
+The expected numbers below come from the IE5374 workbook from Canvas, saved as `data/raw/IE5374_Hackathon_Google_Data.xlsx`. With another file the numbers change, but the behaviour described here stays the same.
 
 ## Before you start
 

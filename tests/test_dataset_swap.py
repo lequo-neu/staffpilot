@@ -1,4 +1,4 @@
-"""Swapping in the official file (other years, same structure) must only change the year labels."""
+"""Swapping in another file (other years, same structure) must only change the year labels."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 # Methods and design
 
-The details behind the [README](../README.md): how each block works, why it was chosen, and the numbers behind every claim. Every figure comes from the code on the public copy of the data (planning year 2026).
+The details behind the [README](../README.md): how each block works, why it was chosen, and the numbers behind every claim. Every figure comes from the code on the IE5374 workbook from Canvas (planning year 2026).
 
 Sections: architecture, method, what the manager decides, assumptions, how the course techniques are used, the app, which page for which moment, start up time, and logging, run history and alerts.
 
@@ -227,16 +227,16 @@ python -m staffpilot eval
 
 `eval` runs every provider with a key at both tiers (`--tier strong`, `fast` or `both`) and the `create_agent` chat (`--skip-agent` to leave it out). It is the only command that makes many paid calls. Replies and their token counts are cached in `eval/cache/`, so reruns cost nothing; commit that folder so the notebook shows the same results. To stay offline while keys are set, set `STAFFPILOT_OFFLINE=1`.
 
-### Switching to the official IE5374 file
+### Loading another data file
 
 Change one line in `config/staffpilot.toml`:
 
 ```toml
 [data]
-path = "data/raw/<official file>.xlsx"
+path = "data/raw/<another file>.xlsx"
 ```
 
-No year appears in the code. The planning year is one year after the last sign up year, so the IE5374 copy (2023 and 2024) plans 2025. `tests/test_dataset_swap.py` shifts all dates by a year and checks that the plan stays the same apart from small differences from week boundaries and leap years (on the real data, net value moves by 0.02 percent). The public copy contains 920 rows dated 29 February 2025, a day that does not exist; they are moved to 28 February.
+No year appears in the code. The planning year is one year after the last sign up year, so the Canvas workbook (2024 and 2025) plans 2026 and a file with 2023 and 2024, the years in the brief's text, would plan 2025. `tests/test_dataset_swap.py` shifts all dates by a year and checks that the plan stays the same apart from small differences from week boundaries and leap years (on the real data, net value moves by 0.02 percent). The Canvas workbook contains 920 rows dated 29 February 2025, a day that does not exist; they are moved to 28 February.
 
 ## The app
 

@@ -19,6 +19,7 @@ import uuid
 import gradio as gr
 import numpy as np
 import pandas as pd
+from pydantic import ValidationError
 
 from staffpilot import accounts, audit, cache, charts, checks
 from staffpilot.agent import StaffPilot
@@ -850,7 +851,7 @@ def parse_scenario(text: str, backend: str) -> tuple[str, str, dict]:
     """Read a sentence into scenario parameters. The third value records what the reader proposed."""
     route, name, guardrails = pilot(backend).read(text)
     if route.scenario is None and not route.clarification:
-        route, name, guardrails = pilot(backend).read(f"What if {text}")
+        route, name, guardrails = pilot(backend).read(f"What if {text[:1].lower()}{text[1:]}")
     proposal = {"params": None, "reader": _reader(name), "guardrails": guardrails}
     if route.clarification:
         return "{}", route.clarification, proposal
@@ -871,8 +872,12 @@ def run_scenario(
 ):
     try:
         params = ScenarioParams.model_validate_json(params_json)
-    except ValueError as error:
-        return f"Those parameters are not valid: {error}", None, pd.DataFrame()
+    except ValidationError as error:
+        problems = "; ".join(
+            f"{'.'.join(str(part) for part in e['loc']) or 'the text'}: {e['msg'].lower()}"
+            for e in error.errors()
+        )
+        return f"Those parameters are not valid ({problems}). Edit them and run again.", None, pd.DataFrame()
     p = planner()
     result = p.scenario(params)
     t = result.totals()

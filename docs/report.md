@@ -2,7 +2,7 @@
 
 Seven Team-5374
 
-IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the public copy of the data (sign ups for 2024 and 2025, planning year 2026). With the official IE5374 file the same code plans 2025; rerun before submission.
+IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the IE5374 workbook from Canvas. It holds sign ups for 2024 and 2025 and the January 2026 headcount, one year later than the brief's text, so the plan covers 2026.
 
 *AI assisted: drafted with an AI coding assistant; every number was copied from an executed cell and checked by the team.*
 
@@ -26,7 +26,7 @@ On 1 January the 22 countries employ 6,474 agents, while the busiest 60 days of 
 
 **Grow Vietnam now.** From 59 to 95 agents, with the first hires decided in January.
 
-**Serve the UAE anyway.** In the UAE one agent's yearly uplift is below its salary, so the pure value plan lets all 309 agents go and serves no one. The recommended plan adds a 98 percent service floor; it keeps about 40 agents there and costs $0.03M in total.
+**Serve the UAE anyway.** In the UAE one agent's yearly uplift is below its salary, so the pure value plan lets all 309 agents go and serves no one. The recommended plan adds a 98 percent service floor; it keeps 15 agents there from February and costs $0.03M in total.
 
 **Profit only or profit with a service level.** The service goal is a choice for the manager, not a hidden setting. Profit only already serves 99.1 percent; the 98 percent floor costs $0.03M. Speed is the real trade: 98 percent served within 7 days costs $3.6M (0.75 percent of net value) and about 87 more agents, and raises the share served within a week from 92.1 to 100.0 percent. The goal is a soft constraint that counts only on time service, so an impossible goal still gives a plan.
 

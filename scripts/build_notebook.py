@@ -76,7 +76,7 @@ data.countries.head()""",
         "md",
         """## 2. Rules and assumptions
 
-The brief rules are settings, not constants in code, and every open point is a switch. The planning year comes from the data, so the IE5374 file (2023 and 2024, plan 2025) and the public copy used here (2024 and 2025, plan 2026) both work by changing one path in `config/staffpilot.toml`."""
+The brief rules are settings, not constants in code, and every open point is a switch. The planning year comes from the data: the IE5374 workbook from Canvas holds sign ups for 2024 and 2025, one year later than the brief's text, so the plan covers 2026. A file with 2023 and 2024 would plan 2025 with no code change."""
         + AI,
     ),
     (

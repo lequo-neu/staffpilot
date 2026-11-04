@@ -20,6 +20,9 @@ _EMPTY_BULLET = re.compile(r"^\s*\*[^\w\n]*$", re.MULTILINE)
 _NUMBER = re.compile(
     r"(?<![A-Za-z_])\$?\d[\d,]*(?:\.\d+)?\s*(?:%|percent|million|billion|thousand|[kKmMbB](?![a-z]))?"
 )
+_COUNTED = re.compile(
+    r"\s*(?:more |fewer |new )?(?:agents?|advertisers?|sign ups?|hires?|notices?|people)\b", re.IGNORECASE
+)
 _SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
 _WORD_SCALE = {"thousand": 1e3, "million": 1e6, "billion": 1e9}
 MONEY_KEYS = ("cost", "value", "salary", "uplift", "budget", "revenue", "threshold")
@@ -127,13 +130,13 @@ class FactLedger:
                 if not named or key.split(".")[0] in named or key.split(".")[0] not in keys
             ]
             allowed += context_values
-            for token in _NUMBER.findall(sentence):
+            for match in _NUMBER.finditer(sentence):
+                token = match.group(0)
                 parsed = _parse_number(token)
                 if parsed is None:
                     continue
                 value, precision = parsed
-                # Small counts, years and month numbers are part of normal writing.
-                if value.is_integer() and (abs(value) <= 12 or 1990 <= value <= 2100):
+                if _ordinary(token, value, sentence[match.end() :]):
                     continue
                 if any(_close(value, precision, a) for a in allowed):
                     continue
@@ -144,15 +147,28 @@ class FactLedger:
 def checked_numbers(text: str) -> int:
     """How many numbers in `text` the number check tests (small counts, months and years are not tested)."""
     count = 0
-    for token in _NUMBER.findall(text):
-        parsed = _parse_number(token)
+    for match in _NUMBER.finditer(text):
+        parsed = _parse_number(match.group(0))
         if parsed is None:
             continue
-        value = parsed[0]
-        if value.is_integer() and (abs(value) <= 12 or 1990 <= value <= 2100):
+        if _ordinary(match.group(0), parsed[0], text[match.end() :]):
             continue
         count += 1
     return count
+
+
+def _ordinary(token: str, value: float, after: str = "") -> bool:
+    """Small counts, month numbers and years are part of normal writing, so they are not tested.
+
+    A year is four plain digits not followed by what it would count, so a headcount written
+    as 2,071, or as 2000 agents, is still checked.
+    """
+    if not value.is_integer():
+        return False
+    if abs(value) <= 12:
+        return True
+    year = re.fullmatch(r"(?:19|20)\d\d", token.strip().rstrip(",")) is not None and 1990 <= value <= 2100
+    return year and _COUNTED.match(after) is None
 
 
 def _close(value: float, precision: float, allowed: float) -> bool:

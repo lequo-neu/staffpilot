@@ -45,6 +45,14 @@ def test_number_check_accepts_rounded_facts_and_rejects_invented_ones():
     assert ledger.verify("It will cost $2.1M and serve 95.0% with 81 agents.") == ["$2.1M", "95.0%", "81"]
 
 
+def test_number_check_tests_headcounts_that_look_like_years():
+    ledger = FactLedger({"x.end_agents": 2071.0})
+    assert ledger.verify("In 2026 the team ends at 2,071 agents.") == []
+    assert ledger.verify("In 2026 the team ends at 2,050 agents.") == ["2,050"]
+    assert ledger.verify("The team ends at $2,071k.") == ["$2,071k"]
+    assert ledger.verify("Germany needs 2000 agents in March 2026.") == ["2000"]
+
+
 def test_retriever_finds_the_waiting_pool_rule():
     hits = Retriever().search("How long can an advertiser wait in the pool?")
     assert hits and hits[0].heading == "Waiting pool"

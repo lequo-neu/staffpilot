@@ -115,7 +115,7 @@ Open **Decision log** (the button at the end of Monthly update).
 Open **Evaluation**.
 
 * **Shows:** the first line says that on new wording (holdout) Claude Sonnet 5.5 reads 100% of questions right and the offline keywords 28%. A chart of five assistants (Claude Sonnet 5.5, Gemma, Llama, offline, GPT 5 nano): questions read right on the main set, the holdout and the follow ups, and seconds per answer. The table names the judges of each row. Retrieval: 7 of 8 rule questions find the right passage. Plan runs: 6 runs, 1 data fingerprint, the same result.
-* **Say:** "We measure the assistant on labelled questions, including a holdout written in new words, and compare five assistants. Claude Sonnet reads every new question right for under two cents; the free keywords read 28 percent. The judges were checked against a person's grades."
+* **Say:** "We measure the assistant on labelled questions, including a holdout written in new words, and compare five assistants. Claude Sonnet reads every new question right for under two cents; the free keywords read 28 percent. A person checked the local judges against hand grades and found them too lenient."
 * **Proves:** **[Brief]** multi LLM evaluation.
 
 ## 4. Where each requirement lives
@@ -149,7 +149,7 @@ Open **Evaluation**.
 * **Can the language model make up a number?** No number it writes reaches the screen unchecked. It writes placeholders; the planner fills them; anything else is rejected, and after one retry the answer is replaced by a template.
 * **Does it need an API key?** No. Offline mode uses a keyword reader and templates with the same planner and the same checks; it is free and is what the tests use. A model reads new wording far better (88 percent against 28 on the holdout).
 * **Why cut two thirds of the team?** The January team is 2.8 times what the busiest weeks need; every notice is paid back within the year. The alerts remind the manager about notice rules and communication, which the model does not price.
-* **Why does the data plan 2026 when the brief says 2025?** The public copy covers 2024 and 2025, so the next year is 2026. With the official file the same code plans 2025; it is one line in `config/staffpilot.toml`.
+* **Why does the data plan 2026 when the brief says 2025?** The workbook from Canvas covers 2024 and 2025, one year later than the brief's text, so the next year is 2026. The code plans the year after the last sign up, so a file with 2023 and 2024 would plan 2025 with no code change.
 
 ## 6. If something goes wrong
 

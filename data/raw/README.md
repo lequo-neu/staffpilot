@@ -1,8 +1,8 @@
 # Input data
 
-Put the teaching team workbook here. It is not committed because it is course material.
+Put the IE5374 workbook from Canvas here as `IE5374_Hackathon_Google_Data.xlsx`, the name in `config/staffpilot.toml`. It is not committed because it is course material.
 
-* IE5374 file from Canvas: save it in this folder and set `path` under `[data]` in `config/staffpilot.toml`.
+* Another file: save it in this folder and set `path` under `[data]` in `config/staffpilot.toml`.
 * The code also reads a folder of three CSV files with the same columns.
 
 Expected tables (sheet names can differ, columns are matched by name):

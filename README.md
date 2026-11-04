@@ -6,6 +6,7 @@ StaffPilot plans how many support agents each of 22 countries needs in each mont
 
 | Deliverable | Link |
 |---|---|
+| GitHub repository | https://github.com/lequo-neu/staffpilot |
 | Executed notebook | [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb) |
 | Analysis report | [`docs/report.md`](docs/report.md) |
 | Demo video (3 minutes) | `<to be added>` |
@@ -30,7 +31,7 @@ On 1 January the 22 countries employ 6,474 agents, while the busiest 60 days of 
 | Agent utilization | 23.9% | **68.9%** |
 | Most advertisers per agent on any day | 10 | **10** (limit 10) |
 
-Planned from 2024 alone and scored on what really happened in 2025, the method reaches 99.3% of the value of a plan made with hindsight. All numbers use the public copy of the data (2024 and 2025 sign ups, planning year 2026); one line in `config/staffpilot.toml` switches to the official file.
+Planned from 2024 alone and scored on what really happened in 2025, the method reaches 99.3% of the value of a plan made with hindsight. All numbers use the IE5374 workbook from Canvas, which holds sign ups for 2024 and 2025 and the January 2026 headcount, so the plan covers 2026; the brief's text names 2023, 2024 and 2025, and the code always plans the year after the last sign up.
 
 ## What the brief asks, and the evidence
 
@@ -45,7 +46,7 @@ Planned from 2024 alone and scored on what really happened in 2025, the method r
 | R13 | Analysis and justification | key decisions, assumptions and their impact | [`docs/report.md`](docs/report.md) |
 | R14 | Sensitivity to sign up volume | sign ups from 70% to 130% of forecast, Monte Carlo with 20 runs, what if scenarios | report section 5; notebook section 10; Scenario page |
 | R15 | Other considerations | monthly update with actual sign ups, lower thresholds, the UAE, notice rules, pool fairness | report section 6; Monthly update page |
-| R16 | The provided data, easy to swap for the official file | every sign up with its budget; the planning year follows the data; one line in the config | `tests/test_dataset_swap.py` |
+| R16 | The provided data, easy to swap for another file | every sign up with its budget; the planning year follows the data; one line in the config | `tests/test_dataset_swap.py` |
 | R17 to R22 | A GenAI app with at least two course techniques | six: API calls, prompt engineering, structured output, LangChain, RAG, agents | How it works, below |
 | R26 to R29 | Notebook, README with setup, diagram and contributions, AI use | executed notebook; this file; [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | links above |
 
@@ -81,12 +82,12 @@ The assistant answered "And Mexico?" after a question about Brazil by keeping th
 
 | Feature | Why it matters | Proof |
 |---|---|---|
-| **Number check on every answer** | the language model never writes a number; it writes `{{Brazil.hires}}`, the planner fills it, and any number with no source, or from another country, is rejected | no answer reaches the user with an unchecked number; Claude passes on the first draft every time |
+| **Number check on every answer** | the language model never writes a number; it writes `{{Brazil.hires}}`, the planner fills it, and any number with no source, or from another country, is rejected | no answer in the app reaches the user with an unchecked number; Claude passes on the first draft on all 72 main and holdout questions |
 | **Profit only against a service level** | the manager chooses the goal; each goal is its own optimization | 98% served costs $0.03M; 98% within 7 days costs $3.6M and 87 agents |
 | **The manager can check the plan** | net value rebuilt from its inputs; any headcount scored by the same simulator | $658.1M uplift minus $91.7M salary minus $86.7M notices = $479.7M |
 | **Monthly update with actual numbers** | the months done keep their decisions; only the rest is solved again | USA, 20% more sign ups by March: hire 39 instead of 0 |
 | **Decision log** | what the optimizer or a model proposed, what changed it, what was applied, and who approved | `outputs/decision_audit.csv` |
-| **Multi LLM evaluation with a holdout** | 82 labelled questions, new wording held out, cross model judges, a person's grades to check the judges | Claude 100%, Gemma 88%, GPT 5 nano 84%, keywords 28% |
+| **Multi LLM evaluation with a holdout** | 82 labelled questions, new wording held out, cross model judges, a person's grades to check the local judges | Claude 100%, Gemma 88%, GPT 5 nano 84%, keywords 28% |
 | **Backtest on real sign ups** | the method is scored on a year it never saw | 99.3% of hindsight value |
 | **Works with no API key** | a keyword router and templates run the same pipeline, free and repeatable | the notebook, tests and CI run offline |
 | **Sign in** | each approval names its user | first password must be changed |
@@ -182,7 +183,7 @@ A language model router is far better than keywords on new wording, and no unche
 
 ## Run it
 
-Python 3.11 to 3.13. Put the teaching team workbook in `data/raw/`, then:
+Python 3.11 to 3.13. Save the IE5374 workbook from Canvas as `data/raw/IE5374_Hackathon_Google_Data.xlsx`, then:
 
 ```bash
 python3.12 -m venv .venv
@@ -190,6 +191,8 @@ source .venv/bin/activate
 pip install -e ".[dev,notebook]"
 python -m staffpilot app
 ```
+
+On Windows (PowerShell), create and activate the environment with `py -3.12 -m venv .venv` and `.venv\Scripts\Activate.ps1`; the other two lines are the same.
 
 The app opens at http://127.0.0.1:7860. Sign in as `admin`, `kevin`, `khoa` or `hamad`; the first password is the user name, and the app then asks for a new one. Without an API key the assistant runs offline, free. Other commands (`plan`, `ask`, `memo`, `update`, `eval`), Windows steps and API keys: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md). Checks before a submission: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md).
 
@@ -199,20 +202,39 @@ The app opens at http://127.0.0.1:7860. Sign in as `admin`, `kevin`, `khoa` or `
 |---|---|
 | Problem statement and vision (15) | the answer above; open points of the brief turned into measured assumptions |
 | LangChain agent design (20) | six tools, structured output, memory with follow ups, `create_agent` chat checked live ([`docs/AGENT_LIVE_CHECK.md`](docs/AGENT_LIVE_CHECK.md)), number check with retry and fallback |
-| Multi LLM evaluation (20) | five assistants on 82 labelled questions with a holdout, cross model judges checked against a person |
+| Multi LLM evaluation (20) | five assistants on 82 labelled questions with a holdout, cross model judges, the local judges checked against a person |
 | Data use (15) | every sign up with its budget, backtest on real 2025 sign ups, leap day repair, threshold scenarios |
 | Presentation and demo (20) | executed notebook, web app, report, [presentation script](docs/PRESENTATION.md); video to be recorded |
 | Innovation (10) | number check with country attribution, manager checks and monthly update, decision log |
 
 ## Team contributions
 
-Each member worked where their background is strongest; all three reviewed the plan, the assumptions and the report.
+Share of the work: **Kevin 40%**, **Hamad 30%**, **Khoa 30%**. All three reviewed the plan, the assumptions and the report.
 
-| Member | Role | Main contributions |
+| Step | Task | Main file | Owner | Status |
+|---|---|---|---|---|
+| 01 | Prepare and check the data: eligibility, date repair, data profile | `src/staffpilot/data.py`, `eda.py` | Kevin | Done |
+| 02 | Forecast demand and backtest the method | `forecast.py`, `backtest.py` | Kevin | Done |
+| 03 | Turn the brief's rules into the planning model: capacity, waiting pool, ramp up, notice, costs | `default_config.toml`, `optimize.py` | Hamad & Kevin | Done |
+| 04 | Simulate day by day and check the plan against every rule | `simulate.py`, `checks.py` | Hamad & Kevin | Done |
+| 05 | Define the KPIs and the service goals of the Plan page | `planner.py` | Hamad | Done |
+| 06 | Write the assumptions A1 to A11 and test how much each one matters | `docs/METHODS.md`, notebook section 11 | Hamad & Khoa | Done |
+| 07 | Design the what if scenarios, the sensitivity and Monte Carlo runs, and read their results | `scenarios.py`, notebook section 10 | Khoa | Done |
+| 08 | Build the GenAI assistant: routing, planner tools, retrieval, number check, memory | `src/staffpilot/agent/` | Kevin | Done |
+| 09 | Write the labelled test questions and check every label | `eval/testset.jsonl`, `holdout.jsonl`, `followups.jsonl`, `label_review.csv` | Khoa & Hamad | Done |
+| 10 | Build the evaluation and compare the models | `evaluation.py`, `docs/EVALUATION.md` | Kevin | Done |
+| 11 | Build the web app: pages, monthly update, decision log, sign in | `app.py`, `src/staffpilot/ui/` | Kevin | Done |
+| 12 | Check the plan against real capacity planning practice and write the business recommendations | `docs/report.md` | Khoa | Done |
+| 13 | Write the process improvement view | `docs/report.md` | Hamad | Done |
+| 14 | Run the testing guide before submission | `docs/TESTING_GUIDE.md` | Khoa & Hamad | Done |
+| 15 | Executed notebook, README and CI on three systems | `notebooks/StaffPilot_Topic3.ipynb`, `.github/workflows/ci.yml` | Kevin | Done |
+| 16 | Presentation script and demo video | `docs/PRESENTATION.md` | Khoa & Kevin | Video to be recorded |
+
+| Member | Role | Background |
 |---|---|---|
-| **Quoc Hung Le (Kevin)** | Team lead, solution architect and lead engineer | Chose Topic 3 and set the strategy against the brief and rubric. Designed the architecture and built most of the code: data loading with the date repair and caching, the forecast and backtest, the planning pipeline end to end, the GenAI assistant (structured routing, planner tools, BM25 retrieval, the fact placeholder number check, conversation memory, model discovery), the web app and its design, the evaluation harness, logging, alerts, CI on three systems and the executed notebook. Kept the repository, documentation and submission together. Background: data analytics and BI at Viettel and Samsung (ETL, workforce dashboards, forecasting). |
-| **Hamad Al Sulaimi** | Optimization and process analysis | Reviewed the planning model against the brief's rules (capacity, waiting pool, ramp up, notice), helped shape the assumptions A1 to A11 and their sensitivity tests, defined the KPIs shown on the Plan page, and wrote the process improvement view in the report. Background: Industrial Engineering, Lean process improvement and Power BI. |
-| **Khoa Tran** | Operations and business validation | Checked the plan against real capacity planning practice, designed the what if scenarios and the labelled test questions, interpreted the sensitivity and Monte Carlo results, ran the testing guide before submission, and led the business recommendations and the demo video. Background: supply chain and transportation operations, capacity planning and fleet utilization. |
+| **Quoc Hung Le (Kevin)** | Team lead, solution architect and lead engineer | data analytics and BI at Viettel and Samsung: ETL, workforce dashboards, forecasting |
+| **Hamad Al Sulaimi** | Optimization and process analysis | Industrial Engineering, Lean process improvement and Power BI |
+| **Khoa Tran** | Operations and business validation | supply chain and transportation operations, capacity planning and fleet utilization |
 
 ## AI use
 

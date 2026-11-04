@@ -29,7 +29,7 @@ AI assisted reviews from a teaching assistant, tester and instructor point of vi
 * Two conclusions in an early report draft contradicted the model (on assumption A1 and on the early service preference A9) and were rewritten from the outputs.
 * A rough threshold estimate ($175M) was far above the model result (a few million dollars per country) and was dropped.
 * Out of range scenarios, unknown countries and countries without eligible sign ups used to crash or be silently ignored; each now has a message and a test.
-* The public data copy contains dates that do not exist (29 February 2025); the loader repairs them.
+* The Canvas workbook contains dates that do not exist (29 February 2025); the loader repairs them.
 
 ## What was not used
 
