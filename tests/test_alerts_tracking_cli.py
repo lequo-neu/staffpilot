@@ -63,6 +63,10 @@ def test_command_line_end_to_end(workbook, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(tracking, "RUNS_FILE", tmp_path / "runs.jsonl")
     cli.main(["plan"])
     assert (tmp_path / "outputs" / "plan.csv").exists()
+    assert (tmp_path / "outputs" / "service_tradeoff.csv").exists()
+    cli.main(["update", "Alpha", "--month", "3", "--percent", "20"])
+    cli.main(["update", "Beta", "--month", "4", "--actual", "300", "280", "310", "--staff-change", "-1"])
+    assert (tmp_path / "outputs" / "update_Alpha_03.csv").exists()
     cli.main(["eda"])
     assert (tmp_path / "outputs" / "eda" / "eda_report.md").exists()
     cli.main(["ask", "What if sign ups in Alpha drop 30% in Q3?"])
@@ -73,6 +77,7 @@ def test_command_line_end_to_end(workbook, tmp_path, monkeypatch, capsys):
     cli.main(["chat"])
     out = capsys.readouterr().out
     assert "Alerts:" in out and "Chart saved to" in out and "plan" in out
+    assert "Profit against service level" in out and "Decide in March" in out
     # On failure, show the chat itself rather than the start of the output.
     chat = out[out.find("Ask a question.") :]
     assert "Kept the kind of question" in out and "Started a new conversation" in out, chat

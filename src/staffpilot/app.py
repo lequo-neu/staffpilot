@@ -1,6 +1,7 @@
 """Gradio app: a planning desk for support staffing managers ("Ledger" design).
 
-A sidebar holds the pages (Assistant, Plan, Scenario, Memo, Data, Evaluation), the
+A sidebar holds the pages (Assistant, Plan, Monthly update, Scenario, Memo, Data,
+Evaluation, Decision log), the
 recent conversations of this browser tab and the settings (language model, saving a
 conversation). Every page starts with the headline numbers and the alerts. The look
 lives in `staffpilot.ui`; this module holds the layout and the handlers.
@@ -18,14 +19,15 @@ import uuid
 import gradio as gr
 import pandas as pd
 
-from staffpilot import cache, charts
+from staffpilot import audit, cache, charts
 from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
 from staffpilot.agent.memory import Conversation, describe
 from staffpilot.alerts import plan_alerts
 from staffpilot.cli import EVAL_DIR, OUTPUTS
 from staffpilot.eda import budget_figure, figures, profile
-from staffpilot.planner import RECOMMENDED_POLICY, Planner
+from staffpilot.monthly import MONTH_NAMES
+from staffpilot.planner import RECOMMENDED_POLICY, SERVICE_GOALS, Planner
 from staffpilot.scenarios import ScenarioParams
 from staffpilot.ui import CSS, components, icon, theme
 
@@ -40,7 +42,16 @@ EXAMPLES = [
     "Which countries have the most volatile demand?",
     "How long can an advertiser wait in the pool?",
 ]
-PAGES = ["Assistant", "Plan", "Scenario", "Memo", "Data", "Evaluation"]
+PAGES = ["Assistant", "Plan", "Monthly update", "Scenario", "Memo", "Data", "Evaluation", "Decision log"]
+# The service goal is a business choice: profit only, or profit with a service level agreement.
+GOAL_NAMES = {
+    "optimized": "Profit only",
+    "service_98": "Profit, 98% served (recommended)",
+    "service_98_21d": "Profit, 98% served within 21 days",
+    "service_98_14d": "Profit, 98% served within 14 days",
+    "service_98_7d": "Profit, 98% served within 7 days",
+}
+GOALS = [(GOAL_NAMES[g], g) for g in SERVICE_GOALS]
 # On a phone the sidebar covers the screen, so it starts closed and closes again after a choice.
 CLOSE_SIDEBAR_ON_PHONE = """() => {
   if (window.innerWidth < 769) {
@@ -120,9 +131,9 @@ def _compare(
     return delta, trend, tone, f"{words[0] if trend == 'up' else words[1]} {base}"
 
 
-def plan_kpis(p: Planner, country: str | None = None) -> str:
+def plan_kpis(p: Planner, country: str | None = None, goal: str = RECOMMENDED_POLICY) -> str:
     """KPI cards with a monthly sparkline, each compared with keeping the January team all year."""
-    bundle, hold = p.run(RECOMMENDED_POLICY), p.run("hold")
+    bundle, hold = p.run(goal), p.run("hold")
     if country:
         t, h = bundle.outcomes[country].kpis, hold.outcomes[country].kpis
     else:
@@ -158,7 +169,8 @@ def plan_kpis(p: Planner, country: str | None = None) -> str:
             "Advertisers served",
             f"{t['service_rate']:.1%}",
             f"Share of eligible advertisers who get an agent within the {rules.max_wait_days} day waiting window. "
-            f"They wait {t['mean_wait_days']:.1f} days on average; one in ten waits over {t['p90_wait_days']:.0f}.",
+            f"They wait {t['mean_wait_days']:.1f} days on average; one in ten waits over {t['p90_wait_days']:.0f}. "
+            f"{t['within_week_rate']:.1%} get an agent within 7 days.",
             *_compare(t["service_rate"], h["service_rate"], **shares),
             m["service"].fillna(1.0).tolist(),
         ),
@@ -205,6 +217,7 @@ def _trace(answer) -> str:
         answer.seconds,
         answer.backend,
         describe(answer.carried) if answer.carried else "",
+        answer.guardrails,
     )
 
 
@@ -215,6 +228,7 @@ def ask(message: str, history: list, backend: str, memory: Conversation | None =
     if not message.strip():
         return history, "", components.trace_empty(), None, pd.DataFrame(), "{}", memory
     answer = pilot(backend).ask(message, memory)
+    audit.record(audit.answer_rows(answer), OUTPUTS)
     history = [*history, {"role": "user", "content": message}, {"role": "assistant", "content": answer.text}]
     path = charts.save_answer_chart(answer.chart, message, OUTPUTS / "answers", components.WEB_DPI)
     if path:
@@ -309,16 +323,19 @@ def model_choices(refresh: bool = False) -> tuple[list[tuple[str, str]], str]:
     return [("Offline (free, no API key)", "offline"), *listed], "offline"
 
 
-def plan_view(country: str):
+def plan_view(country: str, goal: str = RECOMMENDED_POLICY):
     p = planner()
-    bundle = p.run(RECOMMENDED_POLICY)
+    bundle = p.run(goal)
     plan, monthly = bundle.plan_table(), bundle.monthly_table()
     monthly = monthly[monthly["month_index"] <= 12]
     chosen = None if country == "All countries" else country
     if chosen:
         plan, monthly = plan[plan["country"] == chosen], monthly[monthly["country"] == chosen]
     figure = charts.headcount(
-        plan, monthly, f"{country}: recommended headcount for {p.year}", p.settings.rules.capacity_per_agent
+        plan,
+        monthly,
+        f"{country}: headcount for {p.year}, {GOAL_NAMES[goal]}",
+        p.settings.rules.capacity_per_agent,
     )
     columns = [
         "active_agents",
@@ -330,31 +347,133 @@ def plan_view(country: str):
         "fire_cost",
     ]
     shown = plan if chosen else plan.groupby("month", as_index=False)[columns].sum()
-    return plan_kpis(p, chosen), components.sharp(figure), _readable(shown)
+    return plan_kpis(p, chosen, goal), components.sharp(figure), _readable(shown)
 
 
-def approve(country: str) -> str:
-    plan = planner().run(RECOMMENDED_POLICY).plan_table()
+def tradeoff_view(goal: str = RECOMMENDED_POLICY):
+    """Profit only against each service goal: the value given up and the service bought with it."""
+    frame = planner().service_tradeoff()
+    profit, chosen = frame.iloc[0], frame[frame["policy"] == goal].iloc[0]
+    text = (
+        f"**Profit only** earns {charts.money(profit['net_value'])} and serves {profit['service_rate']:.1%} of "
+        f"eligible advertisers, {profit['within_week_rate']:.1%} of them within 7 days. "
+    )
+    if goal != "optimized":
+        text += (
+            f"**{GOAL_NAMES[goal]}** gives up {charts.money(chosen['cost_of_goal'])} "
+            f"({chosen['cost_of_goal'] / profit['net_value']:.2%} of net value) to serve {chosen['service_rate']:.1%}, "
+            f"{chosen['within_week_rate']:.1%} within 7 days, with {chosen['avg_active'] - profit['avg_active']:+,.0f} "
+            "agents on average."
+        )
+    shown = frame.assign(goal=frame["policy"].map(GOAL_NAMES))[
+        [
+            "goal",
+            "net_value",
+            "cost_of_goal",
+            "service_rate",
+            "within_week_rate",
+            "avg_active",
+            "mean_wait_days",
+        ]
+    ].rename(columns={"cost_of_goal": "value_given_up", "within_week_rate": "served_in_7_days_rate"})
+    return text, components.sharp(charts.service_tradeoff(frame, goal)), _readable(shown)
+
+
+def approve(country: str, goal: str = RECOMMENDED_POLICY) -> str:
+    bundle = planner().run(goal)
+    plan = bundle.plan_table()
+    countries = list(bundle.outcomes)
     if country != "All countries":
-        plan = plan[plan["country"] == country]
+        plan, countries = plan[plan["country"] == country], [country]
     OUTPUTS.mkdir(exist_ok=True)
     path = OUTPUTS / "approved_plan.csv"
     plan.to_csv(path, index=False)
-    log.info("Plan approved for %s (%d rows)", country, len(plan))
-    return f"Approved. {len(plan)} rows saved to `{path.name}`. Nothing is sent to anyone until a manager acts on it."
+    rows = audit.plan_rows(bundle, countries, GOAL_NAMES[goal], GOAL_NAMES[RECOMMENDED_POLICY])
+    audit.record(rows, OUTPUTS)
+    log.info("Plan approved for %s with goal %s (%d rows)", country, goal, len(plan))
+    return (
+        f"Approved with the goal *{GOAL_NAMES[goal]}*. {len(plan)} rows saved to `{path.name}` and "
+        f"{len(rows)} rows added to the decision log. Nothing is sent to anyone until a manager acts on it."
+    )
 
 
-def parse_scenario(text: str, backend: str) -> tuple[str, str]:
-    route, _ = pilot(backend).route(text)
+def _as_of(month: str) -> int:
+    return MONTH_NAMES.index(month) + 1
+
+
+def actual_inputs(country: str, month: str, percent: float) -> pd.DataFrame:
+    """The months before the update, with the forecast and an actual count to edit (forecast plus `percent`)."""
+    done = _as_of(month) - 1
+    forecast = planner().forecast.demand(country)[:done]
+    return pd.DataFrame(
+        {
+            "Month": MONTH_NAMES[:done],
+            "Forecast": forecast.round().astype(int),
+            "Actual": (forecast * (1 + float(percent or 0) / 100)).round().astype(int),
+        }
+    )
+
+
+def update_view(country: str, month: str, actuals: pd.DataFrame, change: float, goal: str):
+    """Plan again from `month` with the actual sign ups so far. Returns the summary, chart, table and result."""
+    try:
+        actual = pd.to_numeric(pd.DataFrame(actuals)["Actual"], errors="raise").to_numpy(dtype=float)
+        update = planner().monthly_update(country, _as_of(month), actual, int(change or 0), goal)
+    except (KeyError, TypeError, ValueError) as error:
+        return f"Those inputs do not work: {error}", None, pd.DataFrame(), None
+    table = update.table()
+    figure = charts.monthly_update(table, update.as_of, f"{country}: plan updated in {month} {update.year}")
+    return update.summary(), components.sharp(figure), _update_table(table), update
+
+
+def _update_table(table: pd.DataFrame) -> pd.DataFrame:
+    """The month by month comparison, narrow enough for the side panel."""
+
+    def pair(before: pd.Series, after: pd.Series) -> list[str]:
+        return [str(b) if b == a else f"{b} → {a}" for b, a in zip(before, after, strict=True)]
+
+    return pd.DataFrame(
+        {
+            "Month": [MONTH_NAMES[int(m[-2:]) - 1][:3] for m in table["month"]],
+            "Status": table["status"],
+            "Sign ups": pair(table["forecast_signups"], table["signups_used"]),
+            "Agents at work": pair(table["agents_planned"], table["agents_updated"]),
+            "Hires": pair(table["hires_planned"], table["hires_updated"]),
+            "Notices": pair(table["notices_planned"], table["notices_updated"]),
+        }
+    )
+
+
+def approve_update(update) -> str:
+    if update is None:
+        return "Update the plan first, then approve it."
+    OUTPUTS.mkdir(exist_ok=True)
+    path = OUTPUTS / "approved_update.csv"
+    update.table().assign(country=update.country).to_csv(path, index=False)
+    rows = audit.update_rows(update)
+    audit.record(rows, OUTPUTS)
+    log.info("Monthly update approved for %s in month %d", update.country, update.as_of)
+    return f"Approved. The updated plan is saved to `{path.name}` and {len(rows)} rows are added to the decision log."
+
+
+def _reader(name: str) -> str:
+    return "offline reader (keywords)" if name.startswith("offline") else f"GenAI ({name})"
+
+
+def parse_scenario(text: str, backend: str) -> tuple[str, str, dict]:
+    """Read a sentence into scenario parameters. The third value records what the reader proposed."""
+    route, name, guardrails = pilot(backend).read(text)
     if route.scenario is None and not route.clarification:
-        route, _ = pilot(backend).route(f"What if {text}")
+        route, name, guardrails = pilot(backend).read(f"What if {text}")
+    proposal = {"params": None, "reader": _reader(name), "guardrails": guardrails}
     if route.clarification:
-        return "{}", route.clarification
+        return "{}", route.clarification, proposal
     params = route.scenario or ScenarioParams(countries=route.countries)
-    return json.dumps(params.model_dump(mode="json"), indent=2), f"Understood as: {params.plain()}."
+    proposal["params"] = params.model_dump(mode="json")
+    return json.dumps(proposal["params"], indent=2), f"Understood as: {params.plain()}.", proposal
 
 
-def run_scenario(params_json: str):
+def run_scenario(params_json: str, proposal: dict | None = None):
     try:
         params = ScenarioParams.model_validate_json(params_json)
     except ValueError as error:
@@ -362,6 +481,14 @@ def run_scenario(params_json: str):
     p = planner()
     result = p.scenario(params)
     t = result.totals()
+    proposal = proposal or {}
+    proposed = ScenarioParams.model_validate(proposal["params"]) if proposal.get("params") else None
+    audit.record(
+        audit.scenario_rows(
+            proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t
+        ),
+        OUTPUTS,
+    )
     change = t["net_value_change"]
     sign = "+" if change >= 0 else "-"
     summary = (
@@ -430,22 +557,28 @@ def eval_tables():
 
 PAGE_TEXT = {
     "Assistant": "Ask in plain English. Each answer shows its chart and how it was worked out.",
-    "Plan": "Headcount month by month for the planning year. Approve it when it looks right.",
+    "Plan": "Headcount month by month for the planning year. Pick a service goal, then approve the plan.",
+    "Monthly update": "Enter the real sign ups so far; the remaining months are planned again.",
     "Scenario": "Describe a change in words, check how it was read, then run it against the plan.",
     "Memo": "A one page staffing memo for a country manager.",
     "Data": "How clean the sign up history is and the patterns the plan is built on.",
     "Evaluation": "How each assistant scored on labelled questions, and every recorded run.",
+    "Decision log": "Every approved decision: what was proposed, what changed it and what was applied.",
 }
 # Hover text for sidebar items and buttons, set once the page has loaded.
 TIPS = {
     "Assistant": "Chat about the plan; follow up questions keep their context",
     "Plan": "Headline numbers, alerts and the month by month plan",
+    "Monthly update": "Plan the rest of the year again with the actual sign ups so far",
+    "Decision log": "What the optimizer, a language model and the manager each decided",
+    "Update the plan": "Keeps the months already done and plans the remaining months again",
+    "Approve the update": "Saves the updated plan and records every change in the decision log",
     "Scenario": "Test a change, such as fewer sign ups or a hiring cap",
     "Memo": "Write a staffing memo for one country",
     "Data": "Data quality checks and patterns in the sign ups",
     "Evaluation": "Assistant accuracy and the run history",
     "New chat": "Start a conversation with an empty memory",
-    "Approve this plan": "Saves the plan to outputs/approved_plan.csv; nothing is sent to anyone",
+    "Approve this plan": "Saves the plan to outputs/approved_plan.csv and logs the decision; nothing is sent",
     "Read the scenario": "Turns your sentence into scenario parameters you can check and edit",
     "Run the scenario": "Rebuilds the plan with the change and compares it with the current plan",
     "Write the memo": "Writes the memo from the plan's numbers; every number is checked",
@@ -560,6 +693,13 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     pick = gr.Dropdown(
                         ["All countries", *p.countries], value="All countries", label="Country", scale=3
                     )
+                    goal = gr.Dropdown(
+                        GOALS,
+                        value=RECOMMENDED_POLICY,
+                        label="Service goal",
+                        info="Profit only, or profit with a service level for advertisers",
+                        scale=3,
+                    )
                     approve_btn = gr.Button("Approve this plan", variant="primary", scale=0, min_width=180)
                 cards = gr.HTML()
                 status = gr.Markdown(elem_classes="sp-note")
@@ -568,7 +708,61 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 with gr.Column(elem_classes="sp-panel"):
                     figure = gr.Plot(show_label=False, elem_classes="sp-plot")
                 with gr.Column(elem_classes="sp-panel"):
+                    tradeoff_text = gr.Markdown(elem_classes="sp-prose")
+                    tradeoff_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                    with gr.Accordion("Every service goal", open=False, elem_classes="sp-block"):
+                        tradeoff_table = gr.Dataframe(show_label=False, wrap=True)
+                with gr.Column(elem_classes="sp-panel"):
                     plan_table = gr.Dataframe(label="Month by month", wrap=True)
+
+            with (
+                gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"],
+                gr.Row(equal_height=False),
+            ):
+                with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                    up_country = gr.Dropdown(p.countries, value=p.countries[0], label="Country")
+                    up_month = gr.Dropdown(
+                        MONTH_NAMES[1:],
+                        value=MONTH_NAMES[2],
+                        label="Update made in",
+                        info="The months before it are done and keep their decisions",
+                    )
+                    up_percent = gr.Slider(
+                        -50,
+                        100,
+                        value=20,
+                        step=5,
+                        label="Sign ups so far against the forecast (percent)",
+                        info="Fills the Actual column; edit any month by hand",
+                    )
+                    up_actuals = gr.Dataframe(
+                        label="Actual eligible sign ups",
+                        interactive=True,
+                        wrap=True,
+                        column_count=3,
+                        static_columns=[0, 1],
+                    )
+                    up_change = gr.Number(
+                        0,
+                        precision=0,
+                        label="Agents on staff against the plan",
+                        info="For example -2 when two agents resigned",
+                    )
+                    with gr.Row():
+                        update_btn = gr.Button("Update the plan", variant="primary")
+                        approve_update_btn = gr.Button("Approve the update")
+                    update_status = gr.Markdown(elem_classes="sp-note")
+                with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                    update_summary = gr.Markdown(
+                        "Enter the actual sign ups so far, then update the plan. The approved plan's decisions "
+                        "in the months already done stay as they were.",
+                        elem_classes="sp-prose",
+                    )
+                    update_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                    update_table = gr.Dataframe(
+                        label="Approved plan → update (forecast → actual for sign ups)", wrap=True
+                    )
+                update_state = gr.State(None)
 
             with (
                 gr.Column(visible=False, elem_classes="sp-page") as pages["Scenario"],
@@ -581,6 +775,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         run_btn = gr.Button("Run the scenario", variant="primary")
                     understood = gr.Markdown(elem_classes="sp-note")
                     params = gr.Code(language="json", label="Parameters, which you can edit")
+                    proposal = gr.State({})
                 with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
                     summary = gr.Markdown(
                         "Read a scenario, then run it to compare it with the current plan.",
@@ -628,6 +823,21 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 eval_retrieval = gr.Dataframe(label="Retrieval")
                 runs = gr.Dataframe(label="Runs")
 
+            with (
+                gr.Column(visible=False, elem_classes="sp-page") as pages["Decision log"],
+                gr.Column(elem_classes="sp-panel"),
+            ):
+                gr.Markdown(
+                    "Each row keeps apart what was **proposed** (by the optimizer, the forecast or a language "
+                    "model reading your words), what **adjusted** it (the simulator check, a monthly update, "
+                    "a GenAI guardrail or you) and what was finally **applied**. No language model writes a "
+                    "staffing number: numbers come from the planner.",
+                    elem_classes="sp-note",
+                )
+                log_summary = gr.Markdown(elem_classes="sp-note")
+                log_table = gr.Dataframe(show_label=False, wrap=True)
+                log_file = gr.File(label="decision_audit.csv", visible=False)
+
         # Navigation and conversations
         demo.load(None, None, None, js=PAGE_JS)
         demo.load(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
@@ -646,12 +856,25 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         refresh_btn.click(refresh_models, backend, backend)
 
         # Pages. Data and evaluation tables load when their page is first opened.
-        pick.change(plan_view, pick, [cards, figure, plan_table])
-        approve_btn.click(approve, pick, status)
-        read_btn.click(parse_scenario, [text, backend], [params, understood])
-        run_btn.click(run_scenario, params, [summary, scenario_plot, diff])
+        for control in (pick, goal):
+            control.change(plan_view, [pick, goal], [cards, figure, plan_table])
+        goal.change(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
+        approve_btn.click(approve, [pick, goal], status)
+        for control in (up_country, up_month, up_percent):
+            control.change(actual_inputs, [up_country, up_month, up_percent], up_actuals)
+        update_btn.click(
+            update_view,
+            [up_country, up_month, up_actuals, up_change, goal],
+            [update_summary, update_plot, update_table, update_state],
+        )
+        approve_update_btn.click(approve_update, update_state, update_status)
+        read_btn.click(parse_scenario, [text, backend], [params, understood, proposal])
+        run_btn.click(run_scenario, [params, proposal], [summary, scenario_plot, diff])
         memo_btn.click(memo, [memo_country, backend], [memo_text, memo_plot])
-        demo.load(plan_view, pick, [cards, figure, plan_table])
+        demo.load(plan_view, [pick, goal], [cards, figure, plan_table])
+        demo.load(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
+        demo.load(actual_inputs, [up_country, up_month, up_percent], up_actuals)
+        nav.change(open_log, nav, [log_summary, log_table, log_file])
         loaded = gr.State(set())
         nav.change(
             load_page,
@@ -659,6 +882,19 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             [loaded, findings, trend, need, season, budgets, quality, eval_summary, eval_retrieval, runs],
         )
     return demo
+
+
+def open_log(name: str):
+    """The decision log is read again each time its page opens, since every approval adds to it."""
+    if name != "Decision log":
+        return gr.update(), gr.update(), gr.update()
+    frame = audit.read(OUTPUTS, 500)
+    path = OUTPUTS / audit.FILE_NAME
+    return (
+        audit.summary(frame),
+        frame,
+        gr.File(value=str(path) if path.exists() else None, visible=path.exists()),
+    )
 
 
 def load_page(name: str, loaded: set):

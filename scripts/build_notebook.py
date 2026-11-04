@@ -32,7 +32,7 @@ CELLS: list[tuple[str, str]] = [
 
 IE5374 Applied Generative AI, Module 7 Hackathon, Topic 3 (problem contributed by Google).
 
-**Seven Team-5374** · *Trio Intelligence* · Copyright © 2026 Seven Team-5374
+**Seven Team-5374** · Copyright © 2026 Seven Team-5374
 
 **Question.** How many support agents should each of 22 countries have in each month of the planning year, given uncertain sign ups, a 10 advertiser capacity per agent, a 60 day waiting pool, one month of ramp up and a firing cost of 40 percent of salary?
 
@@ -230,17 +230,21 @@ for alert in plan_alerts(planner):
     ),
     (
         "md",
-        "## 9. Service versus value\n\nThe same model with a floor on the share of eligible advertisers served."
+        "## 9. Profit only or profit with a service level\n\nThe service goal is the manager's choice, offered on the Plan page. Each goal is its own optimization: profit only, at least 98 percent served, and 98 percent served within 21, 14 or 7 days. Only advertisers served within the limit count towards a timed goal; later service stays allowed."
         + AI,
     ),
     (
         "code",
-        """frontier = []
-for target in (0.0, 0.90, 0.95, 0.98, 1.0):
-    variant = Planner(settings.with_updates(planning={"service_target": target}), data)
-    t = variant.run("optimized").totals()
-    frontier.append({"service_floor": target, "service_rate": t["service_rate"], "net_value_M": t["net_value"] / 1e6, "avg_active": t["avg_active"]})
-pd.DataFrame(frontier)""",
+        """from staffpilot.charts import service_tradeoff
+tradeoff = planner.service_tradeoff()
+display(service_tradeoff(tradeoff, RECOMMENDED_POLICY))
+view = tradeoff[["goal", "net_value", "cost_of_goal", "service_rate", "within_week_rate", "avg_active", "mean_wait_days"]].copy()
+view[["net_value", "cost_of_goal"]] = view[["net_value", "cost_of_goal"]] / 1e6
+view.rename(columns={"net_value": "net_value_M", "cost_of_goal": "given_up_M"})""",
+    ),
+    (
+        "md",
+        """Serving everyone is nearly free because support pays for itself in 21 of 22 countries; the small cost of the 98 percent floor is the UAE. Speed is the real trade: serving 98 percent within a week costs a few million dollars and adds agents in every country. We recommend the 98 percent goal and leave the faster goals as a choice, since the brief values timely support but puts no price on a day of waiting.""",
     ),
     ("md", "## 10. Sensitivity to sign up volume and Monte Carlo" + AI),
     (
@@ -269,6 +273,23 @@ ax[0].legend(); plt.tight_layout(); plt.show()""",
         """mc = planner.monte_carlo(runs=20)
 print("Monte Carlo over resampled daily sign ups and sampled uplift, 20 runs")
 mc[["net_value", "service_rate", "dropped"]].describe(percentiles=[0.1, 0.5, 0.9]).loc[["mean", "10%", "50%", "90%"]]""",
+    ),
+    (
+        "md",
+        """### Monthly update from actual sign ups
+
+The forecast will be wrong, so the plan is updated during the year (`Planner.monthly_update`, the Monthly update page, `python -m staffpilot update`). The months already done keep their hires and notices; their actual sign ups replace the forecast, the remaining months are scaled by how far the last three months were from it, and only the remaining months are solved again. Three cases:""",
+    ),
+    (
+        "code",
+        """from staffpilot.charts import monthly_update as update_chart
+cases = [("Germany", 2, 1.4, 0), ("USA", 3, 1.2, 0), ("Vietnam", 5, 0.8, -2)]
+for country, month, scale, staff in cases:
+    actual = planner.forecast.demand(country)[: month - 1] * scale
+    update = planner.monthly_update(country, month, actual, staff)
+    print(f"{country}, update in month {month}, sign ups at {scale:.0%} of forecast, staff change {staff}")
+    print(update.summary().replace("**", ""), "\\n")
+display(update_chart(update.table(), update.as_of, "Vietnam: plan updated in May"))""",
     ),
     ("md", "## 11. Which assumptions matter" + AI),
     (
@@ -374,6 +395,20 @@ for q in ["What if sign ups in Brazil drop 30% in Q3?", "And Mexico?", "What abo
     ),
     (
         "code",
+        """# The decision log keeps apart what a language model proposed and what the planner computed.
+# Here a scenario is read from a sentence, edited as a manager would, run, and logged.
+import tempfile
+from staffpilot import audit
+read, reader, guardrails = pilot.read("What if sign ups in Brazil drop 30% in Q3?")
+ran = read.scenario.model_copy(update={"demand_multiplier": 0.75})
+rows = audit.scenario_rows(read.scenario, ran, reader, guardrails, planner.scenario(ran).totals())
+rows += audit.answer_rows(pilot.ask("How many agents does Germany need in March?"))
+log_folder = Path(tempfile.mkdtemp())
+audit.record(rows, log_folder)
+audit.read(log_folder)[["decision", "item", "proposed", "proposed_by", "adjusted", "adjusted_by", "applied", "note"]]""",
+    ),
+    (
+        "code",
         """memo = pilot.memo("Vietnam")
 print(memo.text)
 print("number check:", "passed" if memo.verified else memo.unsupported)
@@ -426,7 +461,9 @@ retrieval""",
 * The recommended plan keeps about 2,200 agents on average instead of 6,474, gives most notices in January, rehires a few agents before the fourth quarter, serves every eligible advertiser with waits of about a day, and raises expected net value by about 109 million dollars. Uplift is unchanged; the gain is cost.
 * On the real sign ups of the last history year, a plan built from the earlier year reaches over 99 percent of the hindsight value.
 * The largest open question is the value of support (A1). Under the stricter reading every policy loses money, yet the plan still beats holding headcount by more than 100 million dollars.
-* Replan monthly: when sign ups rise, an unchanged plan lets waits grow to weeks before it starts losing advertisers.
+* Replan monthly: when sign ups rise, an unchanged plan lets waits grow to weeks before it starts losing advertisers. The monthly update keeps the months done and solves only the rest; Germany at 40 percent above forecast in January needs 31 hires in February instead of none.
+* The service goal is a business choice: a 98 percent floor costs almost nothing, while serving 98 percent within a week costs a few million dollars.
+* Every approval, scenario and answer goes into a decision log that keeps what a language model proposed apart from what the planner computed.
 * Where agents sit idle, lowering the eligibility threshold by 20 percent is worth a few million dollars per large country. In the UAE support does not pay for itself, but keeping it costs very little in total.
 
 AI use: see docs/AI_USAGE.md.""",

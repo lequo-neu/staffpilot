@@ -43,6 +43,9 @@ POLICY_NAMES = {
     "peak_cover": "One cut to the yearly peak",
     "optimized": "Optimized for value",
     "service_98": "Recommended (98% served)",
+    "service_98_21d": "98% served within 21 days",
+    "service_98_14d": "98% served within 14 days",
+    "service_98_7d": "98% served within 7 days",
 }
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -222,6 +225,87 @@ def scenario_lines(base: pd.DataFrame, scenario: pd.DataFrame, title: str, chang
     ax.legend(frameon=False, fontsize=8)
     sign = "+" if change >= 0 else "-"
     return finish(fig, title, f"Net value change {sign}{money(abs(change))} against the current plan.")
+
+
+def service_tradeoff(frame: pd.DataFrame, chosen: str) -> Figure:
+    """What each service goal costs against profit only, and how fast it serves advertisers."""
+    names = frame["policy"].map(lambda p: "Profit only" if p == "optimized" else POLICY_NAMES.get(p, p))
+    colors = [NAVY if p == chosen else SOFT for p in frame["policy"]]
+    fig, (left, right) = new_figure(width=8.6, height=3.4, ncols=2)
+    y = np.arange(len(frame))[::-1]
+    given_up = frame["cost_of_goal"].clip(lower=0)
+    left.barh(y, given_up, color=colors)
+    right.barh(y, frame["within_week_rate"], color=colors)
+    for ax, values, fmt in (
+        (left, given_up, lambda v: money(v)),
+        (right, frame["within_week_rate"], lambda v: f"{v:.1%}"),
+    ):
+        for yi, value in zip(y, values, strict=True):
+            ax.text(value, yi, f"  {fmt(value)}", va="center", fontsize=8, color=INK)
+        ax.yaxis.grid(False)
+        ax.xaxis.grid(True, color=GRID)
+    left.set_yticks(y, names, fontsize=8)
+    right.set_yticks(y, [""] * len(y))
+    left.set_xlim(0, max(float(given_up.max()), 1.0) * 1.45)
+    left.xaxis.set_major_formatter(FuncFormatter(money_axis_label))
+    right.set_xlim(0.8, 1.07)
+    right.set_xticks([0.8, 0.85, 0.9, 0.95, 1.0])
+    right.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.0%}"))
+    left.set_title("Net value given up against profit only", fontsize=9, color=MUTED, loc="left")
+    right.set_title("Advertisers served within 7 days", fontsize=9, color=MUTED, loc="left")
+    return finish(
+        fig,
+        "Profit against service level",
+        "Each goal is a separate optimization; every number comes from the day by day simulator.",
+    )
+
+
+def monthly_update(table: pd.DataFrame, as_of: int, title: str) -> Figure:
+    """Agents at work under the approved plan and the updated one; the months already done are shaded.
+
+    January is left out: the large cut made then would flatten every later change.
+    """
+    x = np.arange(2, len(table) + 1)
+    planned, updated = table["agents_planned"].to_numpy()[1:], table["agents_updated"].to_numpy()[1:]
+    fig, (ax,) = new_figure()
+    if as_of > 2:
+        ax.axvspan(1.5, as_of - 0.5, color=GRID, alpha=0.6, linewidth=0)
+        ax.text(
+            1.6, 1.0, "carried out", transform=ax.get_xaxis_transform(), va="top", fontsize=7.5, color=MUTED
+        )
+    ax.plot(x, planned, color=SLATE, linewidth=1.8, linestyle=(0, (4, 3)), label="approved plan")
+    start = as_of - 2  # position of the update month in x
+    ax.plot(
+        x[start:],
+        updated[start:],
+        color=NAVY,
+        linewidth=2.6,
+        marker="o",
+        markersize=4,
+        markeredgecolor="white",
+        markeredgewidth=0.8,
+        label="updated plan",
+    )
+    for i in range(start, len(x)):
+        gap = int(updated[i] - planned[i])
+        if gap and (i == start or gap != int(updated[i - 1] - planned[i - 1])):
+            ax.annotate(
+                f"{gap:+d}",
+                (x[i], updated[i]),
+                xytext=(0, 8),
+                textcoords="offset points",
+                ha="center",
+                fontsize=8,
+                color=TEAL if gap > 0 else RED,
+            )
+    ax.set_xticks(x, MONTHS[1 : len(x) + 1])
+    ax.set_ylabel("agents at work", color=MUTED, fontsize=9)
+    low = min(planned.min(), updated.min())
+    ax.set_ylim(max(0, low * 0.85 - 2), max(planned.max(), updated.max()) * 1.12 + 2)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    return finish(
+        fig, title, "February to December. Labels show agents added or removed against the approved plan."
+    )
 
 
 def sensitivity_panels(frame: pd.DataFrame) -> Figure:

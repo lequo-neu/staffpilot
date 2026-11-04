@@ -18,5 +18,4 @@ __all__ = [
 ]
 __version__ = "0.1.0"
 TEAM = "Seven Team-5374"
-SLOGAN = "Trio Intelligence"
 COPYRIGHT = f"Copyright © 2026 {TEAM}"

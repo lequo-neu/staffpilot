@@ -32,8 +32,8 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     assert "Net value" in cards and "<svg" in cards and figure is not None and len(table) == 12
     assert "Agent utilization" in app.plan_view("All countries")[0]
 
-    params, understood = app.parse_scenario("Gamma sign ups rise 20%", "offline")
-    summary, scenario_chart, diff = app.run_scenario(params)
+    params, understood, proposal = app.parse_scenario("Gamma sign ups rise 20%", "offline")
+    summary, scenario_chart, diff = app.run_scenario(params, proposal)
     assert scenario_chart is not None
     assert "Understood as" in understood and "net value moves" in summary and len(diff) == 1
 

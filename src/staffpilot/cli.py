@@ -69,7 +69,15 @@ def cmd_plan(_: argparse.Namespace) -> None:
     view["service_rate"] = view["service_rate"].map(lambda v: f"{v:.1%}")
     view["avg_active"] = view["avg_active"].map(lambda v: f"{v:,.0f}")
     print(view.to_string(index=False))
-    print(f"Wrote {_shown(OUTPUTS / 'plan.csv')}, kpis.csv and policy_comparison.csv")
+    tradeoff = planner.service_tradeoff()
+    tradeoff.to_csv(OUTPUTS / "service_tradeoff.csv", index=False)
+    print("\nProfit against service level:")
+    for row in tradeoff.itertuples():
+        print(
+            f"  {row.goal:<58} net ${row.net_value / 1e6:,.1f}M, given up ${row.cost_of_goal / 1e6:,.2f}M, "
+            f"served within 7 days {row.within_week_rate:.1%}"
+        )
+    print(f"Wrote {_shown(OUTPUTS / 'plan.csv')}, kpis.csv, policy_comparison.csv and service_tradeoff.csv")
     from staffpilot.alerts import plan_alerts
     from staffpilot.tracking import record_run
 
@@ -86,6 +94,25 @@ def cmd_plan(_: argparse.Namespace) -> None:
         planner.settings.data_path(),
         {"planning_year": planner.year, "alerts": sum(a.level != "info" for a in alerts)},
     )
+
+
+def cmd_update(args: argparse.Namespace) -> None:
+    from staffpilot.planner import Planner
+
+    planner = Planner()
+    country = planner.resolve_country(" ".join(args.country))
+    if country is None:
+        raise SystemExit(f"No data for {' '.join(args.country)}. Countries: {', '.join(planner.countries)}")
+    actual = args.actual
+    if actual is None:
+        # Without counts, assume the months so far ran at the forecast scaled by --percent.
+        actual = list(planner.forecast.demand(country)[: args.month - 1] * (1 + args.percent / 100))
+    update = planner.monthly_update(country, args.month, actual, args.staff_change, args.goal)
+    print(update.summary().replace("**", ""))
+    OUTPUTS.mkdir(exist_ok=True)
+    path = OUTPUTS / f"update_{country.replace(' ', '_')}_{args.month:02d}.csv"
+    update.table().to_csv(path, index=False)
+    print(f"Wrote {_shown(path)}")
 
 
 def cmd_eda(_: argparse.Namespace) -> None:
@@ -341,16 +368,14 @@ def cmd_app(args: argparse.Namespace) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    from staffpilot import COPYRIGHT, SLOGAN, __version__
+    from staffpilot import COPYRIGHT, __version__
 
     parser = argparse.ArgumentParser(
         prog="staffpilot",
         description="Support agent staffing planner",
-        epilog=f"{COPYRIGHT}. {SLOGAN}.",
+        epilog=f"{COPYRIGHT}.",
     )
-    parser.add_argument(
-        "--version", action="version", version=f"StaffPilot {__version__}, {COPYRIGHT}, {SLOGAN}"
-    )
+    parser.add_argument("--version", action="version", version=f"StaffPilot {__version__}, {COPYRIGHT}")
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -359,6 +384,20 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("plan", help="build the recommended plan and write outputs").set_defaults(func=cmd_plan)
     sub.add_parser("eda", help="data quality checks and exploratory charts").set_defaults(func=cmd_eda)
+    update = sub.add_parser("update", help="plan the rest of the year again from the actual sign ups so far")
+    update.add_argument("country", nargs="+")
+    update.add_argument("--month", type=int, default=3, help="month of the update, 2 to 12 (default 3)")
+    update.add_argument(
+        "--actual", type=float, nargs="+", help="actual eligible sign ups of each month so far"
+    )
+    update.add_argument(
+        "--percent", type=float, default=0.0, help="without --actual: sign ups so far against the forecast"
+    )
+    update.add_argument("--staff-change", type=int, default=0, help="agents on staff now minus the plan")
+    update.add_argument(
+        "--goal", default="service_98", help="service goal, such as optimized or service_98_7d"
+    )
+    update.set_defaults(func=cmd_update)
     ask = sub.add_parser("ask", help="ask the planning assistant")
     ask.add_argument("question", nargs="+")
     ask.add_argument("--backend", default="offline")

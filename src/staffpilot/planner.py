@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 import logging
 import math
 import os
+import re
 import time
 
 import numpy as np
@@ -16,6 +17,7 @@ from staffpilot import cache
 from staffpilot.config import Settings, load_settings
 from staffpilot.data import Dataset, load_dataset
 from staffpilot.forecast import Forecast, build_forecast, demand_stream, month_of_day
+from staffpilot.monthly import MonthlyUpdate
 from staffpilot.optimize import CountryPlan, optimize_country, path_from_targets
 from staffpilot.scenarios import ScenarioParams, ScenarioResult
 from staffpilot.simulate import SimulationResult, simulate
@@ -33,6 +35,59 @@ POLICY_LABELS = {
     "optimized": "Optimized for net value",
     "service_98": "Optimized with at least 98 percent served",
 }
+# Profit only, then profit with a service level agreement (SLA): a share of eligible advertisers
+# served within a time limit. This is the business choice the Plan page offers.
+SERVICE_GOALS = ("optimized", "service_98", "service_98_21d", "service_98_14d", "service_98_7d")
+_GOAL = re.compile(r"service_(\d{2,3})(?:_(\d{1,2})d)?")
+
+
+def service_goal(policy: str) -> tuple[float | None, int | None]:
+    """The SLA a policy name carries: share served and the wait limit in days, if any.
+
+    "service_98" serves at least 98 percent within the brief's 60 day window;
+    "service_98_7d" serves at least 98 percent within 7 days of sign up. The limit is a
+    whole number of weeks, because the optimizer tracks advertisers week by week.
+    """
+    if not policy.startswith("service_"):
+        return None, None
+    match = _GOAL.fullmatch(policy)
+    if not match or not 50 <= int(match.group(1)) <= 100:
+        raise ValueError(f"Unknown policy {policy!r}; write service_98, or service_98_7d with a wait limit")
+    days = int(match.group(2)) if match.group(2) else None
+    if days is not None and (days % 7 or not 7 <= days <= 56):
+        raise ValueError(f"A wait limit is 7 to 56 days in whole weeks, not {days}")
+    return int(match.group(1)) / 100, days
+
+
+def service_floor(policy: str) -> float | None:
+    """The share served that a policy name asks for: "service_98" is 0.98, "optimized" has none."""
+    return service_goal(policy)[0]
+
+
+def policy_label(policy: str) -> str:
+    floor, days = service_goal(policy)
+    if policy in POLICY_LABELS or floor is None:
+        return POLICY_LABELS.get(policy, policy)
+    within = f" within {days} days" if days else ""
+    return f"Optimized with at least {floor:.0%} served{within}".replace("%", " percent")
+
+
+@dataclass
+class Executed:
+    """What already happened before a monthly update.
+
+    `hires` and `notices` are the decisions carried out in the months before the
+    update; `headcount_change` holds changes nobody planned, by month (negative for
+    agents who left).
+    """
+
+    hires: np.ndarray
+    notices: np.ndarray
+    headcount_change: np.ndarray
+
+    @property
+    def months_done(self) -> int:
+        return len(self.hires)
 
 
 @dataclass
@@ -103,6 +158,7 @@ class PlanBundle:
         )
         sums["mean_wait_days"] = float(waits.mean()) if waits.size else 0.0
         sums["p90_wait_days"] = float(np.percentile(waits, 90)) if waits.size else 0.0
+        sums["within_week_rate"] = float((waits <= 7).sum() / sums["arrivals"]) if sums["arrivals"] else 1.0
         sums["roi"] = sums["uplift_value"] / sums["total_cost"] if sums["total_cost"] else 0.0
         sums["max_overflow"] = float(table["max_overflow"].max())
         return sums
@@ -110,6 +166,7 @@ class PlanBundle:
 
 def _kpis(plan: CountryPlan, sim: SimulationResult, months: int = 12) -> dict[str, float]:
     totals = sim.totals(months)
+    waits = sim.waits[sim.wait_months <= months]
     salary = float(plan.salary_cost()[:months].sum())
     fire = float(plan.fire_cost()[:months].sum())
     cost = salary + fire
@@ -132,6 +189,8 @@ def _kpis(plan: CountryPlan, sim: SimulationResult, months: int = 12) -> dict[st
         "service_rate": totals["service_rate"],
         "mean_wait_days": totals["mean_wait_days"],
         "p90_wait_days": totals["p90_wait_days"],
+        # Share of eligible advertisers who get an agent within a week of signing up.
+        "within_week_rate": float((waits <= 7).sum() / totals["arrivals"]) if totals["arrivals"] else 1.0,
         "utilization": totals["utilization"],
         "avg_idle_agents": float(sim.monthly["idle_agents"].iloc[:months].mean()),
         "max_overflow": totals["max_overflow"],
@@ -220,23 +279,36 @@ class Planner:
             targets = np.full(months, math.ceil(concurrent.max() * 1.1))
             targets[0] = start
             plan = path_from_targets(country, start, targets, salary, s.rules, s.assumptions, policy)
-        elif policy in {"optimized", "service_98"}:
-            target = 0.98 if policy == "service_98" else (s.planning.service_target or None)
-            plan = self._optimize_with_repair(country, ctx, target)
+        elif policy == "optimized" or policy.startswith("service_"):
+            floor, days = service_goal(policy)
+            target = floor or (s.planning.service_target or None)
+            plan = self._optimize_with_repair(country, ctx, target, wait_days=days)
         else:
             raise ValueError(f"Unknown policy {policy!r}; choose one of {POLICIES}")
         plan.policy = policy
         return plan
 
-    def _optimize_with_repair(self, country: str, ctx: Context, service_target: float | None) -> CountryPlan:
+    def _optimize_with_repair(
+        self,
+        country: str,
+        ctx: Context,
+        service_target: float | None,
+        executed: Executed | None = None,
+        wait_days: int | None = None,
+    ) -> CountryPlan:
         s = ctx.settings
         months = self.horizon_months(ctx)
         row = ctx.dataset.countries.loc[country]
         stream = self.demand(country, months, ctx)
         month_by_day = month_of_day(self.year, months)
         budgets = ctx.forecast.mean_budget(country)[:months]
+        # Counted in whole weeks after the week of sign up, so every counted advertiser waits less
+        # than the limit: 7 days means served in the same week.
+        sla_weeks = wait_days // 7 - 1 if wait_days else None
         min_active: np.ndarray | None = None
         plan: CountryPlan | None = None
+        proposed: np.ndarray | None = None
+        done = executed.months_done if executed else 0
         for _ in range(s.planning.repair_rounds + 1):
             plan = optimize_country(
                 country,
@@ -252,9 +324,17 @@ class Planner:
                 min_active,
                 ctx.max_hires_per_month,
                 initial_pool=len(stream.initial_pool),
+                fixed_hires=executed.hires if executed else None,
+                fixed_notices=executed.notices if executed else None,
+                headcount_change=executed.headcount_change if executed else None,
+                sla_weeks=sla_weeks,
             )
+            proposed = plan.active.copy() if proposed is None else proposed
+            plan.proposed_active = proposed
             sim = self._simulate(country, plan, ctx)
-            overflow = sim.monthly["max_overflow"].to_numpy()
+            overflow = sim.monthly["max_overflow"].to_numpy().copy()
+            # Months already carried out cannot be changed, so only later gaps are repaired.
+            overflow[:done] = 0
             short = service_target is not None and sim.totals()["service_rate"] < service_target - 1e-9
             if overflow.max() <= 0 and not short:
                 break
@@ -266,6 +346,7 @@ class Planner:
             if short:
                 dropped = sim.monthly["dropped"].to_numpy()
                 extra[: len(dropped)] += np.where(dropped > 0, 1, 0)
+            extra[:done] = 0
             min_active = np.maximum(min_active if min_active is not None else 0, plan.active + extra)
             plan.notes.append("repair round applied")
             log.info("%s: simulator found a gap (overflow or service below target); solving again", country)
@@ -339,7 +420,7 @@ class Planner:
         rows = []
         for policy in policies:
             totals = self.run(policy, countries).totals()
-            rows.append({"policy": policy, "description": POLICY_LABELS[policy], **totals})
+            rows.append({"policy": policy, "description": policy_label(policy), **totals})
         frame = pd.DataFrame(rows)
         hold = frame.loc[frame["policy"] == "hold", "net_value"]
         if not hold.empty:
@@ -405,6 +486,111 @@ class Planner:
                     }
                 )
         return pd.DataFrame(rows)
+
+    def service_tradeoff(
+        self, countries: list[str] | None = None, goals: tuple[str, ...] = SERVICE_GOALS
+    ) -> pd.DataFrame:
+        """Profit only against profit with a service floor: what each floor costs and what it buys."""
+        rows = []
+        for policy in goals:
+            t = self.run(policy, countries).totals()
+            rows.append(
+                {
+                    "policy": policy,
+                    "goal": policy_label(policy),
+                    "service_floor": service_floor(policy) or 0.0,
+                    **{
+                        k: t[k]
+                        for k in (
+                            "net_value",
+                            "total_cost",
+                            "uplift_value",
+                            "service_rate",
+                            "within_week_rate",
+                            "dropped",
+                            "avg_active",
+                            "mean_wait_days",
+                            "p90_wait_days",
+                        )
+                    },
+                }
+            )
+        frame = pd.DataFrame(rows)
+        # Net value given up against profit only.
+        frame["cost_of_goal"] = float(frame["net_value"].iloc[0]) - frame["net_value"]
+        return frame
+
+    # Monthly update
+
+    def monthly_update(
+        self,
+        country: str,
+        as_of: int,
+        actual_signups: list[float] | np.ndarray,
+        headcount_change: int = 0,
+        policy: str = RECOMMENDED_POLICY,
+        adjust_rest: bool = True,
+    ) -> MonthlyUpdate:
+        """Plan again at the start of month `as_of` (2 to 12) from what really happened before it.
+
+        The months before `as_of` keep the hires and notices already carried out, and their
+        sign ups are the actual counts. The forecast of the later months is scaled by how far
+        the last (up to three) actual months were from it, unless `adjust_rest` is False.
+        `headcount_change` is the agents on staff now minus the plan, for example -2 when
+        two agents resigned. Only the decisions from `as_of` on are made again.
+        """
+        resolved = self.resolve_country(country)
+        if resolved is None:
+            raise ValueError(f"No data for {country}")
+        if not 2 <= int(as_of) <= 12:
+            raise ValueError("A monthly update starts in February at the earliest and December at the latest")
+        done = int(as_of) - 1
+        actual = np.asarray(actual_signups, dtype=float)
+        if actual.shape != (done,) or (actual < 0).any() or not np.isfinite(actual).all():
+            raise ValueError(f"Give {done} actual monthly sign up counts, none negative")
+        horizon = self.horizon_months()
+        forecast = self.forecast.demand(resolved)[:horizon]
+        factors = np.ones(horizon)
+        seen = forecast[:done] > 0
+        factors[:done][seen] = actual[seen] / forecast[:done][seen]
+        recent = slice(max(0, done - 3), done)
+        ratio = float(actual[recent].sum() / forecast[recent].sum()) if forecast[recent].sum() > 0 else 1.0
+        ratio = float(np.clip(ratio, 0.1, 3.0)) if adjust_rest else 1.0
+        factors[done:] = ratio
+        ctx = replace(self.context, multipliers={resolved: factors})
+
+        base = self.run(policy).outcomes[resolved].plan
+        change = np.zeros(horizon)
+        change[done] = float(headcount_change)
+        executed = Executed(base.hires[:done].copy(), base.notices[:done].copy(), change)
+        floor, days = service_goal(policy)
+        updated = self._optimize_with_repair(resolved, ctx, floor, executed, days)
+        updated.policy = policy
+        # Keeping the plan means the same decisions, with the same unplanned change in headcount.
+        kept = replace(base, active=np.clip(base.active + np.cumsum(change), 0, None), notes=[])
+        outcomes = {}
+        for label, plan in (("kept", kept), ("updated", updated)):
+            sim = self._simulate(resolved, plan, ctx)
+            outcomes[label] = CountryOutcome(plan, sim, _kpis(plan, sim))
+        log.info(
+            "Monthly update for %s as of month %d (sign ups at %.0f%% of forecast)",
+            resolved,
+            as_of,
+            ratio * 100,
+        )
+        return MonthlyUpdate(
+            resolved,
+            self.year,
+            int(as_of),
+            forecast,
+            forecast * factors,
+            actual,
+            ratio,
+            int(headcount_change),
+            base,
+            outcomes["kept"],
+            outcomes["updated"],
+        )
 
     # Uncertainty
 

@@ -15,7 +15,7 @@ import io
 from gradio.components.plot import PlotData
 from matplotlib.figure import Figure
 
-from staffpilot import COPYRIGHT, SLOGAN, TEAM
+from staffpilot import COPYRIGHT, TEAM
 from staffpilot.alerts import Alert
 from staffpilot.ui import icon
 
@@ -83,7 +83,7 @@ def sparkline(values: Sequence[float], width: int = 84, height: int = 30) -> str
 def brand() -> str:
     return (
         f'<div class="sp-brand"><div class="sp-mark">{icon.curve_svg()}</div><div>'
-        f'<div class="sp-brand-name">StaffPilot</div><div class="sp-brand-tag">{_e(SLOGAN)}</div></div></div>'
+        '<div class="sp-brand-name">StaffPilot</div></div></div>'
     )
 
 
@@ -92,7 +92,7 @@ def section(title: str) -> str:
 
 
 def legal() -> str:
-    return f'<div class="sp-legal">{_e(COPYRIGHT.replace(TEAM, ""))}<strong>{_e(TEAM)}</strong><br>{_e(SLOGAN)}</div>'
+    return f'<div class="sp-legal">{_e(COPYRIGHT.replace(TEAM, ""))}<strong>{_e(TEAM)}</strong></div>'
 
 
 def page_head(title: str, subtitle: str = "") -> str:
@@ -150,7 +150,15 @@ def history_empty() -> str:
     return '<div class="sp-history-empty">Your chats in this tab appear here.</div>'
 
 
-def trace(intent: str, tools: str, verified: bool, seconds: float, backend: str, carried: str = "") -> str:
+def trace(
+    intent: str,
+    tools: str,
+    verified: bool,
+    seconds: float,
+    backend: str,
+    carried: str = "",
+    guardrails: list[str] | None = None,
+) -> str:
     """How an answer was built, for the details panel (Markdown with a little HTML)."""
     if verified:
         check = '<span class="sp-chip ok" data-tip="Every number in the answer matches a planner result.">Numbers checked</span>'
@@ -163,6 +171,8 @@ def trace(intent: str, tools: str, verified: bool, seconds: float, backend: str,
     lines = [chips, f"Answered with **{_e(tools)}** using **{_e(backend)}**."]
     if carried:
         lines.append(f"This was a follow up, so it kept the {_e(carried)} from your last question.")
+    if guardrails:
+        lines.append("Guardrails that acted: " + "; ".join(_e(g) for g in guardrails) + ".")
     return "\n\n".join(lines)
 
 

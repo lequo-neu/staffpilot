@@ -1,6 +1,6 @@
 # StaffPilot: analysis report
 
-Seven Team-5374 · *Trio Intelligence*
+Seven Team-5374
 
 IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the public copy of the data (sign ups for 2024 and 2025, planning year 2026). With the official IE5374 file the same code plans 2025; rerun before submission.
 
@@ -25,6 +25,10 @@ On 1 January the 22 countries employ 6,474 agents while demand needs about 2,200
 **Grow Vietnam now.** From 59 to 95 agents, with the first hires decided in January.
 
 **Serve the UAE anyway.** In the UAE one agent's yearly uplift is below its salary, so the pure value plan lets all 309 agents go and serves no one. The recommended plan adds a 98 percent service floor; it keeps about 40 agents there and costs $0.03M in total.
+
+**Profit only or profit with a service level.** The service goal is a choice for the manager, not a hidden setting. Profit only already serves 99.1 percent; the 98 percent floor costs $0.03M. Speed is the real trade: 98 percent served within 7 days costs $3.6M (0.75 percent of net value) and about 87 more agents, and raises the share served within a week from 92.1 to 100.0 percent. The goal is a soft constraint that counts only on time service, so an impossible goal still gives a plan.
+
+**Plan again every month.** The forecast will be wrong, so the plan is updated with actual numbers: the months done keep their decisions, the rest of the forecast is scaled by the recent error, and only the remaining months are solved again. If Germany's January sign ups come in 40 percent above forecast, keeping the plan serves 87.7 percent with a 32 day wait; the update hires 31 agents in February, serves everyone within about 2 days and adds $5.5M.
 
 **The optimizer versus a good heuristic.** Matching last month's demand reaches $468.3M. Almost all of the value comes from removing excess agents; the optimizer adds $11.3M and, unlike the heuristics, handles service floors, hiring caps and scenarios in one model.
 
@@ -106,7 +110,7 @@ Other features:
 * It answers questions about the rules with BM25 retrieval and citations.
 * It remembers the last four turns of a chat, so "And Mexico?" after a Brazil scenario reruns that scenario for Mexico. On 10 labelled follow ups the offline router gets the intent right for 9.
 * It gives the same tools to a LangChain `create_agent` chat, which has memory and chooses which tools to call.
-* A manager approves a plan in the app before it is saved.
+* A manager approves a plan in the app before it is saved, and every approval, scenario and answer goes into a decision log. Each row separates what was proposed (by the optimizer, the forecast or a language model reading a sentence), what adjusted it (the simulator check, a monthly update, a GenAI guardrail such as the number check, or the manager) and what was applied, so nothing the model does is hidden.
 
 The evaluation uses 40 labelled questions and a 32 question holdout:
 
@@ -124,6 +128,7 @@ The keyword router was written against the main set, which explains its perfect 
 * Two years of history cannot separate trend from noise; forecasts are seasonal averages.
 * Revenue depends on A1, which the brief does not settle.
 * The plan is deterministic; Monte Carlo tests it but does not optimize over scenarios.
+* A monthly update scales the remaining forecast by the error of the last three months and spreads actual monthly counts over the days like the forecast; it is not yet backtested month by month on the second history year.
 * The backtest reuses the January headcount table for the earlier year.
 * The number check catches invented and misattributed numbers but not a wrong sign or a wrong small count.
 * Language model results depend on the models and keys available at run time; cached replies make reruns reproducible once committed.

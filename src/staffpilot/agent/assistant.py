@@ -59,6 +59,7 @@ class Answer:
     facts: dict[str, float] = field(default_factory=dict)
     chart: Any = None  # a matplotlib Figure that illustrates the answer
     carried: list[str] = field(default_factory=list)  # what a follow up took from the previous turn
+    guardrails: list[str] = field(default_factory=list)  # every check that changed what a model produced
 
     @property
     def verified(self) -> bool:
@@ -78,11 +79,19 @@ class StaffPilot:
         return cls(planner, make_backend(name, planner.settings, cache_dir))
 
     def route(self, question: str, conversation: Conversation | None = None) -> tuple[RoutedQuery, str]:
-        route, name, _ = self._route(question, conversation)
+        route, name, _, _ = self._route(question, conversation)
         return route, name
 
-    def _route(self, question: str, conversation: Conversation | None) -> tuple[RoutedQuery, str, list[str]]:
+    def read(self, question: str) -> tuple[RoutedQuery, str, list[str]]:
+        """Like `route`, plus the guardrails that changed the reading (for the decision audit)."""
+        route, name, _, guardrails = self._route(question, None)
+        return route, name, guardrails
+
+    def _route(
+        self, question: str, conversation: Conversation | None
+    ) -> tuple[RoutedQuery, str, list[str], list[str]]:
         backend = self.backend
+        guardrails: list[str] = []
         countries = self.planner.countries
         history = conversation.transcript() if conversation else ""
         try:
@@ -92,9 +101,13 @@ class StaffPilot:
                 route = None
             route = route or backend.route(question, countries)
             name = backend.name
+            guardrails += [f"router reply repaired: {r}" for r in getattr(backend, "last_repairs", [])]
         except Exception as error:  # a model failure must not break the app
             log.warning("Router %s failed; using the offline router. %s", backend.name, describe_error(error))
             route, name = self.offline.route(question, countries), "offline (router fallback)"
+            guardrails.append(
+                f"the {backend.name} router failed ({type(error).__name__}); the offline router read it"
+            )
         carried: list[str] = []
         previous = conversation.last.route if conversation and conversation.last else None
         try:
@@ -103,9 +116,10 @@ class StaffPilot:
             route = route.model_copy(update={"clarification": str(error)})
         if carried:
             log.info("Follow up: carried %s from the previous turn", ", ".join(carried))
-        return self._clean(route, question), name, carried
+        return self._clean(route, question, guardrails), name, carried, guardrails
 
-    def _clean(self, route: RoutedQuery, question: str) -> RoutedQuery:
+    def _clean(self, route: RoutedQuery, question: str, guardrails: list[str] | None = None) -> RoutedQuery:
+        notes = guardrails if guardrails is not None else []
         countries = [c for c in (self.planner.resolve_country(n) for n in route.countries) if c]
         # A model sometimes fills the country with "All" or a word it read as a name. Only a
         # name the user actually wrote earns the "no data for" reply; the rest are dropped.
@@ -116,7 +130,11 @@ class StaffPilot:
             and n.strip().lower() not in ALL_COUNTRIES
             and n.strip().lower() in question.lower()
         ]
+        dropped = [n for n in route.countries if not self.planner.resolve_country(n) and n not in unknown]
+        if dropped:
+            notes.append(f"dropped names that are not countries in the data: {', '.join(dropped)}")
         if unknown and not countries and not route.clarification:
+            notes.append(f"asked back instead of guessing: no data for {unknown[0]}")
             names = ", ".join(self.planner.countries)
             route = route.model_copy(
                 update={
@@ -124,14 +142,19 @@ class StaffPilot:
                 }
             )
         months = [m for m in route.months if 1 <= m <= 12]
+        if len(months) < len(route.months):
+            notes.append("dropped month numbers outside 1 to 12")
         scenario = route.scenario
         clarification = route.clarification
         if route.intent == Intent.what_if and not clarification:
             if scenario is None:
                 try:
                     scenario = _offline_scenario(question, countries, months)
+                    if scenario is not None:
+                        notes.append("the change was read by the offline parser, as the router gave none")
                 except ScenarioRangeError as error:
                     clarification = str(error)
+                    notes.append("the change is outside the allowed range, so the planner did not run")
             if scenario is not None and not scenario.countries and countries:
                 scenario = scenario.model_copy(update={"countries": countries})
             if scenario is None and clarification is None:
@@ -194,7 +217,7 @@ class StaffPilot:
 
     def _ask(self, question: str, conversation: Conversation | None = None) -> Answer:
         started = time.perf_counter()
-        route, router_name, carried = self._route(question, conversation)
+        route, router_name, carried, guardrails = self._route(question, conversation)
         outputs = self.run_tools(route, question)
         ledger = self._ledger(outputs)
         formatted = ledger.formatted()
@@ -213,6 +236,7 @@ class StaffPilot:
             except Exception as error:  # a model or network failure falls back to the template
                 feedback = f"model error {type(error).__name__}"
                 log.warning("Writer %s failed. %s", writer.name, describe_error(error))
+                guardrails.append(f"the {writer.name} writer failed ({type(error).__name__})")
                 break
             rendered, missing = ledger.render(draft)
             unsupported = ledger.verify(rendered, context, self.planner.countries)
@@ -224,9 +248,12 @@ class StaffPilot:
                 "Write plain sentences with {{fact_name}} placeholders, never JSON or a tool call."
             )
             log.warning("%s answer failed the number check: %s", writer.name, feedback)
+            problems = [*missing[:3], *(f"unsupported {n}" for n in unsupported[:3])]
+            guardrails.append(f"number check rejected a draft ({', '.join(problems)})")
         fallback = not text and writer.name != "offline"
         if fallback:
             log.warning("Using the template answer for %r", question)
+            guardrails.append("the template answer replaced the model's drafts")
         if not text:
             text, _ = ledger.render(template_answer(route, outputs, formatted))
         name = f"{writer.name} (template fallback)" if fallback else writer.name
@@ -245,6 +272,7 @@ class StaffPilot:
             facts=dict(ledger.facts),
             chart=next((o.chart for o in outputs if o.chart is not None), None),
             carried=carried,
+            guardrails=guardrails,
         )
         answer.seconds = time.perf_counter() - started
         log.info(

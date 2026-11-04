@@ -36,6 +36,7 @@ jobs:
           python -m staffpilot plan
           python -m staffpilot ask "What if sign ups in Alpha drop 30% in Q3?"
           python -m staffpilot memo Beta
+          python -m staffpilot update Alpha --month 3 --percent 20
           python -m staffpilot eda
           python -m staffpilot history
       - name: Chat with a follow up

@@ -871,10 +871,12 @@ class LangChainBackend:
             route, repairs = repair_route(parsed)
             if repairs:
                 log.info("Repaired the %s router reply: %s", self.name, "; ".join(repairs))
+            self.last_repairs = repairs
             return route
         return schema.model_validate(parsed)
 
     def route(self, question: str, countries: list[str], history: str = "") -> RoutedQuery:
+        self.last_repairs: list[str] = []  # filled when the reply had to be repaired
         system = ROUTER_PROMPT.format(countries=", ".join(countries))
         if history:
             system += "\n\n" + HISTORY_PROMPT.format(history=history)
@@ -974,15 +976,19 @@ class CachedBackend:
     def route(self, question: str, countries: list[str], history: str = "") -> RoutedQuery:
         # Without history the key stays the question alone, so existing cache files still match.
         payload = [question, history] if history else question
-        value = self._call(
-            "route",
-            payload,
-            lambda: (
+        self.last_repairs: list[str] = []
+
+        def produce() -> dict[str, Any]:
+            route = (
                 self.inner.route(question, countries, history=history)
                 if history
                 else self.inner.route(question, countries)
-            ).model_dump(mode="json"),
-        )
+            )
+            # Repairs are known only when the model is really called, not on a replay.
+            self.last_repairs = list(getattr(self.inner, "last_repairs", []))
+            return route.model_dump(mode="json")
+
+        value = self._call("route", payload, produce)
         return RoutedQuery.model_validate(value)
 
     def compose(

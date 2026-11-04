@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `120 passed` |
+| A1 | `python -m pytest -q` | the last line says `132 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -39,8 +39,8 @@ If A1 reports a failure, stop here and report it; the rest of the guide assumes 
 
 | Step | Command | Expected |
 |---|---|---|
-| B1 | `python -m staffpilot --version` | `StaffPilot 0.1.0, Copyright © 2026 Seven Team-5374, Trio Intelligence` |
-| B2 | `python -m staffpilot plan` | a summary line `Net value $479.7M, service 100.0%, average active agents 2,220 (January 6,474)`, a table of five policies, `Wrote outputs/plan.csv, kpis.csv and policy_comparison.csv`, then a list of alerts starting with `[critical] This file plans 2026, but the brief asks for 2025` |
+| B1 | `python -m staffpilot --version` | `StaffPilot 0.1.0, Copyright © 2026 Seven Team-5374` |
+| B2 | `python -m staffpilot plan` | a summary line `Net value $479.7M, service 100.0%, average active agents 2,220 (January 6,474)`, a table of five policies, `Profit against service level:` with five goals (the last, `within 7 days`, gives up about `$3.61M` and serves `100.0%` within 7 days), `Wrote outputs/plan.csv, kpis.csv, policy_comparison.csv and service_tradeoff.csv`, then a list of alerts starting with `[critical] This file plans 2026, but the brief asks for 2025` |
 | B3 | `python -m staffpilot ask "How many agents does Germany need in March and why?"` | a plain English answer that starts `Germany should start the year with 602 agents and finish it with 102`, mentions `In March, 86 agents are working`, and ends with `every number checked against the planner` and `Chart saved to outputs/answers/...png` |
 | B4 | `python -m staffpilot ask "What is the weather tomorrow?"` | `That is outside what I can help with.` |
 | B5 | `python -m staffpilot ask "What if sign ups in Atlantis rise 20%?"` | `I do not have data for Atlantis.` followed by the list of 22 countries |
@@ -49,7 +49,8 @@ If A1 reports a failure, stop here and report it; the rest of the guide assumes 
 | B8 | `python -m staffpilot eda` | ends with `Wrote outputs/eda/eda_report.md and 6 charts`; open that file in VS Code and check the charts show |
 | B9 | `python -m staffpilot history` | a table with one row per `plan` run; the newest row shows `$479.7M`, `100.0%`, `2,220` and a short git commit code |
 | B10 | `python -m staffpilot chat`, then type `What if sign ups in Brazil drop 30% in Q3?`, then `And Mexico?`, then press Enter on an empty line | the second answer talks about **Mexico** with the same 30 percent drop from July to September, and the note under it says `Kept the kind of question, months and scenario from your last question` |
-| B11 | open the `logs/` folder | a new file for each command you ran, each starting with `Run '<command>' started` |
+| B11 | `python -m staffpilot update Germany --month 2 --percent 40` | four bullets: sign ups `40% above the forecast`; keeping the plan serves `87.7%` after `32.4 days`; the updated plan serves `100.0%` and `adds $5.5M`; `Decide in February: hire 31 (the plan said 0)`; then `Wrote outputs/update_Germany_02.csv` |
+| B12 | open the `logs/` folder | a new file for each command you ran, each starting with `Run '<command>' started` |
 
 ## Part C: the web app (20 minutes)
 
@@ -60,7 +61,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | Step | What to do | Expected |
 |---|---|---|
 | C1.1 | Look at the browser tab | the title is `StaffPilot` and the icon is a teal square with a white curve, the same as the logo at the top of the sidebar |
-| C1.2 | Look at the left sidebar | New chat, then Assistant, Plan, Scenario, Memo, Data and Evaluation, then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
+| C1.2 | Look at the left sidebar | New chat, then Assistant, Plan, Monthly update, Scenario, Memo, Data, Evaluation and Decision log, then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
 | C1.3 | Hover over each sidebar item | a short explanation appears for each |
 | C1.4 | Look at the top of the page | the page title and one line explaining it; there is **no** line naming the data file or the planning year |
 
@@ -88,7 +89,19 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C3.4 | Open `5 items need attention, 1 of them critical` | the same alerts as in step B2 |
 | C3.5 | Choose `Germany` in Country | the cards, the chart and the table switch to Germany; the chart title says Germany |
 | C3.6 | Check the chart closely | text and lines are sharp, not blurry; labels do not sit on top of the line |
-| C3.7 | Click Approve this plan | a message `Approved. 12 rows saved to approved_plan.csv`, and the file exists in `outputs/` |
+| C3.7 | Click Approve this plan | a message `Approved with the goal Profit, 98% served (recommended). 12 rows saved to approved_plan.csv` and a number of rows added to the decision log; the file exists in `outputs/` |
+| C3.8 | Set Country back to `All countries`, scroll to `Profit against service level` | two bar charts: net value given up (`$0` for profit only, `$31k` for the recommended goal, `$3.6M` for 7 days) and advertisers served within 7 days (`91.4%` up to `100.0%`) |
+| C3.9 | Pick the service goal `Profit, 98% served within 7 days` | the cards change (Net value `$476.1M`), the chart title names the goal, and the text says how much net value the goal gives up |
+
+### C3b. Monthly update
+
+| Step | What to do | Expected |
+|---|---|---|
+| C3b.1 | Click Monthly update, pick `Germany` and the month `February` | the table `Actual eligible sign ups` shows January with its forecast and an actual count 20 percent higher |
+| C3b.2 | Set the slider to `40`, click Update the plan | four bullets that match step B11, a chart of the approved and the updated headcount from February, and a table where changed cells read like `86 → 117` |
+| C3b.3 | Type a different number in the Actual column, and `-2` in Agents on staff against the plan, then update again | the summary says `2 agents fewer than planned are on staff now` and the numbers change |
+| C3b.4 | Click Approve the update | `Approved. The updated plan is saved to approved_update.csv` and rows are added to the decision log |
+| C3b.5 | Pick the month `January` | not possible: the list starts in February, because January has no months done yet |
 
 ### C4. Scenario, Memo, Data and Evaluation
 
@@ -99,6 +112,7 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C4.3 | Memo: pick Vietnam and click Write the memo | the memo from step B7 with `Every number matches the planner.` and a chart |
 | C4.4 | Data: open the page | a list of findings, four charts and a data quality table; the charts are sharp |
 | C4.5 | Evaluation: open the page | three tables: assistants, retrieval and runs |
+| C4.6 | Decision log: open the page | the newest decisions first: the scenario from C4.2 with `demand_multiplier` proposed `0.7` by the reader and applied `0.5` after your edit (adjusted by `manager`), then the result rows marked as computed by the planner; the monthly update and plan approvals from C3; one `assistant answer` row per question with the guardrails that acted; a `decision_audit.csv` file to download |
 
 ### C5. Settings and models
 
@@ -188,7 +202,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `120 passed` |
+| F3 | `python -m pytest -q` | `132 passed` |
 
 Then commit as described in the README.
 

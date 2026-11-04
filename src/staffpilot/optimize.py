@@ -44,6 +44,8 @@ class CountryPlan:
     policy: str = "optimized"
     solver_status: str = ""
     notes: list[str] = field(default_factory=list)
+    # The optimizer's first answer, before the simulator check raised any month.
+    proposed_active: np.ndarray | None = None
 
     @property
     def months(self) -> int:
@@ -146,11 +148,24 @@ def optimize_country(
     max_hires_per_month: int | None = None,
     initial_pool: float = 0.0,
     flow_period: str = "week",
+    fixed_hires: np.ndarray | None = None,
+    fixed_notices: np.ndarray | None = None,
+    headcount_change: np.ndarray | None = None,
+    sla_weeks: int | None = None,
 ) -> CountryPlan:
     """Solve the staffing program over the planning year plus the lookahead months.
 
     `flow_period="month"` gives the simpler model that treats 60 days as two months;
     it is kept only to show why the weekly model is needed.
+
+    A monthly update passes the decisions already carried out (`fixed_hires` and
+    `fixed_notices` for the first months) and any change in headcount nobody planned,
+    such as agents who resigned (`headcount_change`, negative for leavers). Only the
+    remaining months are then decided, and a service target counts only those months.
+
+    `sla_weeks` turns the service target into a time limit: only advertisers served at
+    most that many weeks after the week they signed up count towards it. Later service
+    is still allowed, as the brief's 60 day window allows it.
     """
     months = int(month_by_day.max()) + 1
     spans, touched = _periods(month_by_day, flow_period)
@@ -179,11 +194,18 @@ def optimize_country(
         for w in range(u, min(n_weeks, u + wait_periods + 1))
     }
 
-    problem += active[0] == int(start_agents)
+    change = np.zeros(months) if headcount_change is None else np.asarray(headcount_change, dtype=float)
+    problem += active[0] == int(start_agents) + float(change[0])
     for t in range(1, months):
         joined = hires[t - rules.ramp_months] if t >= rules.ramp_months else 0
         left = notices[t - rules.notice_months] if t >= rules.notice_months else 0
-        problem += active[t] == active[t - 1] + joined - left
+        problem += active[t] == active[t - 1] + joined - left + float(change[t])
+    done = 0
+    for decided, variables in ((fixed_hires, hires), (fixed_notices, notices)):
+        if decided is not None:
+            done = max(done, len(decided))
+            for t, value in enumerate(decided):
+                problem += variables[t] == int(round(float(value)))
     for t in range(months):
         problem += notices[t] <= active[t]
         if max_hires_per_month is not None:
@@ -220,15 +242,22 @@ def optimize_country(
     cost = pulp.lpSum(
         salary / 12.0 * payroll[t] + rules.fire_cost_share * salary * notices[t] for t in range(months)
     )
-    problem += revenue - cost
-
+    shortfall = None
     if service_target:
-        planning_weeks = [w for w in range(n_weeks) if max(touched[w]) < 12]
+        planning_weeks = [w for w in range(n_weeks) if max(touched[w]) < 12 and min(touched[w]) >= done]
         demand_in_year = sum(weekly_demand[u] for u in planning_weeks) / buffer
-        problem += (
-            pulp.lpSum(var for (u, w), var in flow.items() if u in planning_weeks)
-            >= service_target * demand_in_year
-        )
+        # A soft floor: missing it costs more per advertiser than a year of an agent's salary, so the
+        # model hires whenever hiring can reach it. A goal that lead times make impossible (hires start
+        # a month late) is then met as far as it can be instead of leaving no plan at all.
+        shortfall = pulp.LpVariable("service_shortfall", lowBound=0)
+        in_time = [
+            var
+            for (u, w), var in flow.items()
+            if u in planning_weeks and (sla_weeks is None or w - u <= sla_weeks)
+        ]
+        problem += pulp.lpSum(in_time) + shortfall >= service_target * demand_in_year
+        cost += (salary + 2 * max(week_value, default=0.0)) * shortfall
+    problem += revenue - cost
 
     solver = pulp.PULP_CBC_CMD(msg=False, timeLimit=planning.solver_time_limit)
     started = time.perf_counter()
@@ -241,7 +270,7 @@ def optimize_country(
     def values(variables: list[pulp.LpVariable]) -> np.ndarray:
         return np.array([round(v.value() or 0.0) for v in variables], dtype=float)
 
-    return CountryPlan(
+    plan = CountryPlan(
         country,
         values(active),
         values(hires),
@@ -252,3 +281,7 @@ def optimize_country(
         policy="optimized" if not service_target else f"service_{int(round(service_target * 100))}",
         solver_status=status,
     )
+    missed = float(shortfall.value() or 0.0) if shortfall is not None else 0.0
+    if missed > 0.5:
+        plan.notes.append(f"service goal out of reach for about {missed:.0f} advertisers (lead times)")
+    return plan
