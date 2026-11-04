@@ -196,16 +196,6 @@ On Windows (PowerShell), create and activate the environment with `py -3.12 -m v
 
 The app opens at http://127.0.0.1:7860. Sign in as `admin`, `kevin`, `khoa` or `hamad`; the first password is the user name, and the app then asks for a new one. Without an API key the assistant runs offline, free. Other commands (`plan`, `ask`, `memo`, `update`, `eval`), Windows steps and API keys: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md). Checks before a submission: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md).
 
-## Self assessment against the rubric
-
-| Criterion (points) | Evidence |
-|---|---|
-| Problem statement and vision (15) | the answer above; open points of the brief turned into measured assumptions |
-| LangChain agent design (20) | six tools, structured output, memory with follow ups, `create_agent` chat checked live ([`docs/AGENT_LIVE_CHECK.md`](docs/AGENT_LIVE_CHECK.md)), number check with retry and fallback |
-| Multi LLM evaluation (20) | five assistants on 82 labelled questions with a holdout, cross model judges, the local judges checked against a person |
-| Data use (15) | every sign up with its budget, backtest on real 2025 sign ups, leap day repair, threshold scenarios |
-| Presentation and demo (20) | executed notebook, web app, report, [presentation script](docs/PRESENTATION.md); video to be recorded |
-| Innovation (10) | number check with country attribution, manager checks and monthly update, decision log |
 
 ## Team contributions
 
@@ -238,7 +228,7 @@ Share of the work: **Kevin 40%**, **Hamad 30%**, **Khoa 30%**. All three reviewe
 
 ## AI use
 
-AI assistants were used to draft code, tests and documentation. Every result here was produced by running the code, and the team reviewed and tested all AI assisted parts. Each notebook section carries a marker; details in [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
+AI assistants were used to draft code, tests and documentation. Every result here was produced by running the code, and the team reviewed and tested all AI assisted parts; details in [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
 
 ## Repository
 
