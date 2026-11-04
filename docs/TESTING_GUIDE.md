@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `132 passed` |
+| A1 | `python -m pytest -q` | the last line says `140 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -61,9 +61,13 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | Step | What to do | Expected |
 |---|---|---|
 | C1.1 | Look at the browser tab | the title is `StaffPilot` and the icon is a teal square with a white curve, the same as the logo at the top of the sidebar |
-| C1.2 | Look at the left sidebar | New chat, then Assistant, Plan, Monthly update, Scenario, Memo, Data, Evaluation and Decision log, then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
+| C1.2 | Look at the left sidebar | New chat, This year, then the groups Before the year starts (Data, Plan, Scenario, Memo), Every month (Monthly update, Decision log), Any time (Assistant) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line |
 | C1.3 | Hover over each sidebar item | a short explanation appears for each |
 | C1.4 | Look at the top of the page | the page title and one line explaining it; there is **no** line naming the data file or the planning year |
+| C1.5 | Read This year | a strip of twelve months: January shows `6,474`, `Hire 11, Notice 4,741` and `Decide now`; September shows `Hire 213`; four steps start with `1. Check the data` |
+| C1.6 | Pick `Start of March` in Where are you in the year? | January and February say `Carried out`, March says `Decide now`, and the steps start with `1. Enter what happened` |
+| C1.7 | Click `Open Monthly update` on the first step | the Monthly update page opens with `March` already picked, and Monthly update is marked in the sidebar |
+| C1.8 | Scroll to the end of Data, Plan, Scenario, Memo, Monthly update and Decision log | each ends with a line saying what comes next and a button that opens it |
 
 ### C2. Assistant
 
@@ -93,6 +97,12 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C3.8 | Set Country back to `All countries`, scroll to `Profit against service level` | two bar charts: net value given up (`$0` for profit only, `$31k` for the recommended goal, `$3.6M` for 7 days) and advertisers served within 7 days (`91.4%` up to `100.0%`) |
 | C3.9 | Pick the service goal `Profit, 98% served within 7 days` | the cards change (Net value `$476.1M`), the chart title names the goal, and the text says how much net value the goal gives up |
 
+| C3.10 | Click the tab Check the plan (Country: All countries) | `8 of 8 checks pass`, each with a line of numbers, and one `Note` saying that 5% fewer agents would earn about $1.8M more while the wait goes from 1.1 to 2.1 days |
+| C3.11 | Click How it is calculated | uplift, salaries and notice cost written as sums of their inputs that add up to `$479.7M`; a month by month table and a CSV to download |
+| C3.12 | Pick Germany, click Try your own plan, then Score my plan | the table holds the optimized headcount and a copy 5% lower; the result says your plan earns about `$106k more` by making advertisers wait longer (1.9 instead of 1.3 days) |
+| C3.13 | Set the slider to `+5` and score again | your plan earns less than the optimized plan |
+| C3.14 | Type a different number in January and score | the result says January is `Not possible as typed`, because decisions take a month |
+
 ### C3b. Monthly update
 
 | Step | What to do | Expected |
@@ -102,6 +112,8 @@ Start it with `python -m staffpilot app` and open the address it prints (normall
 | C3b.3 | Type a different number in the Actual column, and `-2` in Agents on staff against the plan, then update again | the summary says `2 agents fewer than planned are on staff now` and the numbers change |
 | C3b.4 | Click Approve the update | `Approved. The updated plan is saved to approved_update.csv` and rows are added to the decision log |
 | C3b.5 | Pick the month `January` | not possible: the list starts in February, because January has no months done yet |
+| C3b.6 | Look at `Input check` under the table | each month read back against its forecast; type a number three times the forecast and it says `Check this count` |
+| C3b.7 | After approving, pick the month `April` | January keeps the count you approved, the input check says `Starts from the update approved in` the earlier month, and the update keeps that month's new hires as carried out |
 
 ### C4. Scenario, Memo, Data and Evaluation
 
@@ -202,7 +214,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `132 passed` |
+| F3 | `python -m pytest -q` | `140 passed` |
 
 Then commit as described in the README.
 

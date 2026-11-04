@@ -308,6 +308,40 @@ def monthly_update(table: pd.DataFrame, as_of: int, title: str) -> Figure:
     )
 
 
+def manual_plan(table: pd.DataFrame, title: str, change: float) -> Figure:
+    """The optimized headcount against the one a manager typed in, February to December.
+
+    January is left out: it keeps the January team in both plans, and its size would
+    flatten every later difference.
+    """
+    later = table.iloc[1:]
+    x = np.arange(2, len(table) + 1)
+    fig, (ax,) = new_figure()
+    ax.plot(x, later["optimized"], color=SLATE, linewidth=1.8, linestyle=(0, (4, 3)), label="optimized plan")
+    ax.plot(
+        x,
+        later["yours_possible"],
+        color=NAVY,
+        linewidth=2.4,
+        marker="o",
+        markersize=4,
+        markeredgecolor="white",
+        markeredgewidth=0.8,
+        label="your plan",
+    )
+    values = pd.concat([later["optimized"], later["yours_possible"]])
+    ax.set_ylim(max(0, values.min() * 0.85 - 2), values.max() * 1.15 + 2)
+    ax.set_xticks(x, MONTHS[1 : len(table)])
+    ax.set_ylabel("agents at work", color=MUTED, fontsize=9)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    sign = "+" if change >= 0 else "-"
+    return finish(
+        fig,
+        title,
+        f"Scored by the same day by day simulator: net value {sign}{money(abs(change))} against the optimized plan.",
+    )
+
+
 def sensitivity_panels(frame: pd.DataFrame) -> Figure:
     fig, (left, right) = new_figure(width=9.0, height=3.4, ncols=2)
     for label, part in frame.groupby("plan"):

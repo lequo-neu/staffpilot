@@ -127,6 +127,7 @@ def simulate(
             "capacity_slot_days",
             "max_overflow",
             "waiting_end",
+            "uplift_wait_days",
         )
     }
     waits: list[int] = []
@@ -170,6 +171,8 @@ def simulate(
             uplift = rng.choice(levels, p=probabilities) if sample_uplift else rules.expected_uplift
             earned[idx] = uplift * budget[idx] * value_factor
             stats["uplift_value"][month] += earned[idx]
+            # Uplift weighted by the days waited; the optimizer's preference for early service is priced on it.
+            stats["uplift_wait_days"][month] += earned[idx] * (day - arrival_day[idx])
             stats["served"][month] += 1
 
         occupied = int(occupancy[day])

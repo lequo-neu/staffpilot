@@ -22,6 +22,7 @@ outputs/approved_plan.csv
 outputs/approved_update.csv
 outputs/decision_audit.csv
 outputs/update_*.csv
+outputs/plan_detail_*.csv
 outputs/answers/
 outputs/conversations/
 

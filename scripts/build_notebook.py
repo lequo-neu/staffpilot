@@ -217,6 +217,18 @@ changes.head(25)""",
 kpis[["country", "start_agents", "avg_active", "service_rate", "mean_wait_days", "p90_wait_days", "utilization", "avg_idle_agents", "roi", "net_value"]].sort_values("net_value", ascending=False)""",
     ),
     (
+        "code",
+        """# The checks the Plan page shows: every brief rule with its numbers, the solver's proof,
+# the gain over simple rules, the backtest, and how lean the plan is by the exact daily rules.
+from staffpilot import checks
+for check in checks.plan_checks(planner, RECOMMENDED_POLICY):
+    state = {True: "PASS", False: "FAIL", None: "NOTE"}[check.passed]
+    print(f"{state}  {check.title}\\n      {check.detail}")
+b = checks.value_breakdown(planner, RECOMMENDED_POLICY)
+print(f"\\nNet value {b['uplift'] / 1e6:,.1f}M uplift - {b['salary_cost'] / 1e6:,.1f}M salaries - "
+      f"{b['notice_cost'] / 1e6:,.1f}M notices = {b['net_value'] / 1e6:,.1f}M")""",
+    ),
+    (
         "md",
         "### Alerts\n\nChecks a manager should see before acting on the plan. Each rule is a plain threshold, so the reason is visible."
         + AI,

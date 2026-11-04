@@ -30,6 +30,8 @@ On 1 January the 22 countries employ 6,474 agents while demand needs about 2,200
 
 **Plan again every month.** The forecast will be wrong, so the plan is updated with actual numbers: the months done keep their decisions, the rest of the forecast is scaled by the recent error, and only the remaining months are solved again. If Germany's January sign ups come in 40 percent above forecast, keeping the plan serves 87.7 percent with a 32 day wait; the update hires 31 agents in February, serves everyone within about 2 days and adds $5.5M.
 
+**Let the manager check it.** The Plan page tests the plan against every brief rule with its numbers, rebuilds net value from its inputs and scores any headcount the manager types with the same simulator. It also reports the one place the plan is not the cheapest: 5 percent fewer agents would still keep every rule and earn $1.8M more, at the cost of the average wait going from 1.1 to 2.1 days, because the model prefers early service.
+
 **The optimizer versus a good heuristic.** Matching last month's demand reaches $468.3M. Almost all of the value comes from removing excess agents; the optimizer adds $11.3M and, unlike the heuristics, handles service floors, hiring caps and scenarios in one model.
 
 ## 3. Results

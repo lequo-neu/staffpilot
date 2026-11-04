@@ -25,6 +25,19 @@ StaffPilot lets a manager ask about this in plain English. A model reads each qu
 
 Numbers come from the day by day simulator, use the public copy of the data (2024 and 2025 sign ups, planning year 2026) and the assumptions below. Uplift is counted for advertisers who sign up in the planning year. The recommended plan pays $86.7M of one time firing cost. It differs from the pure value plan only in the UAE, where support does not pay for itself; keeping it there costs $0.03M.
 
+## Which page for which moment
+
+The app follows a staffing manager's year, and the sidebar is grouped the same way. It opens on **This year**: a strip of the twelve months with the agents at work and the hires or notices decided in each, and a list **Where are you in the year?** Picking a moment shows what to do now, in order, with a button to each page; every page ends with a button to the next step.
+
+| Moment | Pages, in order | What the manager does |
+|---|---|---|
+| Before the year starts | Data, Plan, Scenario, Memo | Check the sign up history; choose the service goal, read **Check the plan**, rebuild a number in **How it is calculated**, try a headcount of their own, approve; stress test the plan; send each country a memo |
+| Start of each month | Monthly update, Decision log | Type the actual eligible sign ups so far and the agents really on staff; the **Input check** reads each number back against the forecast and flags any more than half away, or a staff change of more than a fifth; update, approve, then see in the log what moved. The next month's update starts from this one, with the counts already entered |
+| Any time | Assistant, Scenario | Ask why a number is what it is; test a change before it happens |
+| Behind the numbers | Evaluation, Decision log | How well each assistant answers; every decision with what proposed and what changed it |
+
+StaffPilot has no live data feed. "Real time" here means the plan is corrected the moment a manager enters the month's real numbers, which is how often staffing decisions are taken: once a month, with a month of lead time.
+
 ## What the manager decides
 
 The model proposes; three choices stay with the manager, and each has its own place in the app.
@@ -44,6 +57,16 @@ The Plan page has a **Service goal** list. Profit only maximizes net value. The 
 Serving everyone is almost free, because support pays for itself in 21 of 22 countries; the $0.03M is the UAE, where it does not. Speed is where the real choice lies: answering every advertiser within a week costs $3.6M (0.75 percent of net value) and about 87 more agents than the recommended plan. We recommend the 98 percent goal and show the faster ones as an option, since the brief values timely support but puts no price on a day of waiting.
 
 How it works: the goal is a soft constraint in the integer program. Only advertisers served within the limit count towards it, later service is still allowed as the brief's 60 day window allows, and missing the goal costs more per advertiser than a year of an agent's salary. The model therefore hires whenever hiring can meet the goal, and a goal that lead times make impossible (hires start a month late) is met as far as possible instead of leaving no plan.
+
+### Can the manager trust the numbers?
+
+The Plan page has three tabs besides the overview, so a manager can check the plan instead of taking it on trust.
+
+* **Check the plan** tests it against every rule of the brief and against its rivals, each with the numbers: no agent above 10 advertisers on any day, nobody served after 60 days in the pool, hires and notices that respect ramp up and notice, costs that follow the brief, the service goal, the solver's proof of optimality (CBC, 22 of 22 countries), the gain over every simple rule ($109.3M over keeping the January team, $11.3M over the best heuristic) and the backtest (99.3 percent of hindsight value). For all countries, 8 of 8 checks pass.
+* **How it is calculated** rebuilds net value from its inputs: 106,182 advertisers served times a $45,911 average budget times 13.5 percent expected uplift = $658.1M, minus 26,992 paid agent months of salary ($91.7M) and 4,741 notices at 40 percent of salary ($86.7M), equals $479.7M, the number on the card. Below it, the simulator's month by month table (sign ups, served, waiting, agents, slots, utilization, cost) can be downloaded as a CSV.
+* **Try your own plan** lets the manager type the agents for each month of a country and scores that plan with the same simulator, next to the optimized one. More agents always earn less.
+
+The same check also says where the plan is not the cheapest possible. Scored day by day, a plan with 5 percent fewer agents from February still keeps every rule and earns $1.8M more (0.4 percent), but the average wait goes from 1.1 to 2.1 days. The model plans advertiser flows week by week and prefers early service (assumption A9), so it keeps that margin. The app shows this as a note rather than hiding it, because whether a day of waiting is worth the money is the manager's call.
 
 ### A monthly update when sign ups differ from the forecast
 
@@ -89,6 +112,7 @@ flowchart LR
     O --> S[simulate.py<br/>day by day rules<br/>source of every KPI]
     S --> P[planner.py<br/>policies, service goals, scenarios,<br/>sensitivity, Monte Carlo]
     P --> MU[monthly.py<br/>update from actual sign ups,<br/>months done stay fixed]
+    S --> CK[checks.py<br/>rule checks, value breakdown,<br/>score a manager's own plan]
   end
   subgraph Agent["agent (GenAI)"]
     R[Router<br/>structured output: RoutedQuery] --> T[[Tools<br/>get_plan, compare_policies,<br/>run_scenario, sensitivity,<br/>signup_insights, search_rules]]
@@ -103,6 +127,7 @@ flowchart LR
   P --> T
   UI[Gradio app<br/>Ask, Plan with service goal and approval,<br/>Monthly update, Scenario, Memo, Evaluation] --> R
   UI --> MU
+  UI --> CK
   UI --> AU[(audit.py<br/>decision log: proposed,<br/>adjusted, applied)]
   V --> AU
   EV[Evaluation<br/>offline vs cloud models or local models,<br/>cross model judges, hand graded check] --> R
@@ -138,6 +163,7 @@ flowchart LR
 * **One planner behind every page.** The plan, the comparison with baselines, the scenarios, the sensitivity and the memo all call the same code, so their numbers agree.
 * **Open questions are settings.** How uplift is counted, who waits in the pool on 1 January, the queue order, pay during ramp up and the eligibility rule are switches in `config/staffpilot.toml`, so the other reading takes one change to test. The section on assumptions reports how much each one moves the result.
 * **The manager decides.** The Plan page offers the service goal and an approval step, the Monthly update page corrects the plan with actual numbers, and the Scenario page shows the parameters it read so they can be corrected before the run.
+* **The manager can check the plan.** Every rule is tested with its numbers, net value is rebuilt from its inputs, and any headcount the manager types is scored by the same simulator.
 * **Nothing is a black box.** The decision log keeps apart what the optimizer or a language model proposed, what the simulator check, a guardrail or the manager changed, and what was applied.
 * **Sized for the decision it supports.** A few managers plan once a month, so the design puts correct, traceable answers ahead of heavy traffic. A cold start solves the 22 countries in about 12 seconds and a warm start reads the cache. Serving many users at once would need a shared cache and a queue for solver runs; the model itself would not change.
 
@@ -267,10 +293,11 @@ No year appears in the code. The planning year is one year after the last sign u
 
 `python -m staffpilot app` opens a planning desk in the browser: a cool grey canvas with white working panels, one deep teal accent and IBM Plex Sans with figures that line up in columns, in light and dark mode (add `?__theme=dark` to the address), on desktop and phone.
 
-* **Sidebar**: New chat, the pages, the recent chats of this browser tab (click one to reopen it with its memory) and Settings: the language model list (Offline, which is the default and free, then every model your keys can use, cheapest first, with retired models removed and the cheapest working one marked), Refresh models and Save conversation. On a phone the sidebar opens from the top left and closes after a choice. Every item explains itself on hover.
+* **Sidebar**: New chat, the pages grouped by moment (This year; Before the year starts; Every month; Any time; Behind the numbers), the recent chats of this browser tab (click one to reopen it with its memory) and Settings: the language model list (Offline, which is the default and free, then every model your keys can use, cheapest first, with retired models removed and the cheapest working one marked), Refresh models and Save conversation. On a phone the sidebar opens from the top left and closes after a choice. Every item explains itself on hover.
+* **This year**: the twelve month strip, the moment picker and the steps for that moment, and a panel saying which page serves which moment.
 * **Assistant**: plain English chat with follow up questions. The chart sits inside the answer; the panel beside it shows how the answer was built (number check, intent, time, tool and model, what a follow up kept, any guardrail that acted), the tool output and how the question was read.
-* **Plan**: the headline numbers live here only, as five cards (net value, agents at work, advertisers served, agent utilization, total cost). Each has a line of the twelve months, the change against keeping the January team all year, and a tooltip that defines the number. A **Service goal** list switches the whole page between profit only and the SLA goals. Below them sit the alerts, the headcount chart, the profit against service chart and the month by month table, for all countries or one, with an approval step.
-* **Monthly update**: pick a country and the month of the update, set how far sign ups ran from the forecast (or type each month's actual count) and the change in staff, then update. The page shows the correction in words, a chart of the approved and the updated headcount, and the month by month table with each change written as "planned → updated". Approving saves `outputs/approved_update.csv` and logs every change.
+* **Plan**: the headline numbers live here only, as five cards (net value, agents at work, advertisers served, agent utilization, total cost). Each has a line of the twelve months, the change against keeping the January team all year, and a tooltip that defines the number. A **Service goal** list switches the whole page between profit only and the SLA goals, and three tabs let the manager check the plan, see how each number is calculated and score a headcount of their own. Below them sit the alerts, the headcount chart, the profit against service chart and the month by month table, for all countries or one, with an approval step.
+* **Monthly update**: pick a country and the month of the update, set how far sign ups ran from the forecast (or type each month's actual count) and the change in staff, then update. The page shows the correction in words, a chart of the approved and the updated headcount, and the month by month table with each change written as "planned → updated". An input check reads every typed number back against the forecast. Approving saves `outputs/approved_update.csv`, logs every change, and makes this update the starting point of the country's next one.
 * **Scenario**, **Memo**, **Data** and **Evaluation** as before; the Data and Evaluation pages load the first time they are opened. Running a scenario also logs what the language model read against what was run.
 * **Decision log**: every approval, scenario and answer, newest first, with what was proposed, adjusted and applied, and the CSV to download.
 
@@ -440,12 +467,12 @@ notebooks/                  executed submission notebook
 outputs/                    plan, KPIs, policy comparison, service trade off; the app adds the decision log
 scripts/                    notebook builder, writing style check, label and judge review sheets
 src/staffpilot/             package (core model, agent, app, CLI); ui/ holds the app's theme and styles
-tests/                      132 tests on synthetic data with years 2031 and 2032
+tests/                      140 tests on synthetic data with years 2031 and 2032
 ```
 
 ## Tests and CI
 
-`python -m pytest` runs 132 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, monthly updates, service goals, the decision log and its guardrail rows, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
+`python -m pytest` runs 140 tests in about 20 seconds on synthetic data, so no dataset or API key is needed. They include a syntax and import check of every module, logging levels, the EDA report, the charts, alerts, the run history, the command line end to end (including the chat command), every app handler, conversation memory and follow ups, monthly updates, service goals, the decision log and its guardrail rows, the plan checks, the value breakdown and scoring a typed in plan, the moment steps, the input check and chained monthly updates, and they cover every brief rule on cases small enough to check by hand, the dataset swap, the number check and its country attribution, offline routing, unknown countries, out of range scenarios, model failure fallback and the evaluation harness. GitHub Actions runs a syntax check (`compileall`), lint, the writing style check, the tests and the command line tools on a synthetic workbook, on Ubuntu, macOS and Windows with Python 3.11, 3.12 and 3.13 (`.github/workflows/ci.yml`).
 
 ## Team contributions
 

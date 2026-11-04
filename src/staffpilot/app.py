@@ -17,16 +17,17 @@ import tempfile
 import uuid
 
 import gradio as gr
+import numpy as np
 import pandas as pd
 
-from staffpilot import audit, cache, charts
+from staffpilot import audit, cache, charts, checks
 from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
 from staffpilot.agent.memory import Conversation, describe
 from staffpilot.alerts import plan_alerts
 from staffpilot.cli import EVAL_DIR, OUTPUTS
 from staffpilot.eda import budget_figure, figures, profile
-from staffpilot.monthly import MONTH_NAMES
+from staffpilot.monthly import MONTH_NAMES, MonthlyUpdate
 from staffpilot.planner import RECOMMENDED_POLICY, SERVICE_GOALS, Planner
 from staffpilot.scenarios import ScenarioParams
 from staffpilot.ui import CSS, components, icon, theme
@@ -42,7 +43,25 @@ EXAMPLES = [
     "Which countries have the most volatile demand?",
     "How long can an advertiser wait in the pool?",
 ]
-PAGES = ["Assistant", "Plan", "Monthly update", "Scenario", "Memo", "Data", "Evaluation", "Decision log"]
+HOME = "This year"
+# The sidebar follows the manager's year: plan before it starts, update every month, ask any time.
+NAV_GROUPS = [
+    ("", [HOME]),
+    ("Before the year starts", ["Data", "Plan", "Scenario", "Memo"]),
+    ("Every month", ["Monthly update", "Decision log"]),
+    ("Any time", ["Assistant"]),
+    ("Behind the numbers", ["Evaluation"]),
+]
+PAGES = [page for _, names in NAV_GROUPS for page in names]
+# The page that comes next in the manager's year, and why.
+NEXT = {
+    "Data": ("Plan", "Next: choose the service goal, check the plan and approve it."),
+    "Plan": ("Scenario", "Next: stress test the plan before the year starts."),
+    "Scenario": ("Memo", "Next: brief each country manager."),
+    "Memo": (HOME, "The plan for the year is ready. Each month, start from This year."),
+    "Monthly update": ("Decision log", "Next: see what the update changed, month by month."),
+    "Decision log": (HOME, "Back to the year at a glance."),
+}
 # The service goal is a business choice: profit only, or profit with a service level agreement.
 GOAL_NAMES = {
     "optimized": "Profit only",
@@ -62,6 +81,8 @@ CLOSE_SIDEBAR_ON_PHONE = """() => {
 
 _PLANNER: Planner | None = None
 _PILOTS: dict[str, StaffPilot] = {}
+# The monthly update approved last for each country; the next update starts from it.
+_APPROVED: dict[str, MonthlyUpdate] = {}
 
 
 def planner() -> Planner:
@@ -350,6 +371,85 @@ def plan_view(country: str, goal: str = RECOMMENDED_POLICY):
     return plan_kpis(p, chosen, goal), components.sharp(figure), _readable(shown)
 
 
+def _chosen(country: str) -> str | None:
+    return None if country == "All countries" else country
+
+
+def check_view(country: str, goal: str = RECOMMENDED_POLICY) -> str:
+    """Is the plan right, and is it the best? Every rule and comparison, with its numbers."""
+    return components.checklist(checks.plan_checks(planner(), goal, _chosen(country)))
+
+
+def breakdown_view(country: str, goal: str = RECOMMENDED_POLICY):
+    """Net value rebuilt from its inputs, the month by month detail, and the detail as a CSV."""
+    p = planner()
+    chosen = _chosen(country)
+    b = checks.value_breakdown(p, goal, chosen)
+    rules = p.settings.rules
+    spread = ", ".join(
+        f"{level:.0%} with probability {prob:.0%}"
+        for level, prob in zip(rules.uplift_levels, rules.uplift_probabilities, strict=True)
+    )
+    per = "average " if chosen is None else ""
+    text = "\n".join(
+        [
+            f"**Net value = uplift − salaries − notice cost**, for {country}, {p.year}.",
+            "",
+            (
+                f"* **Uplift** {charts.money(b['uplift'])} = {b['served']:,.0f} advertisers served × "
+                f"${b['mean_budget']:,.0f} average projected annual budget × {b['uplift_rate']:.1%} expected "
+                f"uplift (the brief's spread: {spread})."
+            ),
+            (
+                f"* **Salaries** {charts.money(b['salary_cost'])} = {b['payroll_agent_months']:,.0f} paid agent months "
+                f"(including ramp up and notice months) × ${b['salary_per_agent_month']:,.0f} {per}salary a month."
+            ),
+            (
+                f"* **Notice cost** {charts.money(b['notice_cost'])} = {b['notices']:,.0f} notices × "
+                f"${b['salary_per_notice']:,.0f} {per}annual salary × {b['fire_cost_share']:.0%}."
+            ),
+            (
+                f"* **Net value** {charts.money(b['uplift'])} − {charts.money(b['salary_cost'])} − "
+                f"{charts.money(b['notice_cost'])} = **{charts.money(b['net_value'])}**, the number on the card."
+            ),
+        ]
+    )
+    detail = checks.monthly_detail(p, goal, chosen)
+    OUTPUTS.mkdir(exist_ok=True)
+    path = OUTPUTS / f"plan_detail_{(chosen or 'all').replace(' ', '_')}.csv"
+    detail.to_csv(path, index=False)
+    shown = detail.assign(utilization=detail["utilization"].map(lambda v: f"{v:.0%}" if pd.notna(v) else ""))
+    return text, _readable(shown), gr.File(value=str(path), visible=True)
+
+
+def manual_inputs(country: str, goal: str = RECOMMENDED_POLICY, percent: float = -5) -> pd.DataFrame:
+    """The optimized headcount and an editable copy changed by `percent` from February."""
+    chosen = _chosen(country)
+    if chosen is None:
+        return pd.DataFrame({"Month": [], "Optimized": [], "Yours": []})
+    active = planner().run(goal).outcomes[chosen].plan.active[:12]
+    yours = active.copy()
+    yours[1:] = (active[1:] * (1 + float(percent or 0) / 100)).round()
+    return pd.DataFrame({"Month": checks.MONTHS, "Optimized": active.astype(int), "Yours": yours.astype(int)})
+
+
+def manual_score(country: str, goal: str, table: pd.DataFrame):
+    """Score the typed headcount with the same simulator and compare it with the optimized plan."""
+    chosen = _chosen(country)
+    if chosen is None:
+        return "Pick one country in the list above, then try your own headcount for it.", None
+    try:
+        targets = pd.to_numeric(pd.DataFrame(table)["Yours"], errors="raise").to_numpy(dtype=float)
+        result = checks.compare_manual(planner(), chosen, targets, goal)
+    except (KeyError, TypeError, ValueError) as error:
+        return f"Those numbers do not work: {error}", None
+    change = result.manual.kpis["net_value"] - result.optimized.kpis["net_value"]
+    figure = charts.manual_plan(
+        result.table(), f"{chosen}: your headcount against the optimized plan", change
+    )
+    return result.summary(), components.sharp(figure)
+
+
 def tradeoff_view(goal: str = RECOMMENDED_POLICY):
     """Profit only against each service goal: the value given up and the service bought with it."""
     frame = planner().service_tradeoff()
@@ -401,15 +501,157 @@ def _as_of(month: str) -> int:
     return MONTH_NAMES.index(month) + 1
 
 
+MOMENTS = ["Before the year starts", *[f"Start of {m}" for m in MONTH_NAMES[1:]]]
+
+
+def _moment_month(moment: str) -> int:
+    """Calendar month the manager is deciding in: January before the year starts."""
+    return 1 if moment == MOMENTS[0] else _as_of(moment.removeprefix("Start of "))
+
+
+def nav_sync(name: str):
+    """Show the open page as selected in its sidebar group and clear the other groups."""
+    return [gr.Radio(value=name if name in names else None) for _, names in NAV_GROUPS]
+
+
+def home_steps(moment: str) -> list[tuple[str, str]]:
+    """What to do now, in order, as (text, page to open)."""
+    now = _moment_month(moment)
+    if now == 1:
+        return [
+            ("**1. Check the data.** See how clean the sign up history is and when demand peaks.", "Data"),
+            (
+                (
+                    "**2. Choose the service goal and approve the plan.** Read the checks first: every rule is "
+                    "tested with its numbers, and you can score a headcount of your own."
+                ),
+                "Plan",
+            ),
+            (
+                "**3. Stress test it.** Try fewer sign ups in the peak, a hiring cap or a lower threshold.",
+                "Scenario",
+            ),
+            ("**4. Brief the countries.** Write a one page memo for each country manager.", "Memo"),
+        ]
+    month, before = MONTH_NAMES[now - 1], MONTH_NAMES[now - 2]
+    upcoming = MONTH_NAMES[min(now, 11)]
+    done = {2: "January", 3: "January and February"}.get(now, f"January to {before}")
+    return [
+        (
+            (
+                f"**1. Enter what happened.** Type the actual eligible sign ups for {done} and the agents on staff, "
+                f"check them, then plan {month} to December again."
+            ),
+            "Monthly update",
+        ),
+        (
+            "**2. See what changed.** The decision log lists every month the update moved, and why.",
+            "Decision log",
+        ),
+        (
+            f"**3. Ask why.** For example: How many agents does Germany need in {upcoming} and why?",
+            "Assistant",
+        ),
+        ("**4. Test what could come next.** What if sign ups keep running above the forecast?", "Scenario"),
+    ]
+
+
+def home_view(moment: str, goal: str = RECOMMENDED_POLICY):
+    """The year strip, the steps for this moment, and the month the Monthly update page should open on."""
+    p = planner()
+    now = _moment_month(moment)
+    active, hires, notices, moved = np.zeros(12), np.zeros(12), np.zeros(12), [False] * 12
+    for country, outcome in p.run(goal).outcomes.items():
+        update = _APPROVED.get(country)
+        plan = update.updated.plan if update else outcome.plan
+        active += plan.active[:12]
+        hires += plan.hires[:12]
+        notices += plan.notices[:12]
+        if update:
+            for t in range(update.done, 12):
+                moved[t] |= bool(update.updated.plan.active[t] != update.original.active[t])
+    months = [
+        {
+            "label": MONTH_NAMES[t][:3],
+            "agents": float(active[t]),
+            "hires": float(hires[t]),
+            "notices": float(notices[t]),
+            "status": "done" if t < now - 1 else "now" if t == now - 1 else "planned",
+            "updated": moved[t],
+        }
+        for t in range(12)
+    ]
+    steps = home_steps(moment)
+    month = gr.update(value=MONTH_NAMES[now - 1]) if now > 1 else gr.update()
+    return (
+        components.year_rail(p.year, months),
+        *[text for text, _ in steps],
+        *[gr.Button(value=f"Open {page}") for _, page in steps],
+        [page for _, page in steps],
+        month,
+    )
+
+
+def home_if_open(name: str, moment: str, goal: str):
+    """Refresh This year when it is opened, since an approval elsewhere may have changed it."""
+    return home_view(moment, goal) if name == HOME else [gr.update()] * 11
+
+
+def check_inputs(country: str, month: str, actuals: pd.DataFrame, change: float) -> str:
+    """Read the typed numbers back with their gap to the forecast, and flag the ones to check."""
+    try:
+        frame = pd.DataFrame(actuals)
+        actual = pd.to_numeric(frame["Actual"], errors="coerce")
+        forecast = pd.to_numeric(frame["Forecast"], errors="coerce")
+    except KeyError:
+        return ""
+    if frame.empty:
+        return ""
+    lines, flags = [], 0
+    for name, a, f in zip(frame["Month"], actual, forecast, strict=True):
+        if pd.isna(a) or a < 0:
+            lines.append(f"* {name}: **not a count**, type a whole number of sign ups.")
+            flags += 1
+            continue
+        gap = (a - f) / f if f else 0.0
+        note = ""
+        if abs(gap) > 0.5:
+            note = " **Check this count**: it is more than half away from the forecast."
+            flags += 1
+        lines.append(f"* {name}: {a:,.0f} against a forecast of {f:,.0f} ({gap:+.0%}).{note}")
+    planned = planner().run(RECOMMENDED_POLICY).outcomes[country].plan.active[_as_of(month) - 1]
+    if change and planned and abs(float(change)) > 0.2 * planned:
+        lines.append(
+            f"* Agents on staff: {float(change):+,.0f} against a plan of {planned:,.0f}. **Check this number**: "
+            "it moves the team by more than a fifth."
+        )
+        flags += 1
+    previous = _APPROVED.get(country)
+    if previous and previous.as_of < _as_of(month):
+        lines.append(
+            f"* Starts from the update approved in {MONTH_NAMES[previous.as_of - 1]}; its actual counts are "
+            "filled in above."
+        )
+    head = "**Input check:** " + (
+        f"{flags} number(s) to look at." if flags else "the numbers look consistent."
+    )
+    return "\n".join([head, *lines])
+
+
 def actual_inputs(country: str, month: str, percent: float) -> pd.DataFrame:
     """The months before the update, with the forecast and an actual count to edit (forecast plus `percent`)."""
     done = _as_of(month) - 1
     forecast = planner().forecast.demand(country)[:done]
+    actual = forecast * (1 + float(percent or 0) / 100)
+    # Months an approved earlier update already counted keep their actual numbers.
+    previous = _APPROVED.get(country)
+    if previous and previous.as_of <= done + 1:
+        actual[: previous.done] = previous.actual
     return pd.DataFrame(
         {
             "Month": MONTH_NAMES[:done],
             "Forecast": forecast.round().astype(int),
-            "Actual": (forecast * (1 + float(percent or 0) / 100)).round().astype(int),
+            "Actual": actual.round().astype(int),
         }
     )
 
@@ -418,7 +660,10 @@ def update_view(country: str, month: str, actuals: pd.DataFrame, change: float, 
     """Plan again from `month` with the actual sign ups so far. Returns the summary, chart, table and result."""
     try:
         actual = pd.to_numeric(pd.DataFrame(actuals)["Actual"], errors="raise").to_numpy(dtype=float)
-        update = planner().monthly_update(country, _as_of(month), actual, int(change or 0), goal)
+        previous = _APPROVED.get(country)
+        # A later month builds on the update approved before it; the same month is planned again from scratch.
+        base = previous.updated.plan if previous and previous.as_of < _as_of(month) else None
+        update = planner().monthly_update(country, _as_of(month), actual, int(change or 0), goal, base=base)
     except (KeyError, TypeError, ValueError) as error:
         return f"Those inputs do not work: {error}", None, pd.DataFrame(), None
     table = update.table()
@@ -450,6 +695,7 @@ def approve_update(update) -> str:
     OUTPUTS.mkdir(exist_ok=True)
     path = OUTPUTS / "approved_update.csv"
     update.table().assign(country=update.country).to_csv(path, index=False)
+    _APPROVED[update.country] = update
     rows = audit.update_rows(update)
     audit.record(rows, OUTPUTS)
     log.info("Monthly update approved for %s in month %d", update.country, update.as_of)
@@ -556,22 +802,25 @@ def eval_tables():
 
 
 PAGE_TEXT = {
-    "Assistant": "Ask in plain English. Each answer shows its chart and how it was worked out.",
-    "Plan": "Headcount month by month for the planning year. Pick a service goal, then approve the plan.",
-    "Monthly update": "Enter the real sign ups so far; the remaining months are planned again.",
-    "Scenario": "Describe a change in words, check how it was read, then run it against the plan.",
-    "Memo": "A one page staffing memo for a country manager.",
-    "Data": "How clean the sign up history is and the patterns the plan is built on.",
-    "Evaluation": "How each assistant scored on labelled questions, and every recorded run.",
-    "Decision log": "Every approved decision: what was proposed, what changed it and what was applied.",
+    HOME: "Where you are in the staffing year, and what to do next.",
+    "Data": "Before the year starts: how clean the sign up history is and the patterns the plan is built on.",
+    "Plan": "Before the year starts: choose a service goal, check the plan, then approve it.",
+    "Scenario": "Before or during the year: describe a change in words, check how it was read, then run it.",
+    "Memo": "Before the year starts: a one page staffing memo for each country manager.",
+    "Monthly update": "Every month: enter the real numbers so far, check them, and plan the remaining months again.",
+    "Decision log": "Every month: what was proposed, what changed it and what was applied.",
+    "Assistant": "Any time: ask in plain English. Each answer shows its chart and how it was worked out.",
+    "Evaluation": "Behind the numbers: how each assistant scored on labelled questions, and every recorded run.",
 }
 # Hover text for sidebar items and buttons, set once the page has loaded.
 TIPS = {
+    HOME: "Where you are in the year and what to do next",
     "Assistant": "Chat about the plan; follow up questions keep their context",
     "Plan": "Headline numbers, alerts and the month by month plan",
     "Monthly update": "Plan the rest of the year again with the actual sign ups so far",
     "Decision log": "What the optimizer, a language model and the manager each decided",
     "Update the plan": "Keeps the months already done and plans the remaining months again",
+    "Score my plan": "Runs your headcount through the same simulator and compares it with the optimized plan",
     "Approve the update": "Saves the updated plan and records every change in the decision log",
     "Scenario": "Test a change, such as fewer sign ups or a hiring cap",
     "Memo": "Write a staffing memo for one country",
@@ -629,7 +878,21 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         with gr.Sidebar(open=True, width=256, elem_id="sp-sidebar"):
             gr.HTML(components.brand())
             new_btn = gr.Button("New chat", size="sm", elem_classes="sp-new")
-            nav = gr.Radio(PAGES, value=PAGES[0], show_label=False, container=False, elem_classes="sp-nav")
+            # One hidden list holds the open page; the visible groups only choose from it.
+            nav = gr.Radio(PAGES, value=HOME, visible=False)
+            groups = []
+            for title, names in NAV_GROUPS:
+                if title:
+                    gr.HTML(f'<div class="sp-nav-group">{title}</div>')
+                groups.append(
+                    gr.Radio(
+                        names,
+                        value=HOME if HOME in names else None,
+                        show_label=False,
+                        container=False,
+                        elem_classes="sp-nav",
+                    )
+                )
             gr.HTML(components.section("Recent chats"))
             recent = gr.Radio([], show_label=False, container=False, elem_classes="sp-history")
             gr.HTML(components.history_empty(), elem_classes="sp-history-note")
@@ -651,10 +914,41 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             gr.HTML(components.legal())
 
         with gr.Column(elem_id="sp-main"):
-            head = gr.HTML(page_head(PAGES[0]))
+            head = gr.HTML(page_head(HOME))
+
+            def next_row(page: str) -> None:
+                target, text = NEXT[page]
+                with gr.Row(elem_classes="sp-next-row"):
+                    gr.Markdown(text)
+                    button = gr.Button(
+                        f"Open {target}", size="sm", scale=0, min_width=170, elem_classes="sp-next"
+                    )
+                button.click(lambda: target, None, nav)
+
+            with gr.Column(visible=True, elem_classes=["sp-page", "sp-home"]) as pages[HOME]:
+                with gr.Column(elem_classes="sp-panel"):
+                    rail = gr.HTML()
+                with gr.Row(equal_height=False):
+                    with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                        moment = gr.Dropdown(
+                            MOMENTS,
+                            value=MOMENTS[0],
+                            label="Where are you in the year?",
+                            info="Pick the month you are deciding in; the steps below follow",
+                        )
+                        step_text, step_btns = [], []
+                        with gr.Column(elem_classes="sp-steps"):
+                            for _ in range(4):
+                                with gr.Row(elem_classes="sp-step"):
+                                    step_text.append(gr.Markdown())
+                                    step_btns.append(gr.Button("Open", size="sm", scale=0, min_width=190))
+                        step_pages = gr.State([page for _, page in home_steps(MOMENTS[0])])
+                    with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                        gr.HTML('<div class="sp-panel-title">Which page for which moment</div>')
+                        gr.HTML(components.cycle())
 
             with (
-                gr.Column(visible=True, elem_classes="sp-page") as pages["Assistant"],
+                gr.Column(visible=False, elem_classes="sp-page") as pages["Assistant"],
                 gr.Row(equal_height=False, elem_classes="sp-chat-row"),
             ):
                 with gr.Column(scale=3, min_width=340, elem_classes="sp-panel"):
@@ -701,88 +995,137 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         scale=3,
                     )
                     approve_btn = gr.Button("Approve this plan", variant="primary", scale=0, min_width=180)
-                cards = gr.HTML()
                 status = gr.Markdown(elem_classes="sp-note")
-                with gr.Accordion(components.alert_summary(alerts), open=False, elem_classes="sp-alerts"):
-                    gr.HTML(components.alert_list(alerts))
-                with gr.Column(elem_classes="sp-panel"):
-                    figure = gr.Plot(show_label=False, elem_classes="sp-plot")
-                with gr.Column(elem_classes="sp-panel"):
-                    tradeoff_text = gr.Markdown(elem_classes="sp-prose")
-                    tradeoff_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                    with gr.Accordion("Every service goal", open=False, elem_classes="sp-block"):
-                        tradeoff_table = gr.Dataframe(show_label=False, wrap=True)
-                with gr.Column(elem_classes="sp-panel"):
-                    plan_table = gr.Dataframe(label="Month by month", wrap=True)
+                with gr.Tabs(elem_classes="sp-tabs"):
+                    with gr.Tab("Overview"):
+                        cards = gr.HTML()
+                        with gr.Accordion(
+                            components.alert_summary(alerts), open=False, elem_classes="sp-alerts"
+                        ):
+                            gr.HTML(components.alert_list(alerts))
+                        with gr.Column(elem_classes="sp-panel"):
+                            figure = gr.Plot(show_label=False, elem_classes="sp-plot")
+                        with gr.Column(elem_classes="sp-panel"):
+                            tradeoff_text = gr.Markdown(elem_classes="sp-prose")
+                            tradeoff_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                            with gr.Accordion("Every service goal", open=False, elem_classes="sp-block"):
+                                tradeoff_table = gr.Dataframe(show_label=False, wrap=True)
+                        with gr.Column(elem_classes="sp-panel"):
+                            plan_table = gr.Dataframe(label="Month by month", wrap=True)
+                    with gr.Tab("Check the plan"), gr.Column(elem_classes="sp-panel"):
+                        check_html = gr.HTML()
+                    with gr.Tab("How it is calculated"), gr.Column(elem_classes="sp-panel"):
+                        breakdown_text = gr.Markdown(elem_classes="sp-prose")
+                        breakdown_table = gr.Dataframe(label="Month by month, from the simulator", wrap=True)
+                        breakdown_file = gr.File(label="Download the month by month detail", visible=False)
+                    with gr.Tab("Try your own plan"), gr.Row(equal_height=False):
+                        with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                            gr.Markdown(
+                                "Type the agents you would keep in each month of the country picked above, "
+                                "or change every month at once. The same simulator scores your plan.",
+                                elem_classes="sp-note",
+                            )
+                            manual_percent = gr.Slider(
+                                -20, 20, value=-5, step=1, label="Change every month from February (percent)"
+                            )
+                            manual_table = gr.Dataframe(
+                                label="Agents at work",
+                                interactive=True,
+                                column_count=3,
+                                static_columns=[0, 1],
+                            )
+                            manual_btn = gr.Button("Score my plan", variant="primary")
+                        with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                            manual_text = gr.Markdown(
+                                "Pick a country above, then score your plan.", elem_classes="sp-prose"
+                            )
+                            manual_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                next_row("Plan")
 
-            with (
-                gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"],
-                gr.Row(equal_height=False),
-            ):
-                with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
-                    up_country = gr.Dropdown(p.countries, value=p.countries[0], label="Country")
-                    up_month = gr.Dropdown(
-                        MONTH_NAMES[1:],
-                        value=MONTH_NAMES[2],
-                        label="Update made in",
-                        info="The months before it are done and keep their decisions",
-                    )
-                    up_percent = gr.Slider(
-                        -50,
-                        100,
-                        value=20,
-                        step=5,
-                        label="Sign ups so far against the forecast (percent)",
-                        info="Fills the Actual column; edit any month by hand",
-                    )
-                    up_actuals = gr.Dataframe(
-                        label="Actual eligible sign ups",
-                        interactive=True,
-                        wrap=True,
-                        column_count=3,
-                        static_columns=[0, 1],
-                    )
-                    up_change = gr.Number(
-                        0,
-                        precision=0,
-                        label="Agents on staff against the plan",
-                        info="For example -2 when two agents resigned",
-                    )
-                    with gr.Row():
-                        update_btn = gr.Button("Update the plan", variant="primary")
-                        approve_update_btn = gr.Button("Approve the update")
-                    update_status = gr.Markdown(elem_classes="sp-note")
-                with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
-                    update_summary = gr.Markdown(
-                        "Enter the actual sign ups so far, then update the plan. The approved plan's decisions "
-                        "in the months already done stay as they were.",
-                        elem_classes="sp-prose",
-                    )
-                    update_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                    update_table = gr.Dataframe(
-                        label="Approved plan → update (forecast → actual for sign ups)", wrap=True
-                    )
-                update_state = gr.State(None)
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"]:
+                with gr.Row(equal_height=False):
+                    with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                        up_country = gr.Dropdown(p.countries, value=p.countries[0], label="Country")
+                        up_month = gr.Dropdown(
+                            MONTH_NAMES[1:],
+                            value=MONTH_NAMES[2],
+                            label="Update made in",
+                            info="The months before it are done and keep their decisions",
+                        )
+                        up_percent = gr.Slider(
+                            -50,
+                            100,
+                            value=20,
+                            step=5,
+                            label="Sign ups so far against the forecast (percent)",
+                            info="Fills the Actual column; edit any month by hand",
+                        )
+                        up_actuals = gr.Dataframe(
+                            label="Actual eligible sign ups",
+                            interactive=True,
+                            wrap=True,
+                            column_count=3,
+                            static_columns=[0, 1],
+                        )
+                        up_change = gr.Number(
+                            0,
+                            precision=0,
+                            label="Agents on staff against the plan",
+                            info="For example -2 when two agents resigned",
+                        )
+                        input_check = gr.Markdown(elem_classes="sp-note")
+                        with gr.Row():
+                            update_btn = gr.Button("Update the plan", variant="primary")
+                            approve_update_btn = gr.Button("Approve the update")
+                        update_status = gr.Markdown(elem_classes="sp-note")
+                    with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                        update_summary = gr.Markdown(
+                            "Enter the actual sign ups so far, then update the plan. The approved plan's decisions "
+                            "in the months already done stay as they were.",
+                            elem_classes="sp-prose",
+                        )
+                        update_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                        update_table = gr.Dataframe(
+                            value=pd.DataFrame(
+                                columns=["Month", "Status", "Sign ups", "Agents at work", "Hires", "Notices"]
+                            ),
+                            label="Approved plan → update (forecast → actual for sign ups)",
+                            wrap=True,
+                        )
+                    update_state = gr.State(None)
+                next_row("Monthly update")
 
-            with (
-                gr.Column(visible=False, elem_classes="sp-page") as pages["Scenario"],
-                gr.Row(equal_height=False),
-            ):
-                with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
-                    text = gr.Textbox(label="Describe the change", value="Sign ups in Germany drop 30% in Q3")
-                    with gr.Row():
-                        read_btn = gr.Button("Read the scenario")
-                        run_btn = gr.Button("Run the scenario", variant="primary")
-                    understood = gr.Markdown(elem_classes="sp-note")
-                    params = gr.Code(language="json", label="Parameters, which you can edit")
-                    proposal = gr.State({})
-                with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
-                    summary = gr.Markdown(
-                        "Read a scenario, then run it to compare it with the current plan.",
-                        elem_classes="sp-prose",
-                    )
-                    scenario_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                    diff = gr.Dataframe(label="Current plan against the scenario", wrap=True)
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Scenario"]:
+                with gr.Row(equal_height=False):
+                    with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                        text = gr.Textbox(
+                            label="Describe the change", value="Sign ups in Germany drop 30% in Q3"
+                        )
+                        with gr.Row():
+                            read_btn = gr.Button("Read the scenario")
+                            run_btn = gr.Button("Run the scenario", variant="primary")
+                        understood = gr.Markdown(elem_classes="sp-note")
+                        params = gr.Code(language="json", label="Parameters, which you can edit")
+                        proposal = gr.State({})
+                    with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                        summary = gr.Markdown(
+                            "Read a scenario, then run it to compare it with the current plan.",
+                            elem_classes="sp-prose",
+                        )
+                        scenario_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                        diff = gr.Dataframe(
+                            value=pd.DataFrame(
+                                columns=[
+                                    "Country",
+                                    "Net value base",
+                                    "Net value scenario",
+                                    "Net value change",
+                                ]
+                            ),
+                            label="Current plan against the scenario",
+                            wrap=True,
+                        )
+                next_row("Scenario")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Memo"]:
                 with gr.Row(elem_classes="sp-toolbar"):
@@ -793,6 +1136,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         memo_text = gr.Markdown("Pick a country and write its memo.", elem_classes="sp-prose")
                     with gr.Column(scale=1, min_width=320, elem_classes="sp-panel"):
                         memo_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                next_row("Memo")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Data"]:
                 with gr.Column(elem_classes="sp-panel"):
@@ -809,6 +1153,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                         budgets = gr.Plot(show_label=False, elem_classes="sp-plot")
                 with gr.Column(elem_classes="sp-panel"):
                     quality = gr.Dataframe(label="Data quality checks")
+                next_row("Data")
 
             with (
                 gr.Column(visible=False, elem_classes="sp-page") as pages["Evaluation"],
@@ -823,26 +1168,28 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 eval_retrieval = gr.Dataframe(label="Retrieval")
                 runs = gr.Dataframe(label="Runs")
 
-            with (
-                gr.Column(visible=False, elem_classes="sp-page") as pages["Decision log"],
-                gr.Column(elem_classes="sp-panel"),
-            ):
-                gr.Markdown(
-                    "Each row keeps apart what was **proposed** (by the optimizer, the forecast or a language "
-                    "model reading your words), what **adjusted** it (the simulator check, a monthly update, "
-                    "a GenAI guardrail or you) and what was finally **applied**. No language model writes a "
-                    "staffing number: numbers come from the planner.",
-                    elem_classes="sp-note",
-                )
-                log_summary = gr.Markdown(elem_classes="sp-note")
-                log_table = gr.Dataframe(show_label=False, wrap=True)
-                log_file = gr.File(label="decision_audit.csv", visible=False)
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Decision log"]:
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.Markdown(
+                        "Each row keeps apart what was **proposed** (by the optimizer, the forecast or a language "
+                        "model reading your words), what **adjusted** it (the simulator check, a monthly update, "
+                        "a GenAI guardrail or you) and what was finally **applied**. No language model writes a "
+                        "staffing number: numbers come from the planner.",
+                        elem_classes="sp-note",
+                    )
+                    log_summary = gr.Markdown(elem_classes="sp-note")
+                    log_table = gr.Dataframe(show_label=False, wrap=True)
+                    log_file = gr.File(label="decision_audit.csv", visible=False)
+                next_row("Decision log")
 
         # Navigation and conversations
         demo.load(None, None, None, js=PAGE_JS)
         demo.load(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
-        for control in (nav, recent):
+        for control in (*groups, recent):
             control.input(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
+        for group in groups:
+            group.input(lambda name: name, group, nav)
+        nav.change(nav_sync, nav, groups)
         new_btn.click(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
         nav.change(show_page, nav, [pages[name] for name in PAGES]).then(page_head, nav, head)
         chat_out = [chat, box, details, table, route, memory, chats, current, recent]
@@ -850,28 +1197,46 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         chat.example_select(example_text, None, box).then(
             send, [box, chat, backend, memory, chats, current], chat_out
         )
-        new_btn.click(start_chat, chats, chat_out).then(lambda: PAGES[0], None, nav)
-        recent.input(open_chat, [recent, chats], [chat, memory, current]).then(lambda: PAGES[0], None, nav)
+        new_btn.click(start_chat, chats, chat_out).then(lambda: "Assistant", None, nav)
+        recent.input(open_chat, [recent, chats], [chat, memory, current]).then(lambda: "Assistant", None, nav)
         export_btn.click(export_conversation, memory, saved)
         refresh_btn.click(refresh_models, backend, backend)
 
         # Pages. Data and evaluation tables load when their page is first opened.
         for control in (pick, goal):
             control.change(plan_view, [pick, goal], [cards, figure, plan_table])
+            control.change(check_view, [pick, goal], check_html)
+            control.change(breakdown_view, [pick, goal], [breakdown_text, breakdown_table, breakdown_file])
+            control.change(manual_inputs, [pick, goal, manual_percent], manual_table)
+        manual_percent.change(manual_inputs, [pick, goal, manual_percent], manual_table)
+        manual_btn.click(manual_score, [pick, goal, manual_table], [manual_text, manual_plot])
         goal.change(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
         approve_btn.click(approve, [pick, goal], status)
         for control in (up_country, up_month, up_percent):
             control.change(actual_inputs, [up_country, up_month, up_percent], up_actuals)
+        for control in (up_actuals, up_change):
+            control.change(check_inputs, [up_country, up_month, up_actuals, up_change], input_check)
+        home_out = [rail, *step_text, *step_btns, step_pages, up_month]
+        for control in (moment, goal):
+            control.change(home_view, [moment, goal], home_out)
+        demo.load(home_view, [moment, goal], home_out)
+        nav.change(home_if_open, [nav, moment, goal], home_out)
+        for i, button in enumerate(step_btns):
+            button.click(lambda pages_, i=i: pages_[i], step_pages, nav)
         update_btn.click(
             update_view,
             [up_country, up_month, up_actuals, up_change, goal],
             [update_summary, update_plot, update_table, update_state],
         )
-        approve_update_btn.click(approve_update, update_state, update_status)
+        approve_update_btn.click(approve_update, update_state, update_status).then(
+            check_inputs, [up_country, up_month, up_actuals, up_change], input_check
+        )
         read_btn.click(parse_scenario, [text, backend], [params, understood, proposal])
         run_btn.click(run_scenario, [params, proposal], [summary, scenario_plot, diff])
         memo_btn.click(memo, [memo_country, backend], [memo_text, memo_plot])
         demo.load(plan_view, [pick, goal], [cards, figure, plan_table])
+        demo.load(check_view, [pick, goal], check_html)
+        demo.load(breakdown_view, [pick, goal], [breakdown_text, breakdown_table, breakdown_file])
         demo.load(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
         demo.load(actual_inputs, [up_country, up_month, up_percent], up_actuals)
         nav.change(open_log, nav, [log_summary, log_table, log_file])

@@ -137,6 +137,87 @@ def alert_summary(alerts: list[Alert]) -> str:
     return f"{len(urgent)} {noun} attention" + (f", {critical} of them critical" if critical else "")
 
 
+RAIL_WORDS = {"done": "Carried out", "now": "Decide now", "planned": "Planned"}
+
+
+def year_rail(year: int, months: list[dict]) -> str:
+    """The staffing year as one strip, like a roster: agents at work and the decision of each month.
+
+    Each month is a dict with `label`, `agents`, `hires` and `notices` (decided that month),
+    `status` (done, now or planned) and `updated` (a monthly update changed it).
+    """
+    cells = []
+    for m in months:
+        moves = [
+            f"Hire {m['hires']:,.0f}" if m["hires"] else "",
+            f"Notice {m['notices']:,.0f}" if m["notices"] else "",
+        ]
+        decision = ", ".join(x for x in moves if x) or "No change"
+        word = RAIL_WORDS[m["status"]] + (", updated" if m.get("updated") else "")
+        cells.append(
+            f'<div class="sp-rail-month {m["status"]}" title="{_e(m["label"])}: {m["agents"]:,.0f} agents at work; '
+            f'{_e(decision.lower())} decided">'
+            f'<span class="sp-rail-name">{_e(m["label"])}</span><b>{m["agents"]:,.0f}</b>'
+            f'<span class="sp-rail-move">{_e(decision)}</span>'
+            f'<span class="sp-rail-state">{_e(word)}</span></div>'
+        )
+    return (
+        f'<div class="sp-rail" aria-label="Agents at work and decisions in each month of {year}">{"".join(cells)}</div>'
+        '<p class="sp-rail-note">Agents at work each month under the approved plan, all countries, and the hires and '
+        "notices decided in that month. A hire works from the next month; a notice ends the next month.</p>"
+    )
+
+
+def cycle() -> str:
+    """Which page serves which moment of the manager's year."""
+    columns = [
+        (
+            "Before the year starts",
+            [
+                ("Data", "check the sign up history"),
+                ("Plan", "choose the service goal, check and approve"),
+                ("Scenario", "stress test the plan"),
+                ("Memo", "brief each country manager"),
+            ],
+        ),
+        (
+            "Every month",
+            [
+                ("Monthly update", "enter the real numbers, plan the rest again"),
+                ("Decision log", "see what changed and who changed it"),
+            ],
+        ),
+        (
+            "Any time",
+            [
+                ("Assistant", "ask about the plan in plain English"),
+                ("Scenario", "test a change before it happens"),
+            ],
+        ),
+    ]
+    html = []
+    for title, pages in columns:
+        items = "".join(f"<li><b>{_e(page)}</b> {_e(job)}</li>" for page, job in pages)
+        html.append(f'<div class="sp-cycle-col"><h3>{_e(title)}</h3><ul>{items}</ul></div>')
+    return f'<div class="sp-cycle">{"".join(html)}</div>'
+
+
+def checklist(checks: list) -> str:
+    """The plan checks: a pass, a fail or a note for each, with the numbers behind it."""
+    states = {True: ("ok", "Pass"), False: ("fail", "Fail"), None: ("info", "Note")}
+    rows = []
+    for c in checks:
+        css, word = states[c.passed]
+        rows.append(
+            f'<div class="sp-check {css}"><span class="sp-check-state">{word}</span>'
+            f"<div><b>{_e(c.title)}</b><p>{_e(c.detail)}</p></div></div>"
+        )
+    tested = [c for c in checks if c.passed is not None]
+    passed = sum(c.passed is True for c in tested)
+    head = f'<div class="sp-check-head">{passed} of {len(tested)} checks pass</div>'
+    return f'<div class="sp-checks">{head}{"".join(rows)}</div>'
+
+
 def chat_empty() -> str:
     """Shown in an empty conversation (Gradio renders the chatbot placeholder as Markdown)."""
     return (

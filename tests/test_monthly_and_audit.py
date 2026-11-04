@@ -168,3 +168,58 @@ def test_monthly_update_page_and_decision_log(planner, tmp_path, monkeypatch):
     assert {"monthly update approved", "plan approved", "assistant answer", "scenario run"} <= decisions
     assert file.visible and "rows" in summary
     assert app.open_log("Plan")[1] == app.gr.update()
+
+
+def test_the_sidebar_follows_the_managers_year(planner):
+    from staffpilot import app
+
+    app.build_app(planner)
+    assert app.PAGES[0] == app.HOME and app.PAGES.index("Data") < app.PAGES.index("Monthly update")
+    synced = app.nav_sync("Monthly update")
+    groups = [names for _, names in app.NAV_GROUPS]
+    assert [s.value for s in synced] == [None, None, "Monthly update", None, None]
+    assert len(synced) == len(groups)
+    assert all(target in app.PAGES for target, _ in app.NEXT.values())
+
+
+def test_this_year_shows_the_steps_for_each_moment(planner):
+    from staffpilot import app
+
+    app.build_app(planner)
+    rail, *rest = app.home_view("Before the year starts")
+    texts, buttons, pages, month = rest[:4], rest[4:8], rest[8], rest[9]
+    assert rail.count("sp-rail-month") == 12 and "Decide now" in rail and "Notice" in rail
+    assert pages == ["Data", "Plan", "Scenario", "Memo"] and texts[0].startswith("**1. Check the data")
+    assert buttons[1].value == "Open Plan" and month == app.gr.update()
+    rail, *rest = app.home_view("Start of April")
+    assert rest[8] == ["Monthly update", "Decision log", "Assistant", "Scenario"]
+    assert "January to March" in rest[0] and rest[9]["value"] == "April"
+    assert rail.count("Carried out") == 3
+    assert app.home_if_open("Plan", "Start of April", RECOMMENDED_POLICY) == [app.gr.update()] * 11
+
+
+def test_monthly_inputs_are_checked_and_updates_build_on_each_other(planner, tmp_path, monkeypatch):
+    from staffpilot import app
+
+    monkeypatch.setattr(app, "OUTPUTS", tmp_path)
+    app.build_app(planner)
+    app._APPROVED.clear()
+    inputs = app.actual_inputs("Alpha", "March", 20)
+    assert "the numbers look consistent" in app.check_inputs("Alpha", "March", inputs, 0)
+    odd = inputs.assign(Actual=[inputs["Forecast"].iloc[0] * 3, "x"])
+    note = app.check_inputs("Alpha", "March", odd, 0)
+    assert "Check this count" in note and "not a count" in note
+    assert "Check this number" in app.check_inputs("Alpha", "March", inputs, -500)
+
+    *_, march = app.update_view("Alpha", "March", inputs, 0, RECOMMENDED_POLICY)
+    app.approve_update(march)
+    april_inputs = app.actual_inputs("Alpha", "April", 0)
+    assert april_inputs["Actual"].iloc[:2].tolist() == [round(v) for v in march.actual]
+    assert "update approved in March" in app.check_inputs("Alpha", "April", april_inputs, 0)
+    *_, april = app.update_view("Alpha", "April", april_inputs, 0, RECOMMENDED_POLICY)
+    # April starts from March's approved update, so March's new decisions are now carried out.
+    assert april.original.hires[2] == march.updated.plan.hires[2]
+    assert april.updated.plan.hires[:3].tolist() == march.updated.plan.hires[:3].tolist()
+    rail = app.home_view("Start of April")[0]
+    assert "updated" in rail or march.changes() == []
+    app._APPROVED.clear()

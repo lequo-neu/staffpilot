@@ -11,7 +11,7 @@ The course allows AI tools if their use is explained and AI generated parts are 
 
 | Part | AI role | How the team checked it |
 |---|---|---|
-| Package code in `src/staffpilot/` | first drafts of modules | 132 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
+| Package code in `src/staffpilot/` | first drafts of modules | 140 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
 | Tests in `tests/` | drafted from the brief rules | each rule case is small enough to check by hand |
 | Notebook text and `docs/report.md` | drafting of prose; every notebook section carries a marker | every number was copied from an executed cell and rechecked |
 | README | drafting | commands were run on a fresh environment |

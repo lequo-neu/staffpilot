@@ -520,6 +520,30 @@ class Planner:
         frame["cost_of_goal"] = float(frame["net_value"].iloc[0]) - frame["net_value"]
         return frame
 
+    def score_plan(
+        self, country: str, targets: list[float] | np.ndarray, policy: str = RECOMMENDED_POLICY
+    ) -> tuple[CountryOutcome, CountryOutcome]:
+        """Score a headcount a manager typed in, against the optimized plan, with the same simulator.
+
+        `targets` holds agents at work for the twelve months. January keeps the January team,
+        since a decision takes a month to act; later months are reached as early as ramp up and
+        notice allow. The lookahead months keep the optimized plan. Returns (manual, optimized).
+        """
+        resolved = self.resolve_country(country)
+        if resolved is None:
+            raise ValueError(f"No data for {country}")
+        wanted = np.asarray(targets, dtype=float)
+        if wanted.shape != (12,) or (wanted < 0).any() or not np.isfinite(wanted).all():
+            raise ValueError("Give twelve monthly headcounts, none negative")
+        best = self.run(policy).outcomes[resolved]
+        full = np.concatenate([np.round(wanted), best.plan.active[12:]])
+        s = self.settings
+        start = int(self.dataset.countries.loc[resolved, "agents"])
+        salary = float(self.dataset.countries.loc[resolved, "salary"])
+        plan = path_from_targets(resolved, start, full, salary, s.rules, s.assumptions, "manual")
+        sim = self._simulate(resolved, plan, self.context)
+        return CountryOutcome(plan, sim, _kpis(plan, sim)), best
+
     # Monthly update
 
     def monthly_update(
@@ -530,6 +554,7 @@ class Planner:
         headcount_change: int = 0,
         policy: str = RECOMMENDED_POLICY,
         adjust_rest: bool = True,
+        base: CountryPlan | None = None,
     ) -> MonthlyUpdate:
         """Plan again at the start of month `as_of` (2 to 12) from what really happened before it.
 
@@ -538,6 +563,8 @@ class Planner:
         the last (up to three) actual months were from it, unless `adjust_rest` is False.
         `headcount_change` is the agents on staff now minus the plan, for example -2 when
         two agents resigned. Only the decisions from `as_of` on are made again.
+        `base` is the plan approved last (an earlier monthly update); by default the
+        plan approved for the year.
         """
         resolved = self.resolve_country(country)
         if resolved is None:
@@ -559,7 +586,7 @@ class Planner:
         factors[done:] = ratio
         ctx = replace(self.context, multipliers={resolved: factors})
 
-        base = self.run(policy).outcomes[resolved].plan
+        base = base if base is not None else self.run(policy).outcomes[resolved].plan
         change = np.zeros(horizon)
         change[done] = float(headcount_change)
         executed = Executed(base.hires[:done].copy(), base.notices[:done].copy(), change)
