@@ -37,3 +37,11 @@ runs/
 
 # Cached workbook sheets and plans (rebuilt automatically)
 .cache/
+
+# Passwords chosen at the first sign in (salted hashes)
+outputs/accounts.json
+outputs/accounts.tmp
+
+# Local backups of evaluation results, and a Gemini run stopped when the free quota ran out
+eval/results_*/
+eval/cache/google.jsonl

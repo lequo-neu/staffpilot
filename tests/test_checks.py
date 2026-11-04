@@ -85,5 +85,8 @@ def test_plan_page_tabs(planner, tmp_path, monkeypatch):
     summary, chart = app.manual_score("Beta", RECOMMENDED_POLICY, inputs)
     assert "Net value" in summary and chart is not None
     assert app.manual_score("All countries", RECOMMENDED_POLICY, inputs)[0].startswith("Pick one country")
-    bad = inputs.assign(Yours=["x"] * 12)
-    assert app.manual_score("Beta", RECOMMENDED_POLICY, bad)[0].startswith("Those numbers do not work")
+    # Every month must hold a whole number of agents, 0 or more; the message names the months to fix.
+    for wrong in ("x", -3, 2.5, None):
+        bad = inputs.assign(Yours=[*inputs["Yours"].iloc[:11], wrong])
+        message, chart = app.manual_score("Beta", RECOMMENDED_POLICY, bad)
+        assert message.startswith("Type a whole number") and "Dec" in message and chart is None

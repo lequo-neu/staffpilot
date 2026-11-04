@@ -63,8 +63,10 @@ class SimulationResult:
             "uplift_value": float(c["uplift_value"].sum()),
             "mean_wait_days": float(waits.mean()) if waits.size else 0.0,
             "p90_wait_days": float(np.percentile(waits, 90)) if waits.size else 0.0,
+            "max_wait_days": float(waits.max()) if waits.size else 0.0,
             "utilization": float(m["occupied_slot_days"].sum() / capacity) if capacity else 0.0,
             "max_overflow": float(m["max_overflow"].max()),
+            "peak_load": float(m["peak_load"].max()),
         }
 
 
@@ -126,6 +128,7 @@ def simulate(
             "occupied_slot_days",
             "capacity_slot_days",
             "max_overflow",
+            "peak_load",
             "waiting_end",
             "uplift_wait_days",
         )
@@ -179,6 +182,10 @@ def simulate(
         stats["occupied_slot_days"][month] += occupied
         stats["capacity_slot_days"][month] += capacity
         stats["max_overflow"][month] = max(stats["max_overflow"][month], occupied - capacity)
+        # Advertisers per agent on the day, which the brief caps at ten.
+        if capacity:
+            load = occupied * rules.capacity_per_agent / capacity
+            stats["peak_load"][month] = max(stats["peak_load"][month], load)
         stats["waiting_end"][month] = waiting
 
     monthly = pd.DataFrame(stats)

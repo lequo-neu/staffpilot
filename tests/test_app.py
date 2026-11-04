@@ -51,7 +51,8 @@ def test_app_builds_and_handlers_run(planner, tmp_path, monkeypatch):
     assert "Staffing memo: Alpha" in text and memo_chart is not None
     assert "Approved" in app.approve("Alpha")
     facts, *plots, checks, quality = app.eda_view()
-    assert "sp-fact" in facts and all(p is not None for p in plots) and len(quality) > 3
+    assert "sp-questions" in facts and "Is demand seasonal?" in facts and "Is demand growing?" in facts
+    assert all(p is not None for p in plots) and len(quality) > 3
     assert "checks pass" in checks and "Fail" not in checks
     # The committed evaluation results are read; runs exist only where the plan command was run.
     lead, chart, scores, retrieval, retrieval_rows, run_facts, _ = app.eval_view()
@@ -143,3 +144,29 @@ def test_charts_reach_the_browser_as_sharp_png():
     assert picture.size[0] == 8 * WEB_DPI
     assert fig.get_dpi() == 110  # the figure itself is left as it was
     assert sharp(None) is None
+
+
+def test_counts_must_be_whole_numbers_of_zero_or_more():
+    from staffpilot import app
+
+    values, bad = app.whole_numbers([0, "3", 12.0])
+    assert bad == [] and values.tolist() == [0, 3, 12]
+    assert app.whole_numbers(["x", -1, 2.5, None, "", 4])[1] == [0, 1, 2, 3, 4]
+
+
+def test_this_year_states_the_limits_and_the_goal_as_a_floor(planner, tmp_path, monkeypatch):
+    from staffpilot import app
+    from staffpilot.ui import components
+
+    monkeypatch.setattr(app, "OUTPUTS", tmp_path)
+    app.build_app(planner)
+    tiles = app.home_verdict()
+    assert "more than keeping the January team" in tiles and "%)" in tiles and "fewer)" in tiles
+    assert "(limit 60)" in tiles and "advertisers per agent (limit 10)" in tiles
+    app.approve("All countries")
+    tiles = app.home_verdict()
+    assert "goal: Profit, at least 98% served (recommended)" in tiles and "Reached:" in tiles
+    # An alert where the manager acts carries a button that opens that page.
+    assert 'data-sp-open="Plan"' in components.alert_list(
+        [components.Alert("warning", "hiring", "x", (), "Plan")]
+    )

@@ -233,7 +233,7 @@ def cmd_models(args: argparse.Namespace) -> None:
     providers = available_providers()
     if not providers:
         print(
-            "No API keys found, so only the offline backend is available. See README, Using language models."
+            "No API keys found, so only the offline backend is available. See docs/SETUP_GUIDE.md, step 11."
         )
         return
     settings = load_settings()
@@ -318,6 +318,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
         EVAL_DIR / "cache",
         judges,
         run_agent=not args.skip_agent,
+        keep=args.keep,
     )
     print(summary.round(3).to_string(index=False))
 
@@ -429,6 +430,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     evaluate.add_argument("--tier", choices=["strong", "fast", "both"], default="both")
     evaluate.add_argument("--skip-agent", action="store_true", help="do not evaluate the create_agent chat")
+    evaluate.add_argument(
+        "--keep",
+        action="store_true",
+        help="keep the earlier results of models not run this time, for example local ones when running online",
+    )
     evaluate.set_defaults(func=cmd_eval)
     hist = sub.add_parser("history", help="list recorded runs")
     hist.add_argument("--limit", type=int, default=20)

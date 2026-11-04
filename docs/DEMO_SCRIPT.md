@@ -2,7 +2,7 @@
 
 A presenter's guide to StaffPilot for an audience that has never seen it. It explains the problem, how the product is built, and then walks through every page in the order a staffing manager would use them, with the numbers the app shows on the public copy of the data (planning year 2026). A three minute version for the video is at the end.
 
-Start the app with no paid model: `STAFFPILOT_OFFLINE=1 python -m staffpilot app`, open http://127.0.0.1:7860 in a wide window, and wait about 15 seconds the first time. To show a language model instead, pick one in Settings before the Assistant step.
+Start the app with no paid model: `STAFFPILOT_OFFLINE=1 python -m staffpilot app`, open http://127.0.0.1:7860 in a wide window, and wait about 15 seconds the first time. Sign in before the audience arrives (for example as `kevin`, choosing a new password at the first sign in), or start with `STAFFPILOT_LOGIN=0` to skip sign in. To show a language model instead, pick one in Settings before the Assistant step.
 
 ## 1. The story in one minute
 
@@ -41,14 +41,14 @@ Each step below says what to click, what the screen shows, what to say, and whic
 
 ### Step 1. This year: the answer first
 
-* **Shows:** four tiles: **$479.7M** net value, $109.3M more than keeping the January team; **6,474 → 2,220** agents; **100.0%** served after 1.1 days; **Not approved**. Below, a strip of the twelve months: January 6,474 agents with **Hire 11, Notice 4,741** (the notice in red), September Hire 213, October Hire 108. On the right, five alerts, such as "Vietnam must grow the team".
+* **Shows:** four tiles: **$479.7M** net value, $109.3M (+29.5%) more than keeping the January team; **6,474 → 2,220** agents (65.7% fewer); **100.0%** served after 1.1 days, longest wait 35 days against the 60 day limit, at most 10.0 advertisers per agent against the limit of 10; **Not approved**. Below, a strip of the twelve months: January 6,474 agents with **Hire 11, Notice 4,741** (the notice in red), September Hire 213, October Hire 108. On the right, four alerts with their numbers, such as "Vietnam has 59 agents and the plan needs up to 95 by October: hire 36", each with an **Open Plan** button where the manager acts on it.
 * **Say:** "This is the year in one screen. The big decision is in January: 4,741 notices, because the team is far larger than demand. A few agents are hired back before the fourth quarter peak."
 * **Proves:** **[Brief]** agents per country and month, with the hiring and notice timing. **[Advanced]** a home page organised around the manager's year.
 * **Then:** keep "Where are you in the year?" on *Before the year starts* and click **Open Data**.
 
 ### Step 2. Data: what the plan stands on
 
-* **Shows:** seven tiles: **42.5%** of 499,644 sign ups are eligible; **2.8 times** the busiest need (in red); busiest month **Nov**, quietest **Jun**; daily noise **0.69** (amber); **Vietnam** understaffed (amber); sign ups **-1.8%** year on year; weekdays differ by **12%** (green). Four charts, then **3 of 3 checks pass** for data quality, with notes on 920 repaired dates and 13 budgets exactly on a threshold.
+* **Shows:** six questions with their answers: **42.5%** of 499,644 sign ups qualify; demand is seasonal, **1.8 times** (24,267 in November divided by 13,814 in June); it jumps from day to day, **CV 0.69**, so the waiting pool is simulated day by day; it is not growing, **-1.8%**; weekdays barely differ, Saturday 1.05 and Thursday 0.93; the January team is **2.8 times too many**, and only Vietnam is short (59 for 107). Four charts, then **3 of 3 checks pass** for data quality, with notes on 920 repaired dates and 13 budgets exactly on a threshold.
 * **Say:** "Before trusting a plan, check the data. It is clean, demand is seasonal with a November peak, and day to day swings are large, which is why the waiting pool matters."
 * **Proves:** **[Brief]** use of the dataset, exploratory analysis. Click a chart to show it full size.
 
@@ -57,7 +57,7 @@ Each step below says what to click, what the screen shows, what to say, and whic
 Open **Plan** (the button at the end of Data).
 
 * **Overview.** Five cards: net value $479.7M (+29.5% against keeping the January team), agents at work 2,220 (-65.7%), served 100.0%, utilization 68.9% (+44.9 points), total cost $178.5M (-37.6%). The headcount chart, then **Profit against service level**.
-  * **Do:** set **Service goal** to *Profit, 98% served within 7 days*.
+  * **Do:** set **Service goal** to *Profit, at least 98% served within 7 days*.
   * **Say:** "Profit only already serves 99.1 percent. Serving 98 percent within a week gives up $3.6M, 0.75 percent of net value, and needs about 101 more agents than profit only. It is a business choice, so the manager makes it here." Set the goal back to the recommended one.
   * **Proves:** **[Brief]** cost against timely support. **[Advanced]** the SLA as a choice with its price.
 * **Check the plan.** "8 of 8 checks pass": no agent above 10 advertisers on any day; nobody served after more than 60 days (longest wait 35); hires and notices respect ramp up and notice; costs match the brief to the dollar; the service goal holds; CBC proved the plan optimal in 22 of 22 countries; $11.3M better than the best simple rule; on 2025's real sign ups, a plan made from 2024 reaches **99.3%** of hindsight. One note: 5 percent fewer agents would earn $1.8M more, with waits of 2.1 days instead of 1.1.
@@ -107,15 +107,15 @@ Go back to **This year**, set "Where are you in the year?" to **Start of March**
 Open **Decision log** (the button at the end of Monthly update).
 
 * **Shows:** tiles such as decisions logged, values changed after the first proposal, changed by you, answers where a GenAI guardrail acted. Click **Only changes**: the monthly update rows, with the changed values tinted amber.
-* **Say:** "Every approval, scenario and answer is logged with what was proposed, by the optimizer, the forecast or a language model, what adjusted it, and what was applied. Nothing the language model does is hidden."
+* **Say:** "Every approval, scenario and answer is logged with who was signed in, what was proposed, by the optimizer, the forecast or a language model, what adjusted it, and what was applied. Nothing the language model does is hidden."
 * **Proves:** **[Advanced]** transparency between GenAI and the model.
 
 ### Step 9. Evaluation: how good is the assistant
 
 Open **Evaluation**.
 
-* **Shows:** "On new wording (holdout), google/gemma-4-e4b reads 88% of questions right; the offline keywords read 28%." A chart of questions read right on the main set, the holdout and the follow ups, and seconds per answer. Retrieval: 7 of 8 rule questions find the right passage. Plan runs: 6 runs, 1 data fingerprint, the same result.
-* **Say:** "We measure the assistant on labelled questions, including a holdout written in new words, and compare models. The judges were checked against a person's grades."
+* **Shows:** the first line says that on new wording (holdout) Claude Sonnet 5.5 reads 100% of questions right and the offline keywords 28%. A chart of five assistants (Claude Sonnet 5.5, Gemma, Llama, offline, GPT 5 nano): questions read right on the main set, the holdout and the follow ups, and seconds per answer. The table names the judges of each row. Retrieval: 7 of 8 rule questions find the right passage. Plan runs: 6 runs, 1 data fingerprint, the same result.
+* **Say:** "We measure the assistant on labelled questions, including a holdout written in new words, and compare five assistants. Claude Sonnet reads every new question right for under two cents; the free keywords read 28 percent. The judges were checked against a person's grades."
 * **Proves:** **[Brief]** multi LLM evaluation.
 
 ## 4. Where each requirement lives

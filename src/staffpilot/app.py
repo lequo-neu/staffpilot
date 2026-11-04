@@ -20,14 +20,14 @@ import gradio as gr
 import numpy as np
 import pandas as pd
 
-from staffpilot import audit, cache, charts, checks
+from staffpilot import accounts, audit, cache, charts, checks
 from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
 from staffpilot.agent.facts import checked_numbers
 from staffpilot.agent.memory import Conversation, describe
 from staffpilot.alerts import plan_alerts
 from staffpilot.cli import EVAL_DIR, OUTPUTS
-from staffpilot.eda import budget_figure, facts, figures, profile, quality_checks
+from staffpilot.eda import budget_figure, figures, profile, quality_checks, questions
 from staffpilot.monthly import MONTH_NAMES, MonthlyUpdate
 from staffpilot.planner import RECOMMENDED_POLICY, SERVICE_GOALS, Planner
 from staffpilot.scenarios import ScenarioParams
@@ -66,10 +66,10 @@ NEXT = {
 # The service goal is a business choice: profit only, or profit with a service level agreement.
 GOAL_NAMES = {
     "optimized": "Profit only",
-    "service_98": "Profit, 98% served (recommended)",
-    "service_98_21d": "Profit, 98% served within 21 days",
-    "service_98_14d": "Profit, 98% served within 14 days",
-    "service_98_7d": "Profit, 98% served within 7 days",
+    "service_98": "Profit, at least 98% served (recommended)",
+    "service_98_21d": "Profit, at least 98% served within 21 days",
+    "service_98_14d": "Profit, at least 98% served within 14 days",
+    "service_98_7d": "Profit, at least 98% served within 7 days",
 }
 GOALS = [(GOAL_NAMES[g], g) for g in SERVICE_GOALS]
 # On a phone the sidebar covers the screen, so it starts closed and closes again after a choice.
@@ -84,6 +84,8 @@ _PLANNER: Planner | None = None
 _PILOTS: dict[str, StaffPilot] = {}
 # The monthly update approved last for each country; the next update starts from it.
 _APPROVED: dict[str, MonthlyUpdate] = {}
+# The accounts that may sign in; None when sign in is off or the app is built without `launch`.
+_ACCOUNTS: accounts.Accounts | None = None
 
 
 def planner() -> Planner:
@@ -245,14 +247,19 @@ def _trace(answer) -> str:
     )
 
 
-def ask(message: str, history: list, backend: str, memory: Conversation | None = None):
+def _user(request: gr.Request | None) -> str:
+    """The signed in user name, or an empty string when sign in is off."""
+    return (getattr(request, "username", None) or "") if request is not None else ""
+
+
+def ask(message: str, history: list, backend: str, memory: Conversation | None = None, user: str = ""):
     """Answer one message. Returns the chat, the cleared box, the trace, chart, table, route and memory."""
     # Each conversation has its own memory, kept in the browser tab's state.
     memory = memory or Conversation()
     if not message.strip():
         return history, "", components.trace_empty(), None, pd.DataFrame(), "{}", memory
     answer = pilot(backend).ask(message, memory)
-    audit.record(audit.answer_rows(answer), OUTPUTS)
+    audit.record(audit.answer_rows(answer), OUTPUTS, user)
     history = [*history, {"role": "user", "content": message}, {"role": "assistant", "content": answer.text}]
     path = charts.save_answer_chart(answer.chart, message, OUTPUTS / "answers", components.WEB_DPI)
     if path:
@@ -284,11 +291,19 @@ def _recent(chats: dict, current: str | None):
     )
 
 
-def send(message: str, history: list, backend: str, memory, chats: dict | None, current: str | None):
+def send(
+    message: str,
+    history: list,
+    backend: str,
+    memory,
+    chats: dict | None,
+    current: str | None,
+    request: gr.Request | None = None,
+):
     """`ask`, plus filing the conversation under Recent chats in the sidebar."""
     chats = dict(chats or {})
     # The chart is shown inside the answer, so the side panel keeps only the trace, table and route.
-    history, box, trace, _, table, route, memory = ask(message, history, backend, memory)
+    history, box, trace, _, table, route, memory = ask(message, history, backend, memory, _user(request))
     if message.strip():
         current = current or uuid.uuid4().hex[:8]
         title = chats.get(current, {}).get("title") or _title(message)
@@ -449,7 +464,10 @@ def manual_score(country: str, goal: str, table: pd.DataFrame):
     if chosen is None:
         return "Pick one country in the list above, then try your own headcount for it.", None
     try:
-        targets = pd.to_numeric(pd.DataFrame(table)["Yours"], errors="raise").to_numpy(dtype=float)
+        targets, bad = whole_numbers(pd.DataFrame(table)["Yours"])
+        if bad:
+            months = ", ".join(checks.MONTHS[i] for i in bad if i < len(checks.MONTHS))
+            return f"Type a whole number of agents, 0 or more, in every month. Check {months}.", None
         result = checks.compare_manual(planner(), chosen, targets, goal)
     except (KeyError, TypeError, ValueError) as error:
         return f"Those numbers do not work: {error}", None
@@ -497,7 +515,7 @@ def _stamp() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def approve(country: str, goal: str = RECOMMENDED_POLICY) -> str:
+def approve(country: str, goal: str = RECOMMENDED_POLICY, request: gr.Request | None = None) -> str:
     bundle = planner().run(goal)
     plan = bundle.plan_table()
     countries = list(bundle.outcomes)
@@ -510,9 +528,11 @@ def approve(country: str, goal: str = RECOMMENDED_POLICY) -> str:
     plan.to_csv(path, index=False)
     rows = audit.plan_rows(bundle, countries, GOAL_NAMES[goal], GOAL_NAMES[RECOMMENDED_POLICY])
     rows[0]["note"] = f"saved as {path.name}"
-    audit.record(rows, OUTPUTS)
+    user = _user(request)
+    audit.record(rows, OUTPUTS, user)
     log.info("Plan approved for %s with goal %s (%d rows)", country, goal, len(plan))
-    return f"Approved with the goal *{GOAL_NAMES[goal]}*. Saved `{path.name}`; {len(rows)} rows in the decision log."
+    by = f" by {user}" if user else ""
+    return f"Approved{by} with the goal *{GOAL_NAMES[goal]}*. Saved `{path.name}`; {len(rows)} rows in the decision log."
 
 
 def _as_of(month: str) -> int:
@@ -602,16 +622,26 @@ def _last_approval() -> tuple[str, str] | None:
     rows = log_frame[(log_frame["decision"] == "plan approved") & (log_frame["item"] == "service goal")]
     if rows.empty:
         return None
-    return rows.iloc[0]["time"].replace("T", " ")[:16], rows.iloc[0]["applied"]
+    goal = rows.iloc[0]["applied"]
+    # Rows written before the goals were renamed say "98% served"; the goal was always a floor.
+    if "at least" not in goal:
+        goal = goal.replace("98% served", "at least 98% served")
+    return rows.iloc[0]["time"].replace("T", " ")[:16], goal
 
 
 def home_verdict(goal: str = RECOMMENDED_POLICY) -> str:
     """The year in four facts: the value, the team, the service, and whether the plan is approved."""
     p = planner()
     t, h = p.run(goal).totals(), p.run("hold").totals()
+    gain, rules = t["net_value"] - h["net_value"], p.settings.rules
     approval = _last_approval()
     status = (
-        (f"Approved {approval[0]}", approval[1], "good")
+        (
+            f"Approved {approval[0]}",
+            f"goal: {approval[1]}",
+            "good",
+            [f"Reached: {t['service_rate']:.1%} served"],
+        )
         if approval
         else ("Not approved", "open Plan to check and approve it", "warn")
     )
@@ -619,53 +649,106 @@ def home_verdict(goal: str = RECOMMENDED_POLICY) -> str:
         [
             (
                 charts.money(t["net_value"]),
-                f"net value, {charts.money(t['net_value'] - h['net_value'])} more than keeping the January team",
+                (
+                    f"net value, {charts.money(gain)} ({gain / abs(h['net_value']):+.1%}) more than keeping the "
+                    "January team"
+                ),
                 "accent",
             ),
             (
                 f"{t['start_agents']:,.0f} → {t['avg_active']:,.0f}",
-                "agents: the January team, then the average month",
+                (
+                    f"agents: the January team, then the average month ({1 - t['avg_active'] / t['start_agents']:.1%} "
+                    "fewer)"
+                ),
                 "",
             ),
             (
                 f"{t['service_rate']:.1%}",
                 f"advertisers served, after {t['mean_wait_days']:.1f} days on average",
                 "good",
+                [
+                    f"Longest wait {t['max_wait_days']:.0f} days (limit {rules.max_wait_days})",
+                    f"At most {t['peak_load']:.1f} advertisers per agent (limit {rules.capacity_per_agent})",
+                ],
             ),
             status,
         ]
     )
 
 
-def check_inputs(country: str, month: str, actuals: pd.DataFrame, change: float) -> str:
+def whole_numbers(values) -> tuple[np.ndarray | None, list[int]]:
+    """Read typed values as whole numbers of zero or more. Returns them, or None and the bad positions."""
+    numbers = pd.to_numeric(pd.Series(list(values), dtype=object), errors="coerce")
+    bad = [i for i, v in enumerate(numbers) if pd.isna(v) or v < 0 or float(v) != int(v)]
+    return (None, bad) if bad else (numbers.to_numpy(dtype=float), [])
+
+
+def _base_plan(country: str, month: str, goal: str = RECOMMENDED_POLICY):
+    """The plan a monthly update starts from: the update approved before `month`, or the year's plan."""
+    previous = _APPROVED.get(country)
+    if previous and previous.as_of < _as_of(month):
+        return previous.updated.plan
+    return planner().run(goal).outcomes[country].plan
+
+
+def planned_staff(country: str, month: str, goal: str = RECOMMENDED_POLICY) -> int:
+    """Agents at work in `month` under the plan the update starts from."""
+    return int(round(_base_plan(country, month, goal).active[_as_of(month) - 1]))
+
+
+def staff_input(country: str, month: str, goal: str = RECOMMENDED_POLICY):
+    """The staff count box, named after the month and filled with the planned count to overwrite."""
+    planned = planned_staff(country, month, goal)
+    return gr.update(
+        value=planned,
+        label=f"Agents on staff in {month}",
+        info=f"The plan has {planned:,}. Type the real count, for example {max(planned - 2, 0):,} after two resignations.",
+    )
+
+
+def check_inputs(
+    country: str, month: str, actuals: pd.DataFrame, staff: float | None, goal: str = RECOMMENDED_POLICY
+) -> str:
     """Read the typed numbers back with their gap to the forecast, and flag the ones to check."""
     try:
         frame = pd.DataFrame(actuals)
-        actual = pd.to_numeric(frame["Actual"], errors="coerce")
+        typed = list(frame["Actual"])
         forecast = pd.to_numeric(frame["Forecast"], errors="coerce")
     except KeyError:
         return ""
     if frame.empty:
         return ""
     lines, flags = [], 0
-    for name, a, f in zip(frame["Month"], actual, forecast, strict=True):
-        if pd.isna(a) or a < 0:
-            lines.append(f"* {name}: **not a count**, type a whole number of sign ups.")
+    _, bad = whole_numbers(typed)
+    for i, (name, f) in enumerate(zip(frame["Month"], forecast, strict=True)):
+        if i in bad:
+            lines.append(f"* {name}: **not a count**. Type a whole number of sign ups, 0 or more.")
             flags += 1
             continue
+        a = float(typed[i])
         gap = (a - f) / f if f else 0.0
         note = ""
         if abs(gap) > 0.5:
             note = " **Check this count**: it is more than half away from the forecast."
             flags += 1
         lines.append(f"* {name}: {a:,.0f} against a forecast of {f:,.0f} ({gap:+.0%}).{note}")
-    planned = planner().run(RECOMMENDED_POLICY).outcomes[country].plan.active[_as_of(month) - 1]
-    if change and planned and abs(float(change)) > 0.2 * planned:
+    planned = planned_staff(country, month, goal)
+    count, bad_staff = whole_numbers([staff])
+    if bad_staff:
         lines.append(
-            f"* Agents on staff: {float(change):+,.0f} against a plan of {planned:,.0f}. **Check this number**: "
-            "it moves the team by more than a fifth."
+            f"* Agents on staff in {month}: **not a count**. Type a whole number of agents, 0 or more."
         )
         flags += 1
+    else:
+        moved = int(count[0]) - planned
+        note = ""
+        if planned and abs(moved) > 0.2 * planned:
+            note = " **Check this number**: it moves the team by more than a fifth."
+            flags += 1
+        lines.append(
+            f"* Agents on staff in {month}: {int(count[0]):,} against a plan of {planned:,} ({moved:+,}).{note}"
+        )
     previous = _APPROVED.get(country)
     if previous and previous.as_of < _as_of(month):
         lines.append(
@@ -696,14 +779,26 @@ def actual_inputs(country: str, month: str, percent: float) -> pd.DataFrame:
     )
 
 
-def update_view(country: str, month: str, actuals: pd.DataFrame, change: float, goal: str):
+def update_view(country: str, month: str, actuals: pd.DataFrame, staff: float | None, goal: str):
     """Plan again from `month` with the actual sign ups so far. Returns the summary, chart, table and result."""
     try:
-        actual = pd.to_numeric(pd.DataFrame(actuals)["Actual"], errors="raise").to_numpy(dtype=float)
-        previous = _APPROVED.get(country)
+        actual, bad = whole_numbers(pd.DataFrame(actuals)["Actual"])
+        count, bad_staff = whole_numbers([staff])
+        if bad or bad_staff:
+            return (
+                (
+                    "Every count must be a whole number, 0 or more, with no empty cell. "
+                    "Fix the numbers the input check marks, then update again."
+                ),
+                None,
+                pd.DataFrame(),
+                None,
+            )
         # A later month builds on the update approved before it; the same month is planned again from scratch.
+        previous = _APPROVED.get(country)
         base = previous.updated.plan if previous and previous.as_of < _as_of(month) else None
-        update = planner().monthly_update(country, _as_of(month), actual, int(change or 0), goal, base=base)
+        change = int(count[0]) - planned_staff(country, month, goal)
+        update = planner().monthly_update(country, _as_of(month), actual, change, goal, base=base)
     except (KeyError, TypeError, ValueError) as error:
         return f"Those inputs do not work: {error}", None, pd.DataFrame(), None
     table = update.table()
@@ -729,7 +824,7 @@ def _update_table(table: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def approve_update(update) -> str:
+def approve_update(update, request: gr.Request | None = None) -> str:
     if update is None:
         return "Update the plan first, then approve it."
     OUTPUTS.mkdir(exist_ok=True)
@@ -740,9 +835,11 @@ def approve_update(update) -> str:
     rows = audit.update_rows(update)
     if rows:
         rows[0]["note"] = f"saved as {path.name}"
-    audit.record(rows, OUTPUTS)
+    user = _user(request)
+    audit.record(rows, OUTPUTS, user)
     log.info("Monthly update approved for %s in month %d", update.country, update.as_of)
-    return f"Approved. Saved `{path.name}`; {len(rows)} rows in the decision log."
+    by = f" by {user}" if user else ""
+    return f"Approved{by}. Saved `{path.name}`; {len(rows)} rows in the decision log."
 
 
 def _reader(name: str) -> str:
@@ -769,7 +866,9 @@ SCENARIO_EXAMPLES = [
 ]
 
 
-def run_scenario(params_json: str, proposal: dict | None = None, record: bool = True):
+def run_scenario(
+    params_json: str, proposal: dict | None = None, request: gr.Request | None = None, record: bool = True
+):
     try:
         params = ScenarioParams.model_validate_json(params_json)
     except ValueError as error:
@@ -785,6 +884,7 @@ def run_scenario(params_json: str, proposal: dict | None = None, record: bool = 
                 proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t
             ),
             OUTPUTS,
+            _user(request),
         )
     change = t["net_value_change"]
     sign = "+" if change >= 0 else "-"
@@ -847,7 +947,7 @@ def eda_view():
     report = profile(p.dataset, p.settings.rules.capacity_per_agent)
     figs = figures(report)
     return (
-        components.facts(facts(report)),
+        components.questions(questions(report)),
         components.sharp(figs["monthly_trend"]),
         components.sharp(figs["staff_vs_need"]),
         components.sharp(figs["seasonality_heatmap"]),
@@ -871,8 +971,10 @@ def eval_view():
     if not holdout.empty:
         best = holdout.iloc[0]
         offline = holdout[holdout["backend"] == "offline"]
+        # Name the assistant by its model where the results record one.
+        best_name = str(best.get("model") or best["backend"]).split(":", 1)[-1].split("/")[-1]
         lead = (
-            f"On new wording (holdout), **{best['backend'].split(':', 1)[-1]}** reads "
+            f"On new wording (holdout), **{best_name}** reads "
             f"**{best['intent_accuracy']:.0%}** of questions right"
             + (
                 f"; the offline keywords read {offline['intent_accuracy'].iloc[0]:.0%}."
@@ -880,18 +982,29 @@ def eval_view():
                 else "."
             )
         )
-    view = summary[
-        [
-            "split",
-            "backend",
-            "cases",
-            "intent_accuracy",
-            "scenario_accuracy",
-            "grounded_rate",
-            "judge_score",
-            "mean_seconds",
-        ]
-    ].rename(
+    if summary.get("judged_by", pd.Series(dtype=str)).fillna("").nunique() > 1:
+        lead += (
+            " Intent, scenario and grounded rates are checked against the labels, so every row compares. "
+            "Judge scores compare only between rows with the same judges (the last column of the table)."
+        )
+    if summary.get("errors", pd.Series(dtype=float)).fillna(0).sum():
+        lead += " Cases a model did not answer (no credit or quota left) count as errors, not as answers."
+    if "model" in summary:
+        summary = summary.assign(
+            backend=summary["model"].fillna("").where(summary["model"].notna(), summary["backend"])
+        )
+    columns = [
+        "split",
+        "backend",
+        "cases",
+        "errors",
+        "intent_accuracy",
+        "scenario_accuracy",
+        "grounded_rate",
+        "judge_score",
+    ]
+    columns += ["mean_seconds"] + (["judged_by"] if "judged_by" in summary else [])
+    view = summary[columns].rename(
         columns={
             "intent_accuracy": "intent_rate",
             "scenario_accuracy": "scenario_rate",
@@ -1087,6 +1200,25 @@ PAGE_JS = """() => {
     document.body.appendChild(box);
   });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
+  // One click on a table cell starts editing it (Gradio selects on the first click and edits on
+  // the second), with the old value selected so typing replaces it. Locked columns stay locked.
+  document.addEventListener('click', (event) => {
+    const cell = event.target.closest('[role="gridcell"]');
+    if (!cell || cell.querySelector('textarea, input')) return;
+    setTimeout(() => {
+      if (!cell.classList.contains('cell-selected')) return;
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      setTimeout(() => cell.querySelector('textarea, input')?.select(), 0);
+    }, 0);
+  });
+  // An Open button inside an alert opens that page through the sidebar.
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-sp-open]');
+    if (!button) return;
+    const name = button.dataset.spOpen;
+    const item = [...document.querySelectorAll('.sp-nav label')].find((el) => label(el) === name);
+    if (item) item.click();
+  });
 }""".replace("TIPS_JSON", json.dumps(TIPS))
 
 
@@ -1116,7 +1248,8 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         _PLANNER = p
         _PILOTS.clear()
     p = planner()
-    alerts = plan_alerts(p)
+    # The planning year check is for the analyst who loads the data, not for the manager's view.
+    alerts = [a for a in plan_alerts(p) if a.topic != "year"]
     choices, default_model = model_choices()
     pages: dict[str, gr.Column] = {}
     with gr.Blocks(title="StaffPilot", fill_height=True) as demo:
@@ -1124,8 +1257,22 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         current = gr.State(None)
         memory = gr.State(None)
 
-        with gr.Sidebar(open=True, width=256, elem_id="sp-sidebar"):
+        # Shown instead of the app while the signed in user still has a first password.
+        with gr.Column(visible=False, elem_id="sp-gate") as gate, gr.Column(elem_classes="sp-panel"):
             gr.HTML(components.brand())
+            gate_text = gr.Markdown()
+            new_password = gr.Textbox(label="New password", type="password", max_length=accounts.MAX_LENGTH)
+            repeat_password = gr.Textbox(
+                label="Type it again", type="password", max_length=accounts.MAX_LENGTH
+            )
+            with gr.Row():
+                save_password_btn = gr.Button("Save the new password", variant="primary")
+                cancel_password_btn = gr.Button("Back to the app", visible=False)
+            gate_note = gr.Markdown(elem_id="sp-gate-note", elem_classes="sp-note")
+
+        with gr.Sidebar(open=True, width=256, elem_id="sp-sidebar") as sidebar:
+            gr.HTML(components.brand())
+            user_line = gr.HTML()
             # One hidden list holds the open page; the visible groups only choose from it.
             nav = gr.Radio(PAGES, value=HOME, visible=False)
             groups = []
@@ -1159,9 +1306,10 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 )
                 export_btn = gr.Button("Save conversation", size="sm")
                 saved = gr.File(label="Conversation", visible=False)
+                password_btn = gr.Button("Change password", size="sm", visible=False)
             gr.HTML(components.legal())
 
-        with gr.Column(elem_id="sp-main"):
+        with gr.Column(elem_id="sp-main") as main:
             head = gr.HTML(page_head(HOME))
 
             def next_row(page: str) -> None:
@@ -1249,10 +1397,6 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 with gr.Tabs(elem_classes="sp-tabs"):
                     with gr.Tab("Overview"):
                         cards = gr.HTML()
-                        with gr.Accordion(
-                            components.alert_summary(alerts), open=False, elem_classes="sp-alerts"
-                        ):
-                            gr.HTML(components.alert_list(alerts))
                         with gr.Column(elem_classes="sp-panel"):
                             figure = gr.Plot(show_label=False, elem_classes="sp-plot")
                         with gr.Column(elem_classes="sp-panel"):
@@ -1320,10 +1464,10 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             static_columns=[0, 1],
                         )
                         up_change = gr.Number(
-                            0,
                             precision=0,
-                            label="Agents on staff against the plan",
-                            info="For example -2 after two resignations",
+                            minimum=0,
+                            label="Agents on staff",
+                            info="Type the real count; the plan's count is filled in",
                         )
                         input_check = gr.Markdown(elem_classes="sp-note")
                         with gr.Row():
@@ -1455,6 +1599,17 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     log_file = gr.File(label="decision_audit.csv", visible=False)
                 next_row("Decision log")
 
+        # Sign in: who is signed in, and the password page while a first password is in use
+        session_out = [gate, sidebar, main, user_line, password_btn, cancel_password_btn, gate_text]
+        demo.load(session_view, None, session_out)
+        password_btn.click(open_password, None, session_out)
+        cancel_password_btn.click(session_view, None, session_out)
+        save_password_btn.click(
+            save_password,
+            [new_password, repeat_password],
+            [gate, sidebar, main, gate_note, new_password, repeat_password],
+        )
+
         # Navigation and conversations
         demo.load(None, None, None, js=PAGE_JS)
         demo.load(None, None, None, js=CLOSE_SIDEBAR_ON_PHONE)
@@ -1487,8 +1642,10 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         approve_btn.click(approve, [pick, goal], status)
         for control in (up_country, up_month, up_percent):
             control.change(actual_inputs, [up_country, up_month, up_percent], up_actuals)
+        for control in (up_country, up_month, goal):
+            control.change(staff_input, [up_country, up_month, goal], up_change)
         for control in (up_actuals, up_change):
-            control.change(check_inputs, [up_country, up_month, up_actuals, up_change], input_check)
+            control.change(check_inputs, [up_country, up_month, up_actuals, up_change, goal], input_check)
         home_out = [verdict, rail, *step_text, *step_btns, step_pages, up_month]
         for control in (moment, goal):
             control.change(home_view, [moment, goal], home_out)
@@ -1502,8 +1659,8 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             [update_summary, update_plot, update_table, update_state],
         )
         approve_update_btn.click(approve_update, update_state, update_status).then(
-            check_inputs, [up_country, up_month, up_actuals, up_change], input_check
-        )
+            staff_input, [up_country, up_month, goal], up_change
+        ).then(check_inputs, [up_country, up_month, up_actuals, up_change, goal], input_check)
         read_btn.click(parse_scenario, [text, backend], [params, understood, proposal])
         for example, sentence in zip(examples, SCENARIO_EXAMPLES, strict=True):
             example.click(lambda s=sentence: s, None, text).then(
@@ -1524,7 +1681,9 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         demo.load(breakdown_view, [pick, goal], [breakdown_text, breakdown_table, breakdown_file])
         demo.load(tradeoff_view, goal, [tradeoff_text, tradeoff_plot, tradeoff_table])
         # The page opens with the default inputs already worked through, so it is never empty.
-        demo.load(actual_inputs, [up_country, up_month, up_percent], up_actuals).then(
+        demo.load(staff_input, [up_country, up_month, goal], up_change).then(
+            actual_inputs, [up_country, up_month, up_percent], up_actuals
+        ).then(
             update_view,
             [up_country, up_month, up_actuals, up_change, goal],
             [update_summary, update_plot, update_table, update_state],
@@ -1536,6 +1695,65 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
         eval_out = [eval_lead, eval_plot, eval_summary, retrieval_facts, eval_retrieval, run_facts, runs]
         nav.change(load_page, [nav, loaded], [loaded, *data_out, *eval_out])
     return demo
+
+
+def _gate_text(name: str, first: bool) -> str:
+    rule = f"Use {accounts.MIN_LENGTH} to {accounts.MAX_LENGTH} characters, different from your user name."
+    if first:
+        return (
+            f"### Choose a new password\n**Signed in as {name}.** Your password is still your user name, "
+            f"so choose a new one before you start. {rule}"
+        )
+    return f"### Change your password\n**Signed in as {name}.** {rule}"
+
+
+def session_view(request: gr.Request | None = None):
+    """The app, or the password page while the signed in user still has a first password."""
+    name = _user(request)
+    if _ACCOUNTS is None or not name:
+        return (
+            gr.update(visible=False),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            "",
+            gr.update(visible=False),
+            gr.update(visible=False),
+            "",
+        )
+    first = _ACCOUNTS.must_change(name)
+    return (
+        gr.update(visible=first),
+        gr.update(visible=not first),
+        gr.update(visible=not first),
+        components.signed_in(name),
+        gr.update(visible=True),
+        gr.update(visible=False),
+        _gate_text(name, first),
+    )
+
+
+def open_password(request: gr.Request | None = None):
+    """The password page, opened from Settings, with a way back to the app."""
+    name = _user(request)
+    return (
+        gr.update(visible=True),
+        gr.update(visible=False),
+        gr.update(visible=False),
+        components.signed_in(name),
+        gr.update(visible=True),
+        gr.update(visible=True),
+        _gate_text(name, False),
+    )
+
+
+def save_password(new: str, repeat: str, request: gr.Request | None = None):
+    """Save the new password and open the app, or say why it was refused."""
+    name = _user(request)
+    problem = _ACCOUNTS.change(name, new or "", repeat or "") if _ACCOUNTS else "Sign in is off."
+    if problem:
+        return gr.update(), gr.update(), gr.update(), f"**{problem}**", "", ""
+    gr.Info("Password saved. Use it the next time you sign in.")
+    return gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), "", "", ""
 
 
 def open_memo(name: str, seen: bool, country: str, backend: str):
@@ -1574,5 +1792,16 @@ def favicon() -> str | None:
 
 
 def launch(port: int = 7860) -> None:
+    """Serve the app. Sign in is on unless STAFFPILOT_LOGIN=0 (see `accounts`)."""
+    global _ACCOUNTS
+    _ACCOUNTS = accounts.Accounts(OUTPUTS) if accounts.enabled() else None
     css = CSS + "\n" + icon.nav_css(NAV_GROUPS)
-    build_app().launch(server_port=port, share=False, theme=theme(), css=css, favicon_path=favicon())
+    build_app().launch(
+        server_port=port,
+        share=False,
+        theme=theme(),
+        css=css,
+        favicon_path=favicon(),
+        auth=_ACCOUNTS.check if _ACCOUNTS else None,
+        auth_message=components.login_message(_ACCOUNTS.names) if _ACCOUNTS else None,
+    )

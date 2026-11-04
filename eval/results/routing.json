@@ -1,11 +1,11 @@
 {
-  "router": "local:google/gemma-4-e4b",
-  "compare": "local:google/gemma-4-e4b",
-  "insight": "local:google/gemma-4-e4b",
-  "memo": "local:google/gemma-4-e4b",
-  "out_of_scope": "local:google/gemma-4-e4b",
+  "router": "anthropic",
+  "compare": "anthropic",
+  "insight": "anthropic",
+  "memo": "anthropic",
+  "out_of_scope": "anthropic",
   "plan_lookup": "offline",
-  "rules": "local:google/gemma-4-e4b",
-  "sensitivity": "local:google/gemma-4-e4b",
-  "what_if": "local:google/gemma-4-e4b"
+  "rules": "anthropic",
+  "sensitivity": "anthropic",
+  "what_if": "anthropic"
 }

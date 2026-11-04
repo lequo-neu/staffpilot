@@ -80,7 +80,7 @@ def test_the_audit_keeps_proposed_adjusted_and_applied_apart(planner, tmp_path):
     repaired = replace(
         bundle, outcomes={"Alpha": replace(outcome, plan=replace(outcome.plan, proposed_active=proposed))}
     )
-    rows = audit.plan_rows(repaired, ["Alpha"], "Profit only", "Profit, 98% served (recommended)")
+    rows = audit.plan_rows(repaired, ["Alpha"], "Profit only", "Profit, at least 98% served (recommended)")
     assert rows[0]["item"] == "service goal" and rows[0]["adjusted_by"] == "manager"
     raised = [r for r in rows if r.get("adjusted_by") == "simulator check"]
     assert len(raised) == 1 and raised[0]["proposed"] == raised[0]["applied"] - 1
@@ -144,15 +144,24 @@ def test_monthly_update_page_and_decision_log(planner, tmp_path, monkeypatch):
     inputs = app.actual_inputs("Alpha", "April", 50)
     assert inputs["Month"].tolist() == ["January", "February", "March"]
     assert (inputs["Actual"] >= inputs["Forecast"]).all()
-    summary, chart, table, update = app.update_view("Alpha", "April", inputs, -1, RECOMMENDED_POLICY)
+    planned = app.planned_staff("Alpha", "April")
+    assert app.staff_input("Alpha", "April")["label"] == "Agents on staff in April"
+    summary, chart, table, update = app.update_view("Alpha", "April", inputs, planned - 1, RECOMMENDED_POLICY)
+    assert update.headcount_change == -1
     assert "Decide in April" in summary and chart is not None and len(table) == 12
     assert "→" in "".join(table["Agents at work"])
     assert "Approved" in app.approve_update(update)
     saved = list(tmp_path.glob("approved_update_Alpha_*_*.csv"))
     assert len(saved) == 1 and f"{update.year}-04" in saved[0].name
     assert "Update the plan first" in app.approve_update(None)
-    bad = app.update_view("Alpha", "April", pd.DataFrame({"Actual": ["x", 1, 2]}), 0, RECOMMENDED_POLICY)
-    assert bad[0].startswith("Those inputs do not work") and bad[3] is None
+    for actual, staff in (
+        (["x", 1, 2], planned),
+        ([1, -2, 2], planned),
+        ([1, 2, 2.5], planned),
+        ([1, 2, 3], None),
+    ):
+        bad = app.update_view("Alpha", "April", pd.DataFrame({"Actual": actual}), staff, RECOMMENDED_POLICY)
+        assert bad[0].startswith("Every count must be a whole number") and bad[3] is None
 
     text, figure, frame = app.tradeoff_view("service_98_7d")
     assert "Profit only" in text and "within 7 days" in text and figure is not None and len(frame) == 5
@@ -215,18 +224,23 @@ def test_monthly_inputs_are_checked_and_updates_build_on_each_other(planner, tmp
     app.build_app(planner)
     app._APPROVED.clear()
     inputs = app.actual_inputs("Alpha", "March", 20)
-    assert "the numbers look consistent" in app.check_inputs("Alpha", "March", inputs, 0)
+    staff = app.planned_staff("Alpha", "March")
+    assert "the numbers look consistent" in app.check_inputs("Alpha", "March", inputs, staff)
     odd = inputs.assign(Actual=[inputs["Forecast"].iloc[0] * 3, "x"])
-    note = app.check_inputs("Alpha", "March", odd, 0)
+    note = app.check_inputs("Alpha", "March", odd, staff)
     assert "Check this count" in note and "not a count" in note
-    assert "Check this number" in app.check_inputs("Alpha", "March", inputs, -500)
+    assert "Check this number" in app.check_inputs("Alpha", "March", inputs, staff * 2)
+    assert "not a count" in app.check_inputs("Alpha", "March", inputs, None)
+    assert "not a count" in app.check_inputs("Alpha", "March", inputs.assign(Actual=[1.5, 2]), staff)
 
-    *_, march = app.update_view("Alpha", "March", inputs, 0, RECOMMENDED_POLICY)
+    *_, march = app.update_view("Alpha", "March", inputs, staff, RECOMMENDED_POLICY)
     app.approve_update(march)
     april_inputs = app.actual_inputs("Alpha", "April", 0)
     assert april_inputs["Actual"].iloc[:2].tolist() == [round(v) for v in march.actual]
-    assert "update approved in March" in app.check_inputs("Alpha", "April", april_inputs, 0)
-    *_, april = app.update_view("Alpha", "April", april_inputs, 0, RECOMMENDED_POLICY)
+    april_staff = app.planned_staff("Alpha", "April")
+    assert april_staff == int(march.updated.plan.active[3])
+    assert "update approved in March" in app.check_inputs("Alpha", "April", april_inputs, april_staff)
+    *_, april = app.update_view("Alpha", "April", april_inputs, april_staff, RECOMMENDED_POLICY)
     # April starts from March's approved update, so March's new decisions are now carried out.
     assert april.original.hires[2] == march.updated.plan.hires[2]
     assert april.updated.plan.hires[:3].tolist() == march.updated.plan.hires[:3].tolist()

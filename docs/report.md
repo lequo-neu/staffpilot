@@ -6,11 +6,13 @@ IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All num
 
 *AI assisted: drafted with an AI coding assistant; every number was copied from an executed cell and checked by the team.*
 
+Each method in detail: [METHODS.md](METHODS.md). The evaluation in full: [EVALUATION.md](EVALUATION.md).
+
 ## 1. Problem and headline
 
 Google supports eligible new advertisers with dedicated agents for 60 days. Each agent holds at most ten advertisers, eligible advertisers wait at most 60 days, new hires need a month of ramp up, and a notice costs 40 percent of annual salary plus a month of pay. The task is a monthly headcount per country that balances cost, timely support and the ability to adjust.
 
-On 1 January the 22 countries employ 6,474 agents while demand needs about 2,200. Only Vietnam is short (59 agents for a peak need near 100). The recommended plan raises expected net value for the year from $370.4M (keep January headcount) to $479.7M, a gain of $109.3M or 30 percent, serves every eligible advertiser, and keeps the average wait at 1.1 days.
+On 1 January the 22 countries employ 6,474 agents, while the busiest 60 days of demand need about 2,333 and the plan keeps 2,220 in an average month. Only Vietnam is short (59 agents for a need of about 107). The recommended plan raises expected net value for the year from $370.4M (keep January headcount) to $479.7M, a gain of $109.3M or 30 percent, serves every eligible advertiser, and keeps the average wait at 1.1 days.
 
 ## 2. Key decisions
 
@@ -116,14 +118,17 @@ Other features:
 
 The evaluation uses 40 labelled questions and a 32 question holdout:
 
-| Metric | Main set | Holdout |
-|---|---|---|
-| Keyword router, intent accuracy | 100% | 28% |
-| Keyword router, scenario accuracy | 100% | 0% |
+| Holdout (32 questions in new words) | Intent | Scenario | Grounded | Seconds | Cost per question |
+|---|---|---|---|---|---|
+| Keyword router (offline) | 28% | 0% | 100% | 0.0 | free |
+| Llama 3.1 8B (local) | 38% | 11% | 94% | 11 | free |
+| Gemma 4 E4B (local) | 88% | 67% | 75% | 66 | free |
+| GPT 5 nano | 84% | 100% | 84% | 12 | $0.001 |
+| Claude Sonnet 5.5 | 100% | 100% | 100% | 8 | $0.016 |
 
-The keyword router was written against the main set, which explains its perfect score there. The gap on the holdout is the case for a language model router. BM25 retrieval finds the right rule passage in the top three for 6 of 7 labelled rule questions.
+The keyword router was written against the main set, where it scores 100%; the gap on the holdout is the case for a language model router. Claude Sonnet 5.5 reads every holdout question right and passes the number check on its first draft every time, for under two cents a question. The local models were run before the router repairs, the online ones after. BM25 retrieval finds the right rule passage in the top three for 7 of 8 labelled rule questions.
 
-`python -m staffpilot eval` adds GPT, Claude and Gemini at two tiers. Each answer is scored by judges from other providers, the run reports tokens and cost, and it writes a routing table that recommends the best model for each intent.
+`python -m staffpilot eval` runs the online models (`--source local` the ones on this computer, `--keep` joins the two). Each answer is scored by judges from other providers, the run reports tokens and cost, and it writes a routing table that recommends the best model for each intent. Judge scores compare only between rows with the same judges, and a person's grades of 30 answers showed the small local judges to be lenient, so the structured accuracies are the evidence.
 
 ## 8. Limitations
 
@@ -134,3 +139,4 @@ The keyword router was written against the main set, which explains its perfect 
 * The backtest reuses the January headcount table for the earlier year.
 * The number check catches invented and misattributed numbers but not a wrong sign or a wrong small count.
 * Language model results depend on the models and keys available at run time; cached replies make reruns reproducible once committed.
+* Sign in only records who approved each decision. It has no roles yet, and passwords travel over plain HTTP on a laptop; a deployment would use the company sign in service.

@@ -1,10 +1,16 @@
-split,backend,cases,errors,intent_accuracy,country_accuracy,scenario_accuracy,grounded_rate,judge_score,agent_tool_accuracy,tokens_per_question,cost_per_question_usd,mean_seconds
-followups,local:google/gemma-4-e4b,10.0,0.0,1.0,1.0,0.875,0.7,4.4,,3213.4,,61.85502925827168
-followups,local:meta-llama-3.1-8b-instruct,10.0,0.0,0.9,0.9,0.6666666666666666,1.0,4.1,,1124.3,,11.559718058188446
-followups,offline,10.0,0.0,0.9,1.0,0.75,1.0,4.45,,0.0,,0.1203323250869289
-holdout,local:google/gemma-4-e4b,32.0,0.0,0.875,0.96875,0.6666666666666666,0.75,4.46875,,3269.90625,,66.34641442583234
-holdout,local:meta-llama-3.1-8b-instruct,32.0,0.0,0.375,0.8125,0.1111111111111111,0.9375,3.46875,,755.625,,11.148506736863055
-holdout,offline,32.0,0.0,0.28125,0.8125,0.0,1.0,4.125,,0.0,,0.020140333217568696
-main,local:google/gemma-4-e4b,40.0,0.0,1.0,0.95,0.8333333333333334,0.625,4.075,,3637.8,,72.38652660111548
-main,local:meta-llama-3.1-8b-instruct,40.0,0.0,1.0,0.875,1.0,0.975,3.275,,1394.25,,11.177502207225189
-main,offline,40.0,0.0,1.0,1.0,1.0,1.0,4.2,,0.0,,0.2008559927577153
+split,backend,cases,errors,intent_accuracy,country_accuracy,scenario_accuracy,grounded_rate,judge_score,agent_tool_accuracy,tokens_per_question,cost_per_question_usd,mean_seconds,model,judged_by
+followups,anthropic,4,6,1.0,1.0,1.0,1.0,4.25,,5221.5,0.018831,9.891046729229856,anthropic:claude-sonnet-5-5,openai:gpt-5-nano
+followups,local:google/gemma-4-e4b,10,0,1.0,1.0,0.875,0.7,4.4,,3213.4,,61.85502925827168,local:google/gemma-4-e4b,local:meta-llama-3.1-8b-instruct
+followups,local:meta-llama-3.1-8b-instruct,10,0,0.9,0.9,0.6666666666666666,1.0,4.1,,1124.3,,11.559718058188446,local:meta-llama-3.1-8b-instruct,local:google/gemma-4-e4b
+followups,offline,10,0,0.9,1.0,0.75,1.0,3.75,,0.0,,0.10029733760748058,offline,"anthropic:claude-sonnet-5-5, openai:gpt-5-nano"
+followups,openai,10,0,1.0,0.9,1.0,0.9,2.6,,4296.8,0.0008542199999999999,12.828661491721869,openai:gpt-5-nano,anthropic:claude-sonnet-5-5
+holdout,anthropic,32,0,1.0,1.0,1.0,1.0,4.1875,,4729.15625,0.0164955625,8.091191399689706,anthropic:claude-sonnet-5-5,openai:gpt-5-nano
+holdout,local:google/gemma-4-e4b,32,0,0.875,0.96875,0.6666666666666666,0.75,4.46875,,3269.90625,,66.34641442583234,local:google/gemma-4-e4b,local:meta-llama-3.1-8b-instruct
+holdout,local:meta-llama-3.1-8b-instruct,32,0,0.375,0.8125,0.1111111111111111,0.9375,3.46875,,755.625,,11.148506736863055,local:meta-llama-3.1-8b-instruct,local:google/gemma-4-e4b
+holdout,offline,32,0,0.28125,0.96875,0.0,1.0,2.953125,,0.0,,0.017995873720792588,offline,"anthropic:claude-sonnet-5-5, openai:gpt-5-nano"
+holdout,openai,32,0,0.84375,0.96875,1.0,0.84375,2.78125,,3922.1875,0.0008130828125000001,12.171432044444373,openai:gpt-5-nano,anthropic:claude-sonnet-5-5
+main,anthropic,40,0,1.0,1.0,1.0,1.0,4.25,,4730.225,0.01643905,8.567295876092976,anthropic:claude-sonnet-5-5,openai:gpt-5-nano
+main,local:google/gemma-4-e4b,40,0,1.0,0.95,0.8333333333333334,0.625,4.075,,3637.8,,72.38652660111548,local:google/gemma-4-e4b,local:meta-llama-3.1-8b-instruct
+main,local:meta-llama-3.1-8b-instruct,40,0,1.0,0.875,1.0,0.975,3.275,,1394.25,,11.177502207225189,local:meta-llama-3.1-8b-instruct,local:google/gemma-4-e4b
+main,offline,40,0,1.0,1.0,1.0,1.0,3.8375,,0.0,,0.13008015521918423,offline,"anthropic:claude-sonnet-5-5, openai:gpt-5-nano"
+main,openai,40,0,0.95,0.95,0.9583333333333334,0.775,3.175,,3793.4,0.0007332725,12.665358746738638,openai:gpt-5-nano,anthropic:claude-sonnet-5-5

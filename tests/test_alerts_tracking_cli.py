@@ -12,8 +12,11 @@ def test_alerts_flag_wrong_year_understaffing_and_the_key_assumption(settings, d
     planner = Planner(settings.with_updates(planning={"expected_year": 2020}), dataset)
     alerts = plan_alerts(planner)
     levels = {a.topic: a.level for a in alerts}
-    assert levels["data"] == "critical"
-    assert levels["hiring"] == "warning" and "Beta" in next(a for a in alerts if a.topic == "hiring").message
+    assert levels["year"] == "critical"
+    hiring = [a for a in alerts if a.topic == "hiring"]
+    assert levels["hiring"] == "warning" and any("Beta has 5 agents" in a.message for a in hiring)
+    # Each hiring alert names the need and opens the page where the plan is approved.
+    assert all("hire" in a.message and a.page == "Plan" for a in hiring)
     assert levels["assumption"] == "info"
     assert [a.level for a in alerts] == sorted(
         (a.level for a in alerts), key=["critical", "warning", "info"].index
@@ -22,7 +25,7 @@ def test_alerts_flag_wrong_year_understaffing_and_the_key_assumption(settings, d
 
 def test_no_year_alert_when_the_year_matches(settings, dataset):
     planner = Planner(settings.with_updates(planning={"expected_year": dataset.planning_year()}), dataset)
-    assert all(a.topic != "data" or a.level != "critical" for a in plan_alerts(planner))
+    assert all(a.topic != "year" for a in plan_alerts(planner))
 
 
 def test_run_history_round_trip(settings, tmp_path):

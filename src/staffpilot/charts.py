@@ -42,10 +42,10 @@ POLICY_NAMES = {
     "reactive": "Follow last month's demand",
     "peak_cover": "One cut to the yearly peak",
     "optimized": "Optimized for value",
-    "service_98": "Recommended (98% served)",
-    "service_98_21d": "98% served within 21 days",
-    "service_98_14d": "98% served within 14 days",
-    "service_98_7d": "98% served within 7 days",
+    "service_98": "Recommended (at least 98% served)",
+    "service_98_21d": "At least 98% served within 21 days",
+    "service_98_14d": "At least 98% served within 14 days",
+    "service_98_7d": "At least 98% served within 7 days",
 }
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -369,7 +369,9 @@ def evaluation_bars(summary: pd.DataFrame) -> Figure:
     splits = [s for s in ("main", "holdout", "followups") if s in set(summary["split"])]
     names = {"main": "main set", "holdout": "holdout (new wording)", "followups": "follow ups"}
     backends = list(dict.fromkeys(summary["backend"]))
-    short = [b.split(":", 1)[-1].split("/")[-1] for b in backends]
+    # Name each assistant by its model where the results record one, since a provider name says less.
+    models = summary.groupby("backend")["model"].first() if "model" in summary else pd.Series(dtype=str)
+    short = [str(models.get(b) or b).split(":", 1)[-1].split("/")[-1] for b in backends]
     fig, (left, right) = new_figure(width=8.8, height=3.8, ncols=2)
     height = 0.8 / max(len(splits), 1)
     y = np.arange(len(backends))[::-1]

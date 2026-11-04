@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pandas as pd
+
 from staffpilot.evaluation import evaluate_backend, load_cases, routing_table, run_evaluation
 
 
@@ -135,3 +137,78 @@ def test_local_models_judge_each_other_but_never_themselves(planner, tmp_path, m
     by_backend = results.set_index("backend")
     assert by_backend.loc["local:gemma", "judges"] == 1 and by_backend.loc["local:llama", "judges"] == 1
     assert sorted(graded) == ["local:gemma", "local:llama"]  # each graded the other once
+
+
+def test_keep_adds_new_models_to_the_earlier_results(planner, tmp_path, monkeypatch):
+    from staffpilot import evaluation
+    from staffpilot.agent.backends import Judgement, OfflineBackend
+
+    class Model(OfflineBackend):
+        def __init__(self, name):
+            super().__init__()
+            self.name = name
+            self.model_spec = name
+
+        def judge(self, question, answer, facts):
+            return Judgement(score=4, reason="fine")
+
+    case = {
+        "id": "a",
+        "question": "How many agents does Alpha need?",
+        "intent": "plan_lookup",
+        "countries": ["Alpha"],
+    }
+    path = tmp_path / "cases.jsonl"
+    path.write_text(json.dumps(case), encoding="utf-8")
+    real = evaluation.make_backend
+    monkeypatch.setattr(
+        evaluation, "make_backend", lambda n, s, c=None: real(n, s, c) if n == "offline" else Model(n)
+    )
+    out = tmp_path / "out"
+    local = ["local:gemma", "local:llama"]
+    run_evaluation(planner, ["offline", *local], path, out, None, local)
+    # An online run with --keep replaces offline (run again) and adds the new model, keeping the local ones.
+    _, summary = run_evaluation(planner, ["offline", "anthropic"], path, out, None, ["anthropic"], keep=True)
+    assert set(summary["backend"]) == {"offline", "anthropic", *local}
+    judged = summary.set_index("backend")["judged_by"]
+    assert judged["local:gemma"] == "local:llama" and judged["offline"] == "anthropic"
+    assert judged["anthropic"] == ""  # no other provider judged it in this run
+    # Without --keep, the run stands alone as before.
+    _, alone = run_evaluation(planner, ["offline"], path, out)
+    assert set(alone["backend"]) == {"offline"}
+
+
+def test_a_model_that_sends_nothing_back_counts_as_an_error_not_an_answer(planner, tmp_path, monkeypatch):
+    from staffpilot import evaluation
+    from staffpilot.agent.backends import OfflineBackend
+
+    class Broke(OfflineBackend):
+        """A model whose account has no credit left: every call fails before any token is used."""
+
+        name = "anthropic"
+        model_spec = "anthropic:claude-sonnet-5-5"
+
+        def route(self, *args, **kwargs):
+            raise RuntimeError("credit balance is too low")
+
+        def compose(self, *args, **kwargs):
+            raise RuntimeError("credit balance is too low")
+
+    case = {
+        "id": "a",
+        "question": "How many agents does Alpha need?",
+        "intent": "plan_lookup",
+        "countries": ["Alpha"],
+    }
+    path = tmp_path / "cases.jsonl"
+    path.write_text(json.dumps(case), encoding="utf-8")
+    real = evaluation.make_backend
+    monkeypatch.setattr(
+        evaluation, "make_backend", lambda n, s, c=None: real(n, s, c) if n == "offline" else Broke()
+    )
+    results, summary = run_evaluation(planner, ["offline", "anthropic"], path, tmp_path / "out")
+    row = results.set_index("backend").loc["anthropic"]
+    assert row["error"].startswith("no answer from the model") and pd.isna(row["intent_ok"])
+    scored = summary.set_index("backend")
+    assert scored.loc["anthropic", "cases"] == 0 and scored.loc["anthropic", "errors"] == 1
+    assert scored.loc["offline", "errors"] == 0 and scored.loc["offline", "model"] == "offline"

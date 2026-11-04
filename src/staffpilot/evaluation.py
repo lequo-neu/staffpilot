@@ -196,6 +196,20 @@ def evaluate_backend(
             continue
         tokens_in = backend.usage["input"] - before["input"]
         tokens_out = backend.usage["output"] - before["output"]
+        # A model that sent nothing back (no credit, no quota, no network) is a failed case, not an
+        # answer: the offline router and template stood in, and would be scored as if they were the model.
+        failed = [g for g in answer.guardrails if " writer failed (" in g]
+        if name != "offline" and failed and tokens_in + tokens_out == 0:
+            rows.append(
+                {
+                    "backend": name,
+                    "model": getattr(backend, "model_spec", name),
+                    "id": case.id,
+                    "intent": case.intent,
+                    "error": f"no answer from the model: {failed[0]}"[:200],
+                }
+            )
+            continue
         row = {
             "backend": name,
             "model": getattr(backend, "model_spec", name),
@@ -221,17 +235,20 @@ def evaluate_backend(
     # Each judge grades every answer in turn, after all answers are in. With local models this
     # keeps one model loaded at a time instead of swapping answerer and judge on every question.
     scores: dict[str, list[int]] = {case.id: [] for _, case, _, _ in to_judge}
+    graded_by: set[str] = set()
     for grader in graders:
         log.info("Judge %s is grading %d answers from %s", grader.name, len(to_judge), name)
         for _, case, text, facts in to_judge:
             try:
                 scores[case.id].append(grader.judge(case.question, text, facts).score)
+                graded_by.add(getattr(grader, "model_spec", grader.name))
             except Exception as exc:  # a judge failure only leaves that score out
                 log.warning("judge %s failed on %s: %s", grader.name, case.id, describe_error(exc))
     for row, case, _, _ in to_judge:
         given = scores[case.id]
         row["judge_score"] = sum(given) / len(given) if given else None
         row["judges"] = len(given)
+        row["judged_by"] = ", ".join(sorted(graded_by))
     return pd.DataFrame(rows)
 
 
@@ -246,7 +263,7 @@ def summarize(results: pd.DataFrame) -> pd.DataFrame:
         return pd.Series(
             {
                 "cases": len(frame),
-                "errors": int((frame.get("error", pd.Series(dtype=str)).fillna("") != "").sum()),
+                "errors": 0,
                 "intent_accuracy": frame["intent_ok"].mean(),
                 "country_accuracy": frame["countries_ok"].mean(),
                 "scenario_accuracy": _mean_or_none(frame, "scenario_score"),
@@ -256,12 +273,25 @@ def summarize(results: pd.DataFrame) -> pd.DataFrame:
                 "tokens_per_question": frame["tokens"].mean(),
                 "cost_per_question_usd": _mean_or_none(frame, "cost_usd"),
                 "mean_seconds": frame["seconds"].mean(),
+                "model": next(iter(frame["model"].dropna()), "") if "model" in frame else "",
+                # Judge scores compare fairly only between rows graded by the same judges.
+                "judged_by": "; ".join(
+                    sorted({j for j in frame.get("judged_by", pd.Series(dtype=str)).fillna("") if j})
+                ),
             }
         )
 
     ok = results.dropna(subset=["intent_ok"]) if "intent_ok" in results else results
     keys = ["split", "backend"] if "split" in ok else ["backend"]
-    return ok.groupby(keys).apply(agg, include_groups=False).reset_index()
+    summary = ok.groupby(keys).apply(agg, include_groups=False).reset_index()
+    # Failed cases have no scores, so they are counted from all rows: `cases` are the scored ones.
+    failed = results.get("error", pd.Series("", index=results.index)).fillna("").astype(str) != ""
+    errors = failed.groupby([results[k] for k in keys]).sum().rename("errors").reset_index()
+    # Outer, so a model that failed every case still shows, with its errors and no scores.
+    merged = (
+        summary.drop(columns="errors").merge(errors, on=keys, how="outer").fillna({"errors": 0, "cases": 0})
+    )
+    return merged[list(summary.columns)]
 
 
 def routing_table(results: pd.DataFrame) -> dict[str, str]:
@@ -306,8 +336,13 @@ def run_evaluation(
     cache_dir: Path | None = None,
     judge_backends: list[str] | None = None,
     run_agent: bool = False,
+    keep: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Evaluate each backend on each test set; write cases.csv, summary.csv, retrieval.csv and routing.json."""
+    """Evaluate each backend on each test set; write cases.csv, summary.csv, retrieval.csv and routing.json.
+
+    With `keep`, the results already in `out_dir` stay for every backend not run this time,
+    so online and local models can be run separately and still be compared on one page.
+    """
     splits = testsets if isinstance(testsets, dict) else {"main": testsets}
     # A provider may have no usable model for a tier (a retired model, or no quota on a
     # free key); it is left out with a note instead of stopping the whole run.
@@ -332,6 +367,12 @@ def run_evaluation(
             frame.insert(0, "split", split)
             frames.append(frame)
     results = pd.concat(frames, ignore_index=True)
+    earlier = out_dir / "cases.csv"
+    if keep and earlier.exists():
+        kept = pd.read_csv(earlier)
+        kept = kept[~kept["backend"].isin(set(results["backend"]))]
+        log.info("Keeping %d earlier results for %s", len(kept), sorted(set(kept["backend"])))
+        results = pd.concat([kept, results], ignore_index=True)
     summary = summarize(results)
     out_dir.mkdir(parents=True, exist_ok=True)
     results.to_csv(out_dir / "cases.csv", index=False)

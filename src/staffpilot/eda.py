@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import calendar
 from dataclasses import dataclass, field
 import logging
 from pathlib import Path
@@ -52,12 +53,13 @@ def profile(dataset: Dataset, capacity: int = 10) -> EdaReport:
             (
                 "Budgets exactly on the threshold",
                 int((s["budget"] == s["country"].map(dataset.countries["threshold"])).sum()),
-                "ineligible under the strict rule",
+                "not eligible: the brief says a budget must exceed the threshold (assumption A2)",
             ),
             ("Countries", len(dataset.countries), ""),
         ],
         columns=["check", "value", "note"],
     )
+    on_threshold = s[s["budget"] == s["country"].map(dataset.countries["threshold"])]
     eligible = dataset.eligible()
     by_country = s.groupby("country").agg(signups=("eligible", "size"), eligible=("eligible", "sum"))
     by_country["eligible_rate"] = by_country["eligible"] / by_country["signups"]
@@ -96,6 +98,7 @@ def profile(dataset: Dataset, capacity: int = 10) -> EdaReport:
         "eligible_rate": float(s["eligible"].mean()),
         "january_agents": int(dataset.countries["agents"].sum()),
         "peak_need": int(by_country["peak_need"].sum()),
+        "on_threshold": on_threshold.groupby("country").size().sort_values(ascending=False).to_dict(),
     }
     report = EdaReport(overview, quality, by_country.reset_index(), monthly, weekday, quantiles)
     report.findings = _findings(report)
@@ -137,33 +140,91 @@ def _findings(report: EdaReport) -> list[str]:
     return found
 
 
-def facts(report: EdaReport) -> list[tuple[str, str, str]]:
-    """The findings as short facts for the app: (value, what it means, tone: bad, warn, good or none)."""
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def questions(report: EdaReport) -> list[tuple[str, str, str, str, str]]:
+    """The questions the data answers before planning: (question, short answer, number, why, tone).
+
+    The tone (bad, warn, good or none) marks answers that change the plan.
+    """
     c = report.countries.set_index("country")
     o = report.overview
-    total_by_month = report.monthly.groupby("month")["eligible"].sum()
-    peak, low = int(total_by_month.idxmax()), int(total_by_month.idxmin())
-    short = c[c["staff_to_need"] < 1].index.tolist()
+    by_month = report.monthly.groupby("month")["eligible"].sum()
+    peak, low = int(by_month.idxmax()), int(by_month.idxmin())
     ratio = o["january_agents"] / max(o["peak_need"], 1)
+    short = c[c["staff_to_need"] < 1]
+    days = report.weekday.set_index("signup_date")["index"]
+    busy, quiet = int(days.idxmax()), int(days.idxmin())
     items = [
-        (f"{o['eligible_rate']:.1%}", f"of {o['signups']:,} sign ups are eligible", ""),
         (
-            f"{ratio:.1f}×",
-            f"January team ({o['january_agents']:,}) over the busiest need ({o['peak_need']:,})",
-            "bad",
-        ),
-        (
-            f"{charts.MONTHS[peak - 1]} / {charts.MONTHS[low - 1]}",
-            f"busiest and quietest month, {total_by_month.max() / total_by_month.min():.1f}× apart",
+            "How many sign ups qualify for support?",
+            "Fewer than half",
+            f"{o['eligible_rate']:.1%}",
+            f"of {o['signups']:,} sign ups have a budget above their country threshold.",
             "",
         ),
-        (f"{c['daily_cv'].median():.2f}", "daily noise (median CV): the waiting pool matters", "warn"),
-        (", ".join(short) or "None", "understaffed in January", "warn" if short else "good"),
+        (
+            "Is demand seasonal?",
+            "Yes",
+            f"{by_month.max() / by_month.min():.1f}×",
+            (
+                f"{calendar.month_name[peak]} is the busiest month and {calendar.month_name[low]} the quietest, both years "
+                f"together: {by_month.max():,} ÷ {by_month.min():,} ≈ {by_month.max() / by_month.min():.1f}. "
+                "The team must change month by month."
+            ),
+            "warn",
+        ),
+        (
+            "Does demand jump from day to day?",
+            "Yes",
+            f"CV {c['daily_cv'].median():.2f}",
+            (
+                "The coefficient of variation (spread ÷ average) of daily sign ups, median country; steady random "
+                "arrivals would give about 0.2. So the plan simulates the waiting pool day by day, not monthly totals."
+            ),
+            "warn",
+        ),
     ]
     if "yearly_change" in c:
-        items.append((f"{c['yearly_change'].median():+.1%}", "eligible sign ups, year on year", ""))
-    spread = report.weekday["index"].max() - report.weekday["index"].min()
-    items.append((f"{spread:.0%}", "gap between weekdays: small enough to ignore", "good"))
+        change = c["yearly_change"].median()
+        items.append(
+            (
+                "Is demand growing?",
+                "Yes" if change > 0.02 else "No",
+                f"{change:+.1%}",
+                "Eligible sign ups from one year to the next, median country. The forecast needs no growth term.",
+                "",
+            )
+        )
+    items += [
+        (
+            "Do weekdays differ?",
+            "Barely",
+            f"{days.max() - days.min():.0%}",
+            (
+                f"{DAY_NAMES[busy]}, the busiest day, is {days.max():.2f} of the average day and {DAY_NAMES[quiet]}, "
+                f"the quietest, {days.min():.2f}. The model needs no weekday schedule."
+            ),
+            "good",
+        ),
+        (
+            "Is the January team the right size?",
+            "No",
+            f"{ratio:.1f}× too many",
+            f"{o['january_agents']:,} agents for a need of about {o['peak_need']:,} in the busiest 60 days. "
+            + (
+                "Only "
+                + ", ".join(
+                    f"{n} has {int(r['agents'])} for {int(r['peak_need'])}" for n, r in short.iterrows()
+                )
+                + "."
+                if len(short)
+                else "No country is short."
+            ),
+            "bad",
+        ),
+    ]
     return items
 
 
@@ -189,11 +250,15 @@ def quality_checks(report: EdaReport) -> list:
             )
         )
     if value.get("Budgets exactly on the threshold"):
+        where = ", ".join(
+            f"{n} in {country}" for country, n in report.overview.get("on_threshold", {}).items()
+        )
         found.append(
             Check(
                 "Some budgets sit exactly on the threshold",
                 None,
-                f"{int(value['Budgets exactly on the threshold']):,}; ineligible under the strict rule (A2).",
+                f"{int(value['Budgets exactly on the threshold']):,} sign ups ({where}). The brief says a budget must "
+                "exceed the threshold, so assumption A2 reads it as strictly greater, and these are not eligible.",
             )
         )
     return found
@@ -209,10 +274,24 @@ def figures(report: EdaReport) -> dict[str, Figure]:
     ):
         series = part.groupby("month")["eligible"].sum()
         ax.plot(series.index, series.to_numpy(), marker="o", linewidth=2.2, color=color, label=str(year))
+    both = report.monthly.groupby("month")["eligible"].sum()
+    ax.plot(both.index, both.to_numpy(), marker="o", linewidth=2.2, color=charts.RED, label="both years")
+    for month in (int(both.idxmax()), int(both.idxmin())):
+        ax.annotate(
+            f"{both[month]:,}",
+            (month, both[month]),
+            xytext=(0, 7),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8,
+            color=charts.RED,
+        )
     ax.set_xticks(range(1, 13), charts.MONTHS)
     ax.legend(frameon=False, fontsize=8)
     out["monthly_trend"] = charts.finish(
-        fig, "Eligible sign ups per month", "All countries, one line per history year."
+        fig,
+        "Eligible sign ups per month",
+        "All countries: one line per history year, and the two years added up in red.",
     )
 
     pivot = report.monthly.groupby(["country", "month"])["eligible"].sum().unstack(fill_value=0)
@@ -230,8 +309,8 @@ def figures(report: EdaReport) -> dict[str, Figure]:
     fig, (ax,) = charts.new_figure(width=9.0, height=5.6)
     order = c.sort_values("staff_to_need")
     y = np.arange(len(order))
-    ax.barh(y - 0.2, order["agents"], height=0.4, color=charts.NAVY, label="January headcount")
-    ax.barh(y + 0.2, order["peak_need"], height=0.4, color=charts.AMBER, label="peak 60 day need")
+    ax.barh(y - 0.2, order["agents"], height=0.4, color=charts.NAVY, label="Real agents (January)")
+    ax.barh(y + 0.2, order["peak_need"], height=0.4, color=charts.AMBER, label="Demand agents")
     ax.set_yticks(y, order["country"], fontsize=8)
     ax.yaxis.grid(False)
     ax.xaxis.grid(True, color=charts.GRID)
@@ -239,7 +318,7 @@ def figures(report: EdaReport) -> dict[str, Figure]:
     out["staff_vs_need"] = charts.finish(
         fig,
         "January headcount against the busiest 60 days",
-        "Need = eligible sign ups in the busiest 60 day window of the last year, divided by 10.",
+        "Demand agents: eligible sign ups in the busiest 60 days of the last year ÷ 10 advertisers per agent.",
     )
 
     out["eligibility_rate"] = charts.ranked_bars(

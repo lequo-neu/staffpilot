@@ -9,6 +9,8 @@ Each row separates three things so no step is a black box:
   the manager, or a GenAI guardrail such as the number check),
 * `applied`: the value that was finally used.
 
+`user` names who was signed in when the decision was taken (empty when sign in is off).
+
 A language model never computes a staffing number. Where one is involved, its rows
 say so (`proposed_by` names the model) and the numbers it led to are marked as
 computed by the planner.
@@ -36,6 +38,7 @@ log = logging.getLogger(__name__)
 FILE_NAME = "decision_audit.csv"
 COLUMNS = [
     "time",
+    "user",
     "decision",
     "country",
     "month",
@@ -50,18 +53,30 @@ COLUMNS = [
 PLANNER = "planner (optimizer and simulator)"
 
 
-def record(rows: Iterable[dict[str, Any]], folder: Path) -> Path:
+def record(rows: Iterable[dict[str, Any]], folder: Path, user: str = "") -> Path:
     """Append rows to the audit file in `folder`, writing the header the first time."""
     stamp = datetime.now().isoformat(timespec="seconds")
     frame = pd.DataFrame(
-        [{**{c: "" for c in COLUMNS}, "time": stamp, **row} for row in rows], columns=COLUMNS
+        [{**{c: "" for c in COLUMNS}, "time": stamp, "user": user, **row} for row in rows], columns=COLUMNS
     )
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / FILE_NAME
     if not frame.empty:
+        _upgrade(path)
         frame.to_csv(path, mode="a", header=not path.exists(), index=False)
         log.info("Decision audit: %d rows for %s", len(frame), frame["decision"].iloc[0])
     return path
+
+
+def _upgrade(path: Path) -> None:
+    """Rewrite a file written before a column was added, so new rows line up with the header."""
+    if not path.exists():
+        return
+    with path.open(encoding="utf-8") as file:
+        header = file.readline().strip().split(",")
+    if header != COLUMNS:
+        old = pd.read_csv(path, dtype=str, keep_default_na=False)
+        old.reindex(columns=COLUMNS, fill_value="").to_csv(path, index=False)
 
 
 def read(folder: Path, limit: int | None = None) -> pd.DataFrame:
@@ -69,7 +84,7 @@ def read(folder: Path, limit: int | None = None) -> pd.DataFrame:
     path = folder / FILE_NAME
     if not path.exists():
         return pd.DataFrame(columns=COLUMNS)
-    frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+    frame = pd.read_csv(path, dtype=str, keep_default_na=False).reindex(columns=COLUMNS, fill_value="")
     frame = frame.assign(_row=range(len(frame))).sort_values(["time", "_row"], ascending=[False, True])
     frame = frame.drop(columns="_row").reset_index(drop=True)
     return frame.head(limit) if limit else frame
@@ -142,12 +157,13 @@ def update_rows(update: MonthlyUpdate) -> list[dict[str, Any]]:
             {
                 **base,
                 "month": _month(update.year, update.done),
-                "item": "agents on staff against the plan",
-                "proposed": 0,
+                "item": "agents on staff",
+                "proposed": int(update.original.active[update.done]),
                 "proposed_by": "approved plan",
-                "adjusted": update.headcount_change,
+                "adjusted": int(update.original.active[update.done]) + update.headcount_change,
                 "adjusted_by": "manager (actual headcount)",
-                "applied": update.headcount_change,
+                "applied": int(update.original.active[update.done]) + update.headcount_change,
+                "note": f"{update.headcount_change:+,} against the plan",
             }
         )
     old, new = update.original, update.updated.plan

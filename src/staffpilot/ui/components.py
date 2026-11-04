@@ -88,6 +88,64 @@ def brand() -> str:
     )
 
 
+# The sign in page does not load the app's stylesheet, so its message carries its own,
+# written with the theme's variables so it follows light and dark mode.
+LOGIN_CSS = """
+.wrap:has(.sp-login-hint) { background: var(--body-background-fill) !important; min-height: 100vh; padding: 16px; }
+.wrap:has(.sp-login-hint) > .column { width: 100%; max-width: 460px; padding: 28px 28px 24px !important;
+  gap: 14px !important; background: var(--background-fill-primary) !important;
+  border: 1.5px solid var(--border-color-primary) !important; border-radius: 14px !important;
+  box-shadow: 0 12px 32px rgba(20, 33, 48, 0.12); }
+.wrap:has(.sp-login-hint) h2 { margin: 0; font-size: 22px; font-weight: 600; color: var(--body-text-color); }
+.wrap:has(.sp-login-hint) .form { background: transparent !important; border: none !important; gap: 12px !important; }
+.wrap:has(.sp-login-hint) .form > .block { background: transparent !important; padding: 0 !important; }
+.wrap:has(.sp-login-hint) input { background: var(--background-fill-secondary) !important;
+  border: 1.5px solid var(--border-color-primary) !important; border-radius: 8px !important; }
+.wrap:has(.sp-login-hint) input:focus { border-color: var(--color-accent) !important; }
+.sp-login-hint { display: block; color: var(--body-text-color-subdued); font-size: 13px; line-height: 1.5; }
+.sp-forgot-toggle { display: none !important; }
+.sp-forgot-link { display: inline-block; margin-top: 6px; color: var(--color-accent); font-size: 13px;
+  font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.sp-forgot-pop { display: none; position: fixed; inset: 0; z-index: 1000; align-items: center;
+  justify-content: center; background: rgba(20, 33, 48, 0.45); padding: 16px; }
+.sp-forgot-toggle:checked ~ .sp-forgot-pop { display: flex; }
+.sp-forgot-card { display: flex; flex-direction: column; gap: 14px; max-width: 360px; width: 100%;
+  background: var(--background-fill-primary); color: var(--body-text-color);
+  border: 1.5px solid var(--border-color-primary); border-radius: 12px; padding: 20px 22px;
+  font-size: 15px; line-height: 1.5; box-shadow: 0 12px 32px rgba(20, 33, 48, 0.25); }
+.sp-forgot-close { align-self: flex-end; cursor: pointer; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; color: #fff; background: var(--color-accent);
+  border-radius: 8px; padding: 7px 16px; }
+"""
+
+
+def login_message(names: Sequence[str]) -> str:
+    """The sign in page: the user names, the first password rule, and a Forgot password popup.
+
+    Gradio shows this above the sign in form. The popup opens with a hidden checkbox, so
+    it needs no script.
+    """
+    users = ", ".join(_e(name) for name in names)
+    return (
+        f"<style>{LOGIN_CSS}</style>"
+        f'<span class="sp-login-hint">Users: {users}. At the first sign in, the password is the '
+        "same as the user name.</span>"
+        '<input type="checkbox" id="sp-forgot" class="sp-forgot-toggle" hidden>'
+        '<label for="sp-forgot" class="sp-forgot-link">Forgot password?</label>'
+        '<span class="sp-forgot-pop" role="dialog" aria-label="Forgot password">'
+        f'<span class="sp-forgot-card"><span>Please contact the {_e(TEAM)}.</span>'
+        '<label for="sp-forgot" class="sp-forgot-close">Close</label></span></span>'
+    )
+
+
+def signed_in(name: str) -> str:
+    """Who is signed in, with a link to sign out, for the top of the sidebar."""
+    return (
+        f'<div class="sp-user"><span>Signed in as <b>{_e(name)}</b></span>'
+        '<a href="/logout">Sign out</a></div>'
+    )
+
+
 def section(title: str) -> str:
     return f'<div class="sp-section">{_e(title)}</div>'
 
@@ -124,9 +182,16 @@ def alert_list(alerts: list[Alert]) -> str:
         return '<div class="sp-alert info"><span class="sp-level">Clear</span><span>Nothing needs attention.</span></div>'
     return "".join(
         f'<div class="sp-alert {a.level}"><span class="sp-level">{LEVEL_NAMES.get(a.level, a.level)}</span>'
-        f"<span>{_e(a.message)}</span></div>"
+        f"<span>{_e(a.message)}{_open(a.page)}</span></div>"
         for a in alerts
     )
+
+
+def _open(page: str) -> str:
+    """A button that opens another page of the app; the page script handles the click."""
+    if not page:
+        return ""
+    return f' <button type="button" class="sp-open" data-sp-open="{_e(page)}">Open {_e(page)}</button>'
 
 
 def alert_summary(alerts: list[Alert]) -> str:
@@ -167,17 +232,30 @@ def year_rail(year: int, months: list[dict]) -> str:
         )
     return (
         f'<div class="sp-rail" aria-label="Agents at work and decisions in each month of {year}">{"".join(cells)}</div>'
-        '<p class="sp-rail-note">Agents at work, all countries. Hires and notices act the next month.</p>'
+        '<p class="sp-rail-note">Agents at work in all countries. A decision takes effect the next month.</p>'
     )
 
 
-def facts(items: list[tuple[str, str, str]]) -> str:
-    """Short facts as tiles: a value, what it means, and a tone (bad, warn, good or none) that marks it."""
-    cells = "".join(
-        f'<div class="sp-fact {tone}"><b>{_e(value)}</b><span>{_e(label)}</span></div>'
-        for value, label, tone in items
+def facts(items: list[tuple]) -> str:
+    """Short facts as tiles: a value, what it means, a tone (bad, warn, good or none) that marks it,
+    and optionally a list of short detail lines shown under the meaning.
+    """
+    cells = []
+    for value, label, tone, *rest in items:
+        details = "".join(f"<small>{_e(line)}</small>" for line in (rest[0] if rest else []))
+        cells.append(f'<div class="sp-fact {tone}"><b>{_e(value)}</b><span>{_e(label)}</span>{details}</div>')
+    return f'<div class="sp-facts">{"".join(cells)}</div>'
+
+
+def questions(items: list[tuple[str, str, str, str, str]]) -> str:
+    """Questions the data answers: each card asks, answers in a word, gives the number and why."""
+    cards = "".join(
+        f'<div class="sp-q {tone}"><p class="sp-q-ask">{_e(ask)}</p>'
+        f'<p class="sp-q-answer"><b>{_e(answer)}</b><span>{_e(number)}</span></p>'
+        f'<p class="sp-q-why">{_e(why)}</p></div>'
+        for ask, answer, number, why, tone in items
     )
-    return f'<div class="sp-facts">{cells}</div>'
+    return f'<div class="sp-questions">{cards}</div>'
 
 
 def checklist(checks: list) -> str:

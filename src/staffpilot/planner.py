@@ -161,6 +161,8 @@ class PlanBundle:
         sums["within_week_rate"] = float((waits <= 7).sum() / sums["arrivals"]) if sums["arrivals"] else 1.0
         sums["roi"] = sums["uplift_value"] / sums["total_cost"] if sums["total_cost"] else 0.0
         sums["max_overflow"] = float(table["max_overflow"].max())
+        sums["max_wait_days"] = float(waits.max()) if waits.size else 0.0
+        sums["peak_load"] = float(table["peak_load"].max())
         return sums
 
 
@@ -189,11 +191,13 @@ def _kpis(plan: CountryPlan, sim: SimulationResult, months: int = 12) -> dict[st
         "service_rate": totals["service_rate"],
         "mean_wait_days": totals["mean_wait_days"],
         "p90_wait_days": totals["p90_wait_days"],
+        "max_wait_days": totals["max_wait_days"],
         # Share of eligible advertisers who get an agent within a week of signing up.
         "within_week_rate": float((waits <= 7).sum() / totals["arrivals"]) if totals["arrivals"] else 1.0,
         "utilization": totals["utilization"],
         "avg_idle_agents": float(sim.monthly["idle_agents"].iloc[:months].mean()),
         "max_overflow": totals["max_overflow"],
+        "peak_load": totals["peak_load"],
     }
 
 

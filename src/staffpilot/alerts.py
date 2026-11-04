@@ -22,6 +22,27 @@ class Alert:
     topic: str
     message: str
     countries: tuple[str, ...] = ()
+    page: str = ""  # the app page where the manager acts on it, if any
+
+
+MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
+
+
+def _money(value: float) -> str:
+    return f"${value / 1e6:,.1f}M" if abs(value) >= 1e6 else f"${value / 1e3:,.0f}k"
 
 
 def _names(countries: list[str], limit: int = 6) -> str:
@@ -37,7 +58,7 @@ def plan_alerts(planner: Planner, policy: str = RECOMMENDED_POLICY) -> list[Aler
         alerts.append(
             Alert(
                 "critical",
-                "data",
+                "year",
                 f"This file plans {planner.year}, but the brief asks for {expected}. Load the official course file before "
                 "using these numbers.",
             )
@@ -75,48 +96,69 @@ def plan_alerts(planner: Planner, policy: str = RECOMMENDED_POLICY) -> list[Aler
                 tuple(overflow),
             )
         )
-    slow = kpis.index[kpis["p90_wait_days"] > 14].tolist()
-    if slow:
+    bundle = planner.run(policy)
+    for country in kpis.index[kpis["p90_wait_days"] > 14]:
+        sim = bundle.outcomes[country].simulation
+        in_year = sim.wait_months <= 12
+        waits, months = sim.waits[in_year], sim.wait_months[in_year]
+        late = waits > 14
+        busy = sorted({int(m) for m in months[late]})
+        named = (
+            " and ".join(MONTHS[m - 1] for m in busy[-2:])
+            if len(busy) <= 2
+            else f"{MONTHS[busy[0] - 1]} to {MONTHS[busy[-1] - 1]}"
+        )
         alerts.append(
             Alert(
                 "warning",
                 "waiting",
-                f"One in ten advertisers waits more than two weeks in {_names(slow)}.",
-                tuple(slow),
+                f"In {country}, {int(late.sum()):,} of {len(waits):,} advertisers wait more than two weeks: those who "
+                f"sign up in {named}, when {int(bundle.outcomes[country].plan.active[busy[-1] - 1]):,} agents meet "
+                f"the year's peak. The longest wait is {int(waits.max())} days, within the 60 day limit.",
+                (country,),
+                "Plan",
             )
         )
-    short = kpis.index[kpis["end_agents"] > kpis["start_agents"]].tolist()
-    if short:
+    for country in kpis.index[kpis["end_agents"] > kpis["start_agents"]]:
+        row = kpis.loc[country]
+        peak = int(bundle.outcomes[country].plan.active[:12].max())
         alerts.append(
             Alert(
                 "warning",
                 "hiring",
-                f"{_names(short)} must grow the team; hires decided in January only "
-                "start in February, so approve them first.",
-                tuple(short),
+                f"{country} has {row['start_agents']:,.0f} agents and the plan needs up to {peak:,} by "
+                f"{MONTHS[int(bundle.outcomes[country].plan.active[:12].argmax())]}: hire {row['hires']:,.0f}. "
+                "Hires decided in January start in February, so approve them first.",
+                (country,),
+                "Plan",
             )
         )
-    deep_cuts = kpis.index[kpis["notices"] > 0.5 * kpis["start_agents"]].tolist()
-    if deep_cuts:
+    deep_cuts = kpis[kpis["notices"] > 0.5 * kpis["start_agents"]]
+    if len(deep_cuts):
+        biggest = deep_cuts["notices"].idxmax()
         alerts.append(
             Alert(
                 "warning",
                 "people",
-                f"{len(deep_cuts)} countries let more than half of their January team "
-                "go. Check local notice rules and plan the communication before notices are sent.",
-                tuple(deep_cuts),
+                f"In {len(deep_cuts)} countries more than half of the January team gets notice: "
+                f"{deep_cuts['notices'].sum():,.0f} of {deep_cuts['start_agents'].sum():,.0f} agents, for example "
+                f"{deep_cuts.loc[biggest, 'notices']:,.0f} of {deep_cuts.loc[biggest, 'start_agents']:,.0f} in "
+                f"{biggest}. Check local notice rules before notices are sent.",
+                tuple(deep_cuts.index),
             )
         )
     # Salary only: the one time firing cost says nothing about whether ongoing support pays.
-    unprofitable = value_only.index[value_only["uplift_value"] < value_only["salary_cost"]].tolist()
-    if unprofitable:
+    for country in value_only.index[value_only["uplift_value"] < value_only["salary_cost"]]:
+        row = kpis.loc[country]
         alerts.append(
             Alert(
                 "warning",
                 "value",
-                f"In {_names(unprofitable)} support costs more than the uplift it brings "
-                "at current salaries; keeping service there is a business decision.",
-                tuple(unprofitable),
+                f"In {country} support brings {_money(row['uplift_value'])} of uplift, but its agents cost "
+                f"{_money(row['salary_cost'])} in salary. The service goal keeps it; Profit only would stop it. "
+                "Choose the goal on Plan.",
+                (country,),
+                "Plan",
             )
         )
     alerts.append(

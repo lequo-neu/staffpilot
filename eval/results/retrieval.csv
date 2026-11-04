@@ -1,9 +1,9 @@
 id,source,top3,hit,split
-r01,Waiting pool,Waiting pool | Service rate | A3 Pool on 1 January,True,main
-r02,Firing or Firing cost,A5 Notice month | Firing cost | Net value,True,main
+r01,Waiting pool,Waiting pool | Service rate | Wait time,True,main
+r02,Firing or Firing cost,Firing cost | A5 Notice month | Net value,True,main
 r03,Service rate,Service rate | A9 Waiting and value | Optimizer,True,main
 r04,A3 Pool on 1 January,A3 Pool on 1 January | A9 Waiting and value | Waiting pool,True,main
 h14,Support length,Waiting pool | Hiring | Eligibility,False,holdout
 h15,Eligibility,Eligibility | Simulator | Service rate,True,holdout
-h31,Hiring,Hiring | Simulator | Agent capacity,True,holdout
-f08,Waiting pool,Waiting pool | A3 Pool on 1 January | Wait time,True,followups
+h31,Hiring,Hiring | Simulator | A5 Notice month,True,holdout
+f08,Waiting pool,Waiting pool | Wait time | A3 Pool on 1 January,True,followups

@@ -21,7 +21,7 @@ Source `IE5374_Hackathon_Google_Data.xlsx`, history years [2024, 2025], planning
 | Duplicate advertiser ids | 0 |  |
 | Impossible dates repaired | 920 | moved to the last day of the month |
 | Budgets at or below zero | 0 |  |
-| Budgets exactly on the threshold | 13 | ineligible under the strict rule |
+| Budgets exactly on the threshold | 13 | not eligible: the brief says a budget must exceed the threshold (assumption A2) |
 | Countries | 22 |  |
 
 ## Countries
