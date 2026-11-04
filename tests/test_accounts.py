@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pandas as pd
@@ -42,8 +43,9 @@ def test_a_first_password_must_be_changed_and_the_new_one_is_stored_hashed(tmp_p
     assert book.check("kevin", "abc") and not book.check("kevin", "kevin")
     assert not book.must_change("kevin")
     assert "current one" in book.change("kevin", "abc", "abc")
-    stored = (tmp_path / accounts.FILE_NAME).read_text()
-    assert "abc" not in stored and "hash" in stored
+    stored = json.loads((tmp_path / accounts.FILE_NAME).read_text(encoding="utf-8"))
+    # The salt and hash are random hex, so compare whole values, not substrings.
+    assert set(stored["kevin"]) == {"salt", "hash"} and "abc" not in stored["kevin"].values()
     # A second reader of the same folder, as after a restart, sees the new password.
     assert accounts.Accounts(tmp_path, "kevin:kevin").check("kevin", "abc")
 
