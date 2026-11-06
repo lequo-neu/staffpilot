@@ -714,10 +714,9 @@ def template_answer(route: RoutedQuery, outputs: list[ToolOutput], facts: dict[s
             )
         elif out.name == "signup_insights":
             lines.extend(out.notes)
-        elif out.name == "search_rules":
-            if out.notes:
-                lines.append("Here is what the case rules say.")
-                lines.extend(out.notes[:2])
+        elif out.name == "search_rules" and out.notes:
+            lines.append("Here is what the case rules say.")
+            lines.extend(out.notes[:2])
     if not lines:
         lines.append(
             "That is outside what I can help with. Ask me about the staffing plan, a what if scenario, "
