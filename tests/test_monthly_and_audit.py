@@ -43,6 +43,17 @@ def test_lower_demand_and_resignations_are_planned_around(planner):
     assert "2 agents fewer than planned" in resigned.summary()
 
 
+@pytest.mark.parametrize("as_of, scale", [(6, 2.0), (12, 1.5), (12, 2.0)])
+def test_a_late_surge_is_planned_even_when_the_goal_can_no_longer_be_met(planner, as_of, scale):
+    # The headcount of the update month was set by last month's decisions, so a repair may
+    # only add agents from the month after; asking for more in the update month was infeasible.
+    for country in planner.countries:
+        update = _update(planner, country, as_of=as_of, scale=scale)
+        done = update.done
+        assert update.updated.plan.active[done] == update.original.active[done]
+        assert update.updated.kpis["service_rate"] >= update.kept.kpis["service_rate"] - 1e-9
+
+
 @pytest.mark.parametrize(
     "as_of, counts", [(1, []), (13, [1.0] * 12), (4, [1.0, 2.0]), (3, [1.0, -5.0]), (3, [1.0, np.nan])]
 )

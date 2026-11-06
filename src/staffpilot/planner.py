@@ -313,26 +313,40 @@ class Planner:
         plan: CountryPlan | None = None
         proposed: np.ndarray | None = None
         done = executed.months_done if executed else 0
-        for _ in range(s.planning.repair_rounds + 1):
-            plan = optimize_country(
-                country,
-                stream.daily_counts,
-                month_by_day,
-                budgets,
-                int(row["agents"]),
-                float(row["salary"]),
-                s.rules,
-                s.assumptions,
-                s.planning,
-                service_target,
-                min_active,
-                ctx.max_hires_per_month,
-                initial_pool=len(stream.initial_pool),
-                fixed_hires=executed.hires if executed else None,
-                fixed_notices=executed.notices if executed else None,
-                headcount_change=executed.headcount_change if executed else None,
-                sla_weeks=sla_weeks,
-            )
+        # A hire or notice acts the month after it is decided, so the headcount of month `done`
+        # is already set by earlier decisions; the first month a repair can still raise is done + 1.
+        first_free = done + 1
+        for round_number in range(s.planning.repair_rounds + 1):
+            try:
+                candidate = optimize_country(
+                    country,
+                    stream.daily_counts,
+                    month_by_day,
+                    budgets,
+                    int(row["agents"]),
+                    float(row["salary"]),
+                    s.rules,
+                    s.assumptions,
+                    s.planning,
+                    service_target,
+                    min_active,
+                    ctx.max_hires_per_month,
+                    initial_pool=len(stream.initial_pool),
+                    fixed_hires=executed.hires if executed else None,
+                    fixed_notices=executed.notices if executed else None,
+                    headcount_change=executed.headcount_change if executed else None,
+                    sla_weeks=sla_weeks,
+                )
+            except RuntimeError:
+                if plan is None:
+                    raise
+                # The extra headcount asked for cannot be reached (for example under a hiring cap);
+                # keep the last plan the solver found, and let the simulator report the gap.
+                log.warning(
+                    "%s: repair round %d has no solution; keeping the previous plan", country, round_number
+                )
+                break
+            plan = candidate
             proposed = plan.active.copy() if proposed is None else proposed
             plan.proposed_active = proposed
             sim = self._simulate(country, plan, ctx)
@@ -340,7 +354,7 @@ class Planner:
             # Months already carried out cannot be changed, so only later gaps are repaired.
             overflow[:done] = 0
             short = service_target is not None and sim.totals()["service_rate"] < service_target - 1e-9
-            if overflow.max() <= 0 and not short:
+            if overflow[first_free:].max(initial=0) <= 0 and not short:
                 break
             extra = np.zeros(months)
             need = np.ceil(np.clip(overflow, 0, None) / s.rules.capacity_per_agent)
@@ -350,7 +364,8 @@ class Planner:
             if short:
                 dropped = sim.monthly["dropped"].to_numpy()
                 extra[: len(dropped)] += np.where(dropped > 0, 1, 0)
-            extra[:done] = 0
+            # An overflow in month `done` was already carried to the next month above.
+            extra[:first_free] = 0
             min_active = np.maximum(min_active if min_active is not None else 0, plan.active + extra)
             plan.notes.append("repair round applied")
             log.info("%s: simulator found a gap (overflow or service below target); solving again", country)

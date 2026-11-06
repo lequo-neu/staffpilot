@@ -14,7 +14,7 @@ StaffPilot plans how many support agents each of 22 countries needs in each mont
 | Evaluation in detail | [`docs/EVALUATION.md`](docs/EVALUATION.md) |
 | Presentation script | [`docs/PRESENTATION.md`](docs/PRESENTATION.md) |
 
-Topic confirmed on the sign up sheet on 3 November 2026.
+Topic confirmed via email with Ms. Niki on 3 November 2026.
 
 ![The This year page: the four headline numbers, the twelve month plan and the alerts](docs/Assets/R1.png)
 
@@ -228,7 +228,7 @@ Share of the work: **Kevin 40%**, **Hamad 30%**, **Khoa 30%**. All three reviewe
 
 ## AI use
 
-AI assistants were used to draft code, tests and documentation. Every result here was produced by running the code, and the team reviewed and tested all AI assisted parts; details in [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
+AI assistants were used; details in [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
 
 ## Repository
 
