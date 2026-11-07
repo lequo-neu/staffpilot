@@ -1,11 +1,11 @@
 # Project settings. Anything not listed here keeps the value in src/staffpilot/default_config.toml.
 
 [data]
-# The IE5374 workbook from Canvas, saved under this name. Change this line to load another file.
+# The course dataset, saved under this name. Change this line to load another file.
 path = "data/raw/IE5374_Hackathon_Google_Data.xlsx"
 
 [planning]
-# The Canvas workbook holds sign ups for 2024 and 2025 (the brief's text says 2023 and 2024),
+# The course dataset holds sign ups for 2024 and 2025 (the brief's text says 2023 and 2024),
 # so the plan covers 2026. An alert is raised when a file plans another year.
 expected_year = 2026
 

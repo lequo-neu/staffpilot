@@ -2,7 +2,7 @@
 
 Seven Team-5374
 
-IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the IE5374 workbook from Canvas. It holds sign ups for 2024 and 2025 and the January 2026 headcount, one year later than the brief's text, so the plan covers 2026.
+IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All numbers come from `notebooks/StaffPilot_Topic3.ipynb` run on the course dataset. As the teaching team confirmed, it holds sign ups for 2024 and 2025 and staffing as of January 2026, one year later than the brief's text, so the plan covers 2026.
 
 Each method in detail: [METHODS.md](METHODS.md). The evaluation in full: [EVALUATION.md](EVALUATION.md).
 
@@ -13,6 +13,8 @@ Google supports eligible new advertisers with dedicated agents for 60 days. Each
 On 1 January the 22 countries employ 6,474 agents, while the busiest 60 days of demand need about 2,333 and the plan keeps 2,220 in an average month. Only Vietnam is short (59 agents for a need of about 107). The recommended plan raises expected net value for the year from $370.4M (keep January headcount) to $479.7M, a gain of $109.3M or 30 percent, serves every eligible advertiser, and keeps the average wait at 1.1 days.
 
 ## 2. Key decisions
+
+**Keep the 920 sign ups dated 29 February 2025, moved to 28 February.** That day does not exist, so Excel and pandas read these cells as text; they come from all 22 countries. We move each one to 28 February 2025, the last day of its month, and keep the rest of the row unchanged. 397 of them are eligible, 4.4 percent of the eligible sign ups of February 2025, so dropping them would understate February in every country, and moving them to 1 March would count them in the wrong month. With our choice every monthly total stays as in the data; only the day within February changes. The Data page and the notebook report the repair.
 
 **Model the rules exactly, then optimize on a close approximation.** A day by day simulator implements the brief (60 day support, 60 day wait limit, ten per agent, ramp up, notice) and is the only source of reported numbers. A slot counts as free only if it exists for the whole support period, so an agent under notice takes no new advertisers. The optimizer is a mixed integer program per country: monthly hires and notices, weekly advertiser flows, and three months of lookahead so December is not cut only because the model ends there.
 

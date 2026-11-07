@@ -2,7 +2,7 @@
 
 This guide walks you through checking StaffPilot before a commit or a submission. You do not need to know Python. Follow the parts in order and tick each check. The whole run takes about an hour; Part A alone takes five minutes and is the minimum before any commit.
 
-The expected numbers below come from the IE5374 workbook from Canvas, saved as `data/raw/IE5374_Hackathon_Google_Data.xlsx`. With another file the numbers change, but the behaviour described here stays the same.
+The expected numbers below come from the course dataset, saved as `data/raw/IE5374_Hackathon_Google_Data.xlsx`. With another file the numbers change, but the behaviour described here stays the same.
 
 ## Before you start
 
@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `155 passed` |
+| A1 | `python -m pytest -q` | the last line says `159 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -233,7 +233,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `155 passed` |
+| F3 | `python -m pytest -q` | `159 passed` |
 
 Then commit as described in the README.
 

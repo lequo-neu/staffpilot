@@ -76,7 +76,7 @@ data.countries.head()""",
         "md",
         """## 2. Rules and assumptions
 
-The brief rules are settings, not constants in code, and every open point is a switch. The planning year comes from the data: the IE5374 workbook from Canvas holds sign ups for 2024 and 2025, one year later than the brief's text, so the plan covers 2026. A file with 2023 and 2024 would plan 2025 with no code change."""
+The brief rules are settings, not constants in code, and every open point is a switch. The planning year comes from the data: the course dataset holds sign ups for 2024 and 2025 and staffing as of January 2026, one year later than the brief's text, so the plan covers 2026. A file with 2023 and 2024 would plan 2025 with no code change."""
         + AI,
     ),
     (

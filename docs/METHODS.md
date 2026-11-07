@@ -1,6 +1,6 @@
 # Methods and design
 
-The details behind the [README](../README.md): how each block works, why it was chosen, and the numbers behind every claim. Every figure comes from the code on the IE5374 workbook from Canvas (planning year 2026).
+The details behind the [README](../README.md): how each block works, why it was chosen, and the numbers behind every claim. Every figure comes from the code on the course dataset (sign ups for 2024 and 2025, planning year 2026).
 
 Sections: architecture, method, what the manager decides, assumptions, how the course techniques are used, the app, which page for which moment, start up time, and logging, run history and alerts.
 
@@ -236,7 +236,7 @@ Change one line in `config/staffpilot.toml`:
 path = "data/raw/<another file>.xlsx"
 ```
 
-No year appears in the code. The planning year is one year after the last sign up year, so the Canvas workbook (2024 and 2025) plans 2026 and a file with 2023 and 2024, the years in the brief's text, would plan 2025. `tests/test_dataset_swap.py` shifts all dates by a year and checks that the plan stays the same apart from small differences from week boundaries and leap years (on the real data, net value moves by 0.02 percent). The Canvas workbook contains 920 rows dated 29 February 2025, a day that does not exist; they are moved to 28 February.
+No year appears in the code. The planning year is one year after the last sign up year, so the course dataset (2024 and 2025) plans 2026 and a file with 2023 and 2024, the years in the brief's text, would plan 2025. `tests/test_dataset_swap.py` shifts all dates by a year and checks that the plan stays the same apart from small differences from week boundaries and leap years (on the real data, net value moves by 0.02 percent). The course dataset contains 920 rows dated 29 February 2025, a day that does not exist; they are moved to 28 February.
 
 ## The app
 

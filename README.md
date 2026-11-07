@@ -31,7 +31,7 @@ On 1 January the 22 countries employ 6,474 agents, while the busiest 60 days of 
 | Agent utilization | 23.9% | **68.9%** |
 | Most advertisers per agent on any day | 10 | **10** (limit 10) |
 
-Planned from 2024 alone and scored on what really happened in 2025, the method reaches 99.3% of the value of a plan made with hindsight. All numbers use the IE5374 workbook from Canvas, which holds sign ups for 2024 and 2025 and the January 2026 headcount, so the plan covers 2026; the brief's text names 2023, 2024 and 2025, and the code always plans the year after the last sign up.
+Planned from 2024 alone and scored on what really happened in 2025, the method reaches 99.3% of the value of a plan made with hindsight. All numbers use the course dataset (sign ups for 2024 and 2025, staffing as of January 2026, as the teaching team confirmed), so the plan covers 2026; the brief's text names 2023, 2024 and 2025, and the code always plans the year after the last sign up.
 
 ## What the brief asks, and the evidence
 
@@ -183,7 +183,7 @@ A language model router is far better than keywords on new wording, and no unche
 
 ## Run it
 
-Python 3.11 to 3.13. Save the IE5374 workbook from Canvas as `data/raw/IE5374_Hackathon_Google_Data.xlsx`, then:
+Python 3.11 to 3.13. Save the course dataset as `data/raw/IE5374_Hackathon_Google_Data.xlsx`, then:
 
 ```bash
 python3.12 -m venv .venv
@@ -239,10 +239,10 @@ docs/            report, methods, evaluation, presentation, setup and testing gu
 eval/            labelled questions, cached model replies, results
 notebooks/       the executed submission notebook
 src/staffpilot/  planning core, GenAI assistant, web app, command line
-tests/           155 tests on synthetic data
+tests/           159 tests on synthetic data
 ```
 
-`python -m pytest` runs the 155 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
+`python -m pytest` runs the 159 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
 
 ## References
 

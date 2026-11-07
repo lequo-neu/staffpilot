@@ -11,7 +11,7 @@ The course allows AI tools if their use is explained and AI generated parts are 
 
 | Part | AI role | How the team checked it |
 |---|---|---|
-| Package code in `src/staffpilot/` | first drafts of modules | 155 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
+| Package code in `src/staffpilot/` | first drafts of modules | 159 unit tests, lint, runs on real data, a day by day simulator that checks every plan |
 | Tests in `tests/` | drafted from the brief rules | each rule case is small enough to check by hand |
 | Notebook text and `docs/report.md` | drafting of prose; every notebook section carries a marker | every number was copied from an executed cell and rechecked |
 | README | drafting | commands were run on a fresh environment |
@@ -29,7 +29,7 @@ AI assisted reviews from a teaching assistant, tester and instructor point of vi
 * Two conclusions in an early report draft contradicted the model (on assumption A1 and on the early service preference A9) and were rewritten from the outputs.
 * A rough threshold estimate ($175M) was far above the model result (a few million dollars per country) and was dropped.
 * Out of range scenarios, unknown countries and countries without eligible sign ups used to crash or be silently ignored; each now has a message and a test.
-* The Canvas workbook contains dates that do not exist (29 February 2025); the loader repairs them.
+* The course dataset contains dates that do not exist (29 February 2025); the loader moves them to 28 February.
 
 ## What was not used
 

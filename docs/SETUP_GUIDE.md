@@ -7,7 +7,7 @@ Every command goes into a terminal window. Type or paste it, press Enter, and wa
 ## What you need
 
 * A Mac or a Windows PC with about 2 GB of free disk space and an internet connection.
-* The teaching team data file (an `.xlsx` workbook from Canvas). You can finish most of the setup before you have it.
+* The course dataset (an `.xlsx` workbook with the three sheets the teaching team describes). You can finish most of the setup before you have it.
 * Optional: an API key for OpenAI, Anthropic or Google if you want language models instead of the built in offline assistant.
 
 ## Step 1: Install Python 3.12
@@ -101,11 +101,11 @@ The tests use made up data, so they work before you have the real file:
 python -m pytest -q
 ```
 
-The last line should say `155 passed`. If it does, Python, the solver and every package are working.
+The last line should say `159 passed`. If it does, Python, the solver and every package are working.
 
 ## Step 6: Add the data file
 
-1. Copy the workbook from Canvas into the folder `data/raw/` inside the project.
+1. Copy the course dataset workbook into the folder `data/raw/` inside the project.
 2. Open `config/staffpilot.toml` in any text editor (TextEdit on Mac, Notepad on Windows, or VS Code).
 3. Change the `path` line so the file name matches exactly, for example:
 

@@ -1,7 +1,7 @@
 """Load the advertiser sign up dataset and apply the eligibility rule.
 
 Nothing here assumes particular years. The planning year is derived from the data,
-so the Canvas workbook (2024 to 2025) and a file with the brief's years (2023 to 2024)
+so the course dataset (2024 to 2025) and a file with the brief's years (2023 to 2024)
 both work without code changes.
 """
 
@@ -64,9 +64,9 @@ def _has(frame: pd.DataFrame, columns: tuple[str, ...]) -> bool:
 def parse_signup_dates(values: pd.Series) -> pd.Series:
     """Parse sign up dates and repair impossible calendar days.
 
-    The Canvas workbook was shifted by one year, which turned 29 February
-    into 2025-02-29. Such a day is moved to the last valid day of its month so the
-    sign up still counts in the right month.
+    The course dataset has 920 sign ups dated 2025-02-29, a day that does not exist,
+    so they arrive as text. Such a day is moved to the last valid day of its month so
+    the sign up still counts in the right month.
     """
 
     repaired = 0
