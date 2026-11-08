@@ -91,6 +91,9 @@ The assistant answered "And Mexico?" after a question about Brazil by keeping th
 | **Backtest on real sign ups** | the method is scored on a year it never saw | 99.3% of hindsight value |
 | **Works with no API key** | a keyword router and templates run the same pipeline, free and repeatable | the notebook, tests and CI run offline |
 | **Sign in** | each approval names its user | first password must be changed |
+| **Compare policies** | the five policies side by side with the trade offs in words, and sign ups 30% below and above the forecast, plan kept or rebuilt | 30% more sign ups: the kept plan serves 96.0% with a 22 day average wait; rebuilt, 100.0% and +$18.2M |
+| **Scenario step by step** | countries, period, change in sign ups (up to two changes), service goal and Run Scenario, with no language model | USA up 20% in Q4: $117.6M to $126.9M, the same as the sentence |
+| **Country inputs** | salary, threshold, January team, eligible sign ups and need per country, and every assumption with its effect, read only | Vietnam alone short of its busiest 60 days |
 
 | Service goal: profit against speed | How it is calculated |
 |---|---|

@@ -73,6 +73,8 @@ NAV_ICONS = {
     "Assistant": '<path d="M20.5 11.5a8 8 0 0 1-11.8 7L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>'
     '<path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01"/>',
     "Evaluation": '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9"/>',
+    "Country inputs": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    "Compare policies": '<path d="M12 3v18M7 21h10M5 7h14"/><path d="M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/>',
 }
 
 
