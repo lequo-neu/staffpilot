@@ -98,10 +98,10 @@ This downloads a few hundred megabytes and takes two to five minutes. The quotes
 The tests use made up data, so they work before you have the real file:
 
 ```bash
-python -m pytest -q
+python -m pytest
 ```
 
-The last line should say `181 passed`. If it does, Python, the solver and every package are working.
+The last line should say `190 passed`. If it does, Python, the solver and every package are working.
 
 ## Step 6: Add the data file
 
@@ -275,7 +275,7 @@ You do not need to reinstall.
 |---|---|
 | Activate the environment (macOS) | `source .venv/bin/activate` |
 | Activate the environment (Windows) | `.venv\Scripts\Activate.ps1` |
-| Run the tests | `python -m pytest -q` |
+| Run the tests | `python -m pytest` |
 | Build the plan | `python -m staffpilot plan` |
 | Explore the data | `python -m staffpilot eda` |
 | List earlier runs | `python -m staffpilot history` |

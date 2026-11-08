@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `181 passed` |
+| A1 | `python -m pytest` | the last line says `190 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -76,13 +76,13 @@ Start from no stored passwords: delete `outputs/accounts.json` if it exists.
 | Step | What to do | Expected |
 |---|---|---|
 | C1.1 | Look at the browser tab | the title is `StaffPilot` and the icon is a teal square with a white curve, the same as the logo at the top of the sidebar |
-| C1.2 | Look at the left sidebar | Assistant and This year at the top, then the groups Before the year starts (Data, Plan, Scenario, Memo), Every month (Monthly update, Decision log) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line; there is no separate New chat button |
+| C1.2 | Look at the left sidebar | Assistant and This year at the top, then the groups Before the year starts (Data, Country inputs, Plan, Compare policies, Scenario, Memo), Every month (Monthly update, Decision log) and Behind the numbers (Evaluation), then Recent chats (with `Your chats in this tab appear here.`), Settings, and the copyright line with `Seven Team-5374` on one line; there is no separate New chat button |
 | C1.3 | Hover over each sidebar item | a short explanation appears for each |
 | C1.4 | Look at the top of the page | the page title and one line explaining it; there is **no** line naming the data file or the planning year |
 | C1.5 | Read This year | four tiles: `$479.7M` with `$109.3M (+29.5%) more than keeping the January team`, `6,474 → 2,220` with `(65.7% fewer)`, `100.0%` with `Longest wait 35 days (limit 60)` and `At most 10.0 advertisers per agent (limit 10)`, `6,474 → 2,220`, `100.0%` and `Not approved`; a strip of twelve months where January shows `6,474`, `Hire 11, Notice 4,741` (the notice in red) and `Decide now`; four steps start with `1. Check the data`; on the right the alerts that need action |
 | C1.6 | Pick `Start of March` in Where are you in the year? | January and February say `Carried out`, March says `Decide now`, and the steps start with `1. Enter what happened` |
 | C1.7 | Click `Open Monthly update` on the first step | the Monthly update page opens with `March` already picked, and Monthly update is marked in the sidebar |
-| C1.8 | Scroll to the end of Data, Plan, Scenario, Memo, Monthly update and Decision log | each ends with a line saying what comes next and a button that opens it |
+| C1.8 | Scroll to the end of Data, Country inputs, Plan, Compare policies, Scenario, Memo, Monthly update and Decision log | each ends with a line saying what comes next and a button that opens it, in the order Data, Country inputs, Plan, Compare policies, Scenario, Memo |
 | C1.9 | Look at the sidebar and the page | the groups are teal bands in capitals, each page has an icon, panel titles, field names, tabs and buttons are in capitals, and every area has a clear edge |
 | C1.10 | Click any chart | it opens at full size over the page; a click or Escape closes it |
 
@@ -144,6 +144,22 @@ Start from no stored passwords: delete `outputs/accounts.json` if it exists.
 | C4.4 | Data: open the page | six questions first, such as `Is demand seasonal?` `Yes 1.8×` with `24,267 ÷ 13,814 ≈ 1.8`, and `Is the January team the right size?` `No 2.8× too many` in red; the sign ups chart has a red line for both years added up; the headcount chart says `Real agents (January)` and `Demand agents`; four sharp charts, then `Data quality` with `3 of 3 checks pass` and two notes; the table opens from `Every check, as a table` |
 | C4.5 | Evaluation: open the page | one line on the holdout, a chart of questions read right and seconds per answer, then tiles for rule retrieval (`7 of 8`, `1` missed) and plan runs; each table opens below its tiles, with the best scores, the missed question and the latest run tinted |
 | C4.6 | Decision log: open the page | four tiles (decisions, values changed, changed by you, answers where a guardrail acted) and filter buttons; the newest decisions first: the scenario from C4.2 with `demand_multiplier` proposed `0.7` by the reader and applied `0.5` after your edit (adjusted by `manager`), then the result rows marked as computed by the planner; the monthly update and plan approvals from C3; one `assistant answer` row per question with the guardrails that acted; a `decision_audit.csv` file to download | Click `Only changes`: only rows with an adjustment remain, tinted amber |
+
+### C4b. Manager pages and lists of changes
+
+| Step | Do this | Expect |
+|---|---|---|
+| C4b.1 | Country inputs: open the page | `22 countries start the year with 6,474 agents`, the busiest 60 days need about `2,333`; one row per country with salary, threshold, January agents, eligible sign ups for 2024 and 2025 and `Team vs need`; only Vietnam is amber (`0.6 times`) |
+| C4b.2 | Scroll to `Assumptions behind every plan` | eleven rows with what each one changes; `Order of service` says largest budgets first earns about $1.0M less |
+| C4b.3 | Compare policies: open the page and wait up to a minute the first time | five policies; Recommended `$479.7M`, `+$109.3M`, `100.0%` served; Keep January headcount `$370.4M` with `6,474` agents; every wait has one decimal |
+| C4b.4 | Scroll to `If sign ups miss the forecast` | `30% more sign ups`: the kept plan serves `96.0%` with a `22.2` day wait; rebuilt `100.0%` and `+$18.2M` |
+| C4b.5 | Pick `Vietnam` in Country | the page changes in under a second; Keep January headcount serves `85.8%` |
+| C4b.6 | Scenario, tab `Choose step by step`: pick USA, Q4, `20`, then Run Scenario | `You chose: If sign ups rise 20% from October to December in USA` before the run; net value `$117.6M` to `$126.9M`, the same as C4.1 |
+| C4b.7 | Change the service goal to `within 7 days` and run again | `$116.8M` to `$125.4M` (`+$8.7M`); the summary names the goal |
+| C4b.8 | Set the slider to `0` | `Not ready yet: Set a change in sign ups first` |
+| C4b.9 | Tab `Describe in words`: click `India grows 50% in Q4 and Brazil falls 10% all year` | `Understood as: If sign ups in India rise 50% from October to December and sign ups in Brazil fall 10%`; the table has an India row and a Brazil row; net value `$130.2M` to `$139.5M` |
+| C4b.10 | Type `What if Atlantis demand increases 40%?` and click Read the scenario | `I do not have data for Atlantis.` and the list of countries; nothing runs |
+| C4b.11 | Decision log | the runs from C4b.6 and C4b.7 each have a `service goal` row naming the goal; the run from C4b.9 names `India, Brazil` as its countries |
 
 ### C5. Settings and models
 
@@ -233,7 +249,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `181 passed` |
+| F3 | `python -m pytest` | `190 passed` |
 
 Then commit as described in the README.
 

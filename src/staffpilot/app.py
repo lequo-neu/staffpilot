@@ -892,10 +892,11 @@ def run_scenario(
     t = result.totals()
     proposal = proposal or {}
     proposed = ScenarioParams.model_validate(proposal["params"]) if proposal.get("params") else None
+    goal = None if policy is None else GOAL_NAMES.get(policy, policy)
     if record:
         audit.record(
             audit.scenario_rows(
-                proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t
+                proposed, params, proposal.get("reader", "manager"), proposal.get("guardrails", []), t, goal
             ),
             OUTPUTS,
             _user(request),
@@ -907,8 +908,8 @@ def run_scenario(
         f"**{charts.money(t['net_value_scenario'])}** ({sign}{charts.money(abs(change))}). "
         f"Service goes from {t['service_rate_base']:.1%} to {t['service_rate_scenario']:.1%}."
     )
-    if policy is not None:
-        summary += f" Staffing policy: {GOAL_NAMES.get(policy, policy)}."
+    if goal is not None:
+        summary += f" Service goal: {goal}."
     affected = result.comparison["country"].tolist()
     base = p.run(policy or RECOMMENDED_POLICY).plan_table()
     where = ", ".join(affected) if len(affected) <= 3 else f"{len(affected)} countries"
@@ -978,7 +979,7 @@ def builder_preview(*controls) -> str:
         return f"**Not ready yet:** {error}"
     except ValidationError:
         return "**Not ready yet:** check the change in sign ups."
-    return f"**You chose:** {params.plain()}. Staffing policy: {GOAL_NAMES.get(policy, policy)}."
+    return f"**You chose:** {params.plain()}. Service goal: {GOAL_NAMES.get(policy, policy)}."
 
 
 def run_builder(*controls, request: gr.Request | None = None):
@@ -1720,7 +1721,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                                     label="Change in eligible sign ups (percent)",
                                     info="Leave at 0 to skip this change",
                                 )
-                            b_policy = gr.Dropdown(GOALS, value=RECOMMENDED_POLICY, label="Staffing policy")
+                            b_policy = gr.Dropdown(GOALS, value=RECOMMENDED_POLICY, label="Service goal")
                             b_mode = gr.Radio(
                                 [manager.REBUILD, manager.KEEP], value=manager.REBUILD, label="How to respond"
                             )

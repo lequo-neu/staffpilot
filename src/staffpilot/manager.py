@@ -52,7 +52,7 @@ def policy_table(frame: pd.DataFrame) -> pd.DataFrame:
             "Hires": frame["hires"].map(_count),
             "Notices": frame["notices"].map(_count),
             "Served": frame["service_rate"].map(lambda v: f"{v:.1%}"),
-            "Avg wait (days)": frame["mean_wait_days"].round(1),
+            "Avg wait (days)": frame["mean_wait_days"].map(lambda v: f"{v:.1f}"),
         }
     )
     return shown.reset_index(drop=True)
@@ -187,7 +187,7 @@ def sensitivity_table(frame: pd.DataFrame) -> pd.DataFrame:
                 "Gain from rebuilding": _signed_money(r["net_value"] - k["net_value"]),
                 "Kept: served": f"{k['service_rate']:.1%}",
                 "Rebuilt: served": f"{r['service_rate']:.1%}",
-                "Kept: wait (days)": round(float(k["mean_wait_days"]), 1),
+                "Kept: wait (days)": f"{k['mean_wait_days']:.1f}",
                 "Rebuilt: agents": _count(r["avg_active"]),
             }
         )
@@ -386,7 +386,10 @@ def assumptions(p: Planner) -> pd.DataFrame:
         (
             "Order of service",
             "First come, first served" if chosen.queue_policy == "fifo" else "Largest budgets first",
-            "Serving large budgets first adds a little value but makes small advertisers wait.",
+            (
+                "Tested on the course data: largest budgets first earns about $1.0M less, serves fewer "
+                "advertisers and makes small advertisers wait longer."
+            ),
         ),
         (
             "Forecast",

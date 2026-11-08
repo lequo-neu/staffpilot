@@ -217,11 +217,12 @@ Share of the work: **Kevin 40%**, **Hamad 30%**, **Khoa 30%**. All three reviewe
 | 09 | Write the labelled test questions and check every label | `eval/testset.jsonl`, `holdout.jsonl`, `followups.jsonl`, `label_review.csv` | Khoa & Hamad | Done |
 | 10 | Build the evaluation and compare the models | `evaluation.py`, `docs/EVALUATION.md` | Kevin | Done |
 | 11 | Build the web app: pages, monthly update, decision log, sign in | `app.py`, `src/staffpilot/ui/` | Kevin | Done |
-| 12 | Check the plan against real capacity planning practice and write the business recommendations | `docs/report.md` | Khoa | Done |
-| 13 | Write the process improvement view | `docs/report.md` | Hamad | Done |
-| 14 | Run the testing guide before submission | `docs/TESTING_GUIDE.md` | Khoa & Hamad | Done |
-| 15 | Executed notebook, README and CI on three systems | `notebooks/StaffPilot_Topic3.ipynb`, `.github/workflows/ci.yml` | Kevin | Done |
-| 16 | Presentation script and demo video | `docs/PRESENTATION.md` | Khoa & Kevin | Video to be recorded |
+| 12 | Build the manager pages: compare policies, country inputs, a scenario chosen step by step | `manager.py`, `tests/test_manager.py` | Hamad | Done |
+| 13 | Check the plan against real capacity planning practice and write the business recommendations | `docs/report.md` | Khoa | Done |
+| 14 | Write the process improvement view | `docs/report.md` | Hamad | Done |
+| 15 | Run the testing guide before submission | `docs/TESTING_GUIDE.md` | Khoa & Hamad | Done |
+| 16 | Executed notebook, README and CI on three systems | `notebooks/StaffPilot_Topic3.ipynb`, `.github/workflows/ci.yml` | Kevin | Done |
+| 17 | Presentation script and demo video | `docs/PRESENTATION.md` | Khoa & Kevin | Video to be recorded |
 
 | Member | Role | Background |
 |---|---|---|
@@ -242,10 +243,10 @@ docs/            report, methods, evaluation, presentation, setup and testing gu
 eval/            labelled questions, cached model replies, results
 notebooks/       the executed submission notebook
 src/staffpilot/  planning core, GenAI assistant, web app, command line
-tests/           181 tests on synthetic data
+tests/           190 tests on synthetic data
 ```
 
-`python -m pytest` runs the 181 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
+`python -m pytest` runs the 190 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
 
 ## References
 

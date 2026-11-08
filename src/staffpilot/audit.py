@@ -206,13 +206,15 @@ def scenario_rows(
     reader: str,
     guardrails: list[str],
     totals: dict[str, float],
+    goal: str | None = None,
 ) -> list[dict[str, Any]]:
     """Rows for a scenario run: each parameter as read by the model and as run, then the computed result.
 
     `proposed` is what the reader (a language model or the offline parser) made of the
-    manager's sentence; `applied` is what was run, after any edit by the manager.
+    manager's sentence; `applied` is what was run, after any edit by the manager. `goal`
+    is the service goal the manager picked, when it is not the planner's default.
     """
-    base = {"decision": "scenario run", "country": _shown(applied.countries)}
+    base = {"decision": "scenario run", "country": _shown(applied.all_countries())}
     default = type(applied)()
     read = proposed.model_dump() if proposed is not None else None
     rows: list[dict[str, Any]] = []
@@ -231,6 +233,10 @@ def scenario_rows(
                 "adjusted_by": "manager" if edited or read is None else "",
                 "applied": _shown(value),
             }
+        )
+    if goal is not None:
+        rows.append(
+            {**base, "item": "service goal", "adjusted": goal, "adjusted_by": "manager", "applied": goal}
         )
     if rows and guardrails:
         rows[0]["note"] = "; ".join(guardrails)

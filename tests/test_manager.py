@@ -22,6 +22,8 @@ def test_policy_comparison_is_the_planners_own(planner):
     assert table.iloc[0]["Net value"] == charts.money(frame["net_value"].max())
     assert {"vs January team", "Served", "Avg agents", "Notices"} <= set(table.columns)
     assert (table["Policy"] == "Keep January headcount").sum() == 1
+    # Waits keep one decimal, so 1.0 does not show as "1" next to 1.1.
+    assert all(len(w.split(".")[1]) == 1 for w in table["Avg wait (days)"])
 
     lines = manager.policy_takeaways(frame)
     text = " ".join(lines)
@@ -49,6 +51,7 @@ def test_sensitivity_uses_the_planner_and_is_kept(planner):
     table = manager.sensitivity_table(frame)
     assert list(table["Sign ups"]) == ["30% fewer sign ups", "As forecast", "30% more sign ups"]
     assert table.loc[1, "Gain from rebuilding"] == "same"
+    assert all(len(w.split(".")[1]) == 1 for w in table["Kept: wait (days)"])
     lines = manager.sensitivity_takeaways(frame)
     assert lines[0].startswith("**30% fewer sign ups:**") and lines[1].startswith("**30% more sign ups:**")
     assert lines[-1].startswith("**What it means:**") and "Monthly update" in lines[-1]
@@ -148,15 +151,22 @@ def test_step_by_step_scenario_runs_without_a_model(planner, tmp_path, monkeypat
     assert "at least 98% served within 14 days" in preview
 
     summary, chart, diff = app.run_builder(*choice, RECOMMENDED_POLICY)
-    assert "net value moves" in summary and "Staffing policy: Profit, at least 98% served" in summary
+    assert "net value moves" in summary and "Service goal: Profit, at least 98% served" in summary
     assert chart is not None and list(diff.data["Country"]) == ["Alpha"]
     # The run is a manager decision, so it reaches the decision log with the manager as its author.
     log = pd.read_csv(tmp_path / "decision_audit.csv")
     assert (log["decision"] == "scenario run").any() and "manager" in set(log["adjusted_by"].dropna())
+    # The service goal changes the result, so the log names it.
+    goal = log[log["item"] == "service goal"]
+    assert list(goal["applied"]) == ["Profit, at least 98% served (recommended)"]
 
     two = [["Alpha"], "All year", [], 20, ["Beta"], manager.CUSTOM, ["March"], -30, manager.KEEP]
     summary, _, diff = app.run_builder(*two, "optimized")
     assert "keep the current plan" in summary and set(diff.data["Country"]) == {"Alpha", "Beta"}
+    log = pd.read_csv(tmp_path / "decision_audit.csv")
+    # A run with two changes logs the countries of both, not "all".
+    assert set(log["country"]) == {"Alpha", "Alpha, Beta"}
+    assert "Profit only" in set(log.loc[log["item"] == "service goal", "applied"])
 
     nothing = [[], "All year", [], 0, [], "All year", [], 0, manager.REBUILD]
     assert app.builder_preview(*nothing, RECOMMENDED_POLICY).startswith("**Not ready yet:**")

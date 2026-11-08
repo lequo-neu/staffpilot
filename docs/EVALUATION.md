@@ -4,7 +4,7 @@ How the GenAI part is measured: the test sets, the scores, the runs, and a check
 
 ## Test sets and scores
 
-`eval/testset.jsonl` has 40 labelled questions across eight intents (plan lookup, compare, what if, sensitivity, insight, memo, rules, out of scope). `eval/holdout.jsonl` has 32 more written in different words. `eval/followups.jsonl` has 10 follow ups, each asked after the earlier question it lists in `context`. For each backend and split the harness reports:
+`eval/testset.jsonl` has 40 labelled questions across eight intents (plan lookup, compare, what if, sensitivity, insight, memo, rules, out of scope). `eval/holdout.jsonl` has 32 more written in different words. `eval/followups.jsonl` has 10 follow ups, each asked after the earlier question it lists in `context`. `eval/edge.jsonl` has 11 harder what if questions (see the edge set below). For each backend and split the harness reports:
 
 * intent, country and scenario field accuracy of the structured request;
 * grounded rate (passes the number check without the template fallback; always 100 percent for the offline templates, by construction);
@@ -52,6 +52,8 @@ What the numbers say:
 
 
 The offline keywords were written while looking at the main set, so its main score flatters it; the holdout shows the gap a language model router has to close. The follow up rules were written together with the follow up set, so treat that row as a regression check. The test questions and labels were drafted with AI assistance (see [docs/AI_USAGE.md](AI_USAGE.md)). `python scripts/label_review_sheet.py` writes them to `eval/label_review.csv`, one row per question with columns for a reviewer's verdict. The team checked all 82 labels there on 3 November 2026 and changed none. Six questions carry a comment because they can be read more than one way: "end the year" (p04) is labelled with no month although it implies December, "the summer months" (h01) is read as June to August, and "around Christmas" (h17) as December only. To check the judge score itself, `python scripts/judge_review.py sheet` writes 30 answers to `eval/judge_review.xlsx` for team members to grade by hand on the judges' rubric, and `python scripts/judge_review.py compare` reports how closely the judges match them (steps in [docs/TESTING_GUIDE.md](TESTING_GUIDE.md), Part H).
+
+**Edge set.** `eval/edge.jsonl` holds 11 what if questions taken from Hamad Al Sulaimi's scenario explorer prototype. Five should be asked back instead of run: an unknown place, a period that runs past December, a 400 percent change, a vague question and one with no size of change. Six should run: two lists of changes for different countries and months, "doubles", "October through December", "120% demand" and full country names. Besides the usual fields the harness scores `ask_back_accuracy`, the share of questions where the assistant asked back exactly when it should. Offline gets all 11 right (intent, countries, scenario and ask back 100 percent; `python -m staffpilot eval --split edge`). The reader was fixed with these questions in view, so like the follow ups this row is a regression check; the language models have not been run on it.
 
 **Does the AI judge agree with a person?** Quoc Hung Le graded the 30 answers in `eval/judge_review.xlsx` by hand on 3 November 2026, checking every number against the facts the judges saw. Against these grades the local judges (each grading the other model) did poorly:
 
