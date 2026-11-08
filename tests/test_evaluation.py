@@ -212,3 +212,82 @@ def test_a_model_that_sends_nothing_back_counts_as_an_error_not_an_answer(planne
     scored = summary.set_index("backend")
     assert scored.loc["anthropic", "cases"] == 0 and scored.loc["anthropic", "errors"] == 1
     assert scored.loc["offline", "errors"] == 0 and scored.loc["offline", "model"] == "offline"
+
+
+def test_the_edge_set_scores_asking_back_and_lists_of_changes(planner, tmp_path):
+    cases = [
+        {
+            "id": "e1",
+            "question": "What if Atlantis demand increases 40%?",
+            "intent": "what_if",
+            "countries": [],
+            "ask_back": True,
+        },
+        {
+            "id": "e2",
+            "question": "What if Alpha grows 50% in Q4 and Beta falls 10% all year?",
+            "intent": "what_if",
+            "countries": ["Alpha", "Beta"],
+            "ask_back": False,
+            "scenario": {
+                "adjustments": [
+                    {"countries": ["Alpha"], "months": [10, 11, 12], "multiplier": 1.5},
+                    {"countries": ["Beta"], "months": [], "multiplier": 0.9},
+                ]
+            },
+        },
+        # Asked back when an answer was expected: the case fails on this score.
+        {
+            "id": "e3",
+            "question": "What if things get busier?",
+            "intent": "what_if",
+            "countries": [],
+            "ask_back": False,
+        },
+    ]
+    path = tmp_path / "edge.jsonl"
+    path.write_text("\n".join(json.dumps(c) for c in cases), encoding="utf-8")
+    rows = evaluate_backend(planner, "offline", load_cases(path), None).set_index("id")
+    assert rows.loc["e1", "asked_back_ok"] and rows.loc["e2", "asked_back_ok"]
+    assert not rows.loc["e3", "asked_back_ok"]
+    assert rows.loc["e2", "scenario_score"] == 1.0
+
+
+def test_a_single_change_written_as_a_list_of_one_scores_as_the_single_field():
+    from staffpilot.evaluation import _scenario_score
+    from staffpilot.scenarios import DemandChange, ScenarioParams
+
+    as_list = ScenarioParams(adjustments=[DemandChange(countries=["Alpha"], months=[3], multiplier=2.0)])
+    assert _scenario_score({"demand_multiplier": 2.0, "months": [3]}, as_list) == 1.0
+
+
+def test_keep_replaces_only_the_test_sets_run_again(planner, tmp_path):
+    main, edge = tmp_path / "main.jsonl", tmp_path / "edge.jsonl"
+    main.write_text(
+        json.dumps(
+            {
+                "id": "a",
+                "question": "How many agents does Alpha need?",
+                "intent": "plan_lookup",
+                "countries": ["Alpha"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    edge.write_text(
+        json.dumps(
+            {
+                "id": "e",
+                "question": "What if Atlantis demand increases 40%?",
+                "intent": "what_if",
+                "countries": [],
+                "ask_back": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+    run_evaluation(planner, ["offline"], {"main": main}, out)
+    results, summary = run_evaluation(planner, ["offline"], {"edge": edge}, out, keep=True)
+    assert sorted(results["split"]) == ["edge", "main"]
+    assert set(summary["split"]) == {"edge", "main"}

@@ -101,7 +101,7 @@ The tests use made up data, so they work before you have the real file:
 python -m pytest -q
 ```
 
-The last line should say `159 passed`. If it does, Python, the solver and every package are working.
+The last line should say `181 passed`. If it does, Python, the solver and every package are working.
 
 ## Step 6: Add the data file
 

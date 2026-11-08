@@ -161,6 +161,11 @@ def _carry_scenario(
     assert base is not None
     countries = update.get("countries", route.countries)
     months = update.get("months", route.months)
+    if base.adjustments and route.scenario is None:
+        # Each change of the list has its own places and months, so a short follow up cannot say which to move.
+        raise ScenarioRangeError(
+            "The last scenario had several changes. Ask the whole question again for the new countries or months."
+        )
     if route.scenario is not None:
         # The question set its own change; only fill the places and months it left out.
         fill = {

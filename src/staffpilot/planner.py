@@ -728,7 +728,9 @@ class Planner:
     # Scenarios
 
     def scenario(self, params: ScenarioParams, policy: str = "optimized") -> ScenarioResult:
-        targets = [c for c in (self.resolve_country(n) for n in params.countries) if c] or self.countries
+        targets = [
+            c for c in (self.resolve_country(n) for n in params.all_countries()) if c
+        ] or self.countries
         ctx = self._scenario_context(params, targets)
         base = self.run(policy)
         rows, plans = [], []
@@ -802,4 +804,15 @@ class Planner:
         multipliers = None
         if params.demand_multiplier != 1.0:
             multipliers = self._scaled_context(params.demand_multiplier, targets, params.months).multipliers
+        if params.adjustments:
+            # Each change scales its own countries and months; where two overlap they multiply.
+            multipliers = {c: f.copy() for c, f in (multipliers or {}).items()}
+            for change in params.adjustments:
+                named = [
+                    c for c in (self.resolve_country(n) for n in change.countries) if c
+                ] or self.countries
+                for country, factors in self._scaled_context(
+                    change.multiplier, named, change.months
+                ).multipliers.items():
+                    multipliers[country] = multipliers.get(country, np.ones(len(factors))) * factors
         return Context(settings, dataset, forecast, multipliers, params.max_hires_per_month)

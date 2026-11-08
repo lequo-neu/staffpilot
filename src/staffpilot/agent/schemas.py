@@ -87,7 +87,7 @@ def repair_route(data: dict) -> tuple[RoutedQuery, list[str]]:
                 repairs.append(f"read {name} = {value} as {value / 100:g}")
     for _ in range(12):
         try:
-            return RoutedQuery.model_validate(data), repairs
+            route = RoutedQuery.model_validate(data)
         except ValidationError as error:
             changed = False
             for problem in error.errors():
@@ -106,4 +106,16 @@ def repair_route(data: dict) -> tuple[RoutedQuery, list[str]]:
                     changed = True
             if not changed:
                 raise
+            continue
+        dropped = [r.removeprefix("dropped scenario.") for r in repairs if r.startswith("dropped scenario.")]
+        if dropped and route.scenario is not None and route.scenario.plain().startswith("Nothing changes"):
+            # The change the question asked for was the field that had to go, so running what is left
+            # would answer a different question. Ask instead.
+            field = dropped[0].replace("_", " ")
+            message = f"That {field} is outside the range the planner accepts."
+            if field.endswith("multiplier"):
+                message += " Multipliers must be between 0.1 and 3, so a change from a 90 percent drop up to three times the forecast."
+            route = route.model_copy(update={"scenario": None, "clarification": message})
+            repairs.append(f"asked back instead of running a scenario without its {field}")
+        return route, repairs
     raise ValueError("router reply could not be repaired")

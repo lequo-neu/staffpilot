@@ -61,6 +61,7 @@ class Case:
     insight_kind: str | None
     source: str | list[str] | None  # one heading, or several that each answer the question
     context: list[str] = field(default_factory=list)  # earlier questions in the same chat
+    ask_back: bool | None = None  # True when the right reply is a question back, False when it is an answer
 
 
 def load_cases(path: Path) -> list[Case]:
@@ -79,9 +80,17 @@ def load_cases(path: Path) -> list[Case]:
                     raw.get("insight_kind"),
                     raw.get("source"),
                     raw.get("context", []),
+                    raw.get("ask_back"),
                 )
             )
     return cases
+
+
+def _changes(items: list[dict[str, Any]]) -> set[tuple]:
+    return {
+        (tuple(sorted(a.get("countries", []))), tuple(sorted(a.get("months", []))), round(a["multiplier"], 2))
+        for a in items
+    }
 
 
 def _scenario_score(expected: dict[str, Any], actual: Any) -> float | None:
@@ -90,10 +99,21 @@ def _scenario_score(expected: dict[str, Any], actual: Any) -> float | None:
     if actual is None:
         return 0.0
     got = actual.model_dump()
+    single = got.get("adjustments") or []
+    if len(single) == 1 and got.get("demand_multiplier") == 1.0 and "adjustments" not in expected:
+        # One change written as a list of one is the same request as the single field.
+        only = single[0]
+        got.update(
+            demand_multiplier=only["multiplier"],
+            months=only["months"] or got["months"],
+            countries=only["countries"] or got["countries"],
+        )
     hits = 0
     for key, want in expected.items():
         have = got.get(key)
-        if isinstance(want, float) and isinstance(have, int | float):
+        if key == "adjustments":
+            hits += _changes(want) == _changes(have or [])
+        elif isinstance(want, float) and isinstance(have, int | float):
             hits += abs(want - have) <= 0.011
         elif isinstance(want, list):
             hits += sorted(want) == sorted(have or [])
@@ -220,6 +240,9 @@ def evaluate_backend(
             "countries_ok": sorted(route.countries) == sorted(case.countries),
             "scenario_score": _scenario_score(case.scenario, route.scenario),
             "insight_ok": (route.insight_kind == case.insight_kind) if case.insight_kind else None,
+            "asked_back_ok": (route.clarification is not None) == case.ask_back
+            if case.ask_back is not None
+            else None,
             "grounded": answer.verified and not answer.fallback_used,
             "fallback": answer.fallback_used,
             "tokens": tokens_in + tokens_out,
@@ -267,6 +290,7 @@ def summarize(results: pd.DataFrame) -> pd.DataFrame:
                 "intent_accuracy": frame["intent_ok"].mean(),
                 "country_accuracy": frame["countries_ok"].mean(),
                 "scenario_accuracy": _mean_or_none(frame, "scenario_score"),
+                "ask_back_accuracy": _mean_or_none(frame, "asked_back_ok"),
                 "grounded_rate": frame["grounded"].mean(),
                 "judge_score": _mean_or_none(frame, "judge_score"),
                 "agent_tool_accuracy": _mean_or_none(frame, "agent_tool_ok"),
@@ -370,7 +394,9 @@ def run_evaluation(
     earlier = out_dir / "cases.csv"
     if keep and earlier.exists():
         kept = pd.read_csv(earlier)
-        kept = kept[~kept["backend"].isin(set(results["backend"]))]
+        # Only the test sets run this time are replaced, so one set can be added without rerunning the rest.
+        ran = set(zip(results["split"], results["backend"], strict=True))
+        kept = kept[[pair not in ran for pair in zip(kept["split"], kept["backend"], strict=True)]]
         log.info("Keeping %d earlier results for %s", len(kept), sorted(set(kept["backend"])))
         results = pd.concat([kept, results], ignore_index=True)
     summary = summarize(results)

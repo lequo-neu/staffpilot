@@ -226,9 +226,10 @@ def _readable(frame: pd.DataFrame) -> pd.DataFrame:
         if any(k in column for k in ("cost", "value")):
             out[column] = out[column].map(charts.money)
         elif "rate" in column:
-            out[column] = out[column].map(lambda v: f"{v:.1%}")
+            out[column] = out[column].map(lambda v: "" if pd.isna(v) else f"{v:.1%}")
         elif pd.api.types.is_float_dtype(out[column]):
-            out[column] = out[column].round(1)
+            # A score a test set does not measure stays empty instead of reading "nan".
+            out[column] = out[column].round(1).astype(object).where(out[column].notna(), "")
     # "active_agents" reads as "Active agents" in the table header.
     out.columns = [str(c).replace("_", " ").capitalize() for c in out.columns]
     return out
@@ -864,6 +865,7 @@ SCENARIO_EXAMPLES = [
     "Sign ups in Germany drop 30% in Q3",
     "Sign ups in the USA rise 20% in Q4",
     "The eligibility threshold in the UK is lowered by 20%",
+    "India grows 50% in Q4 and Brazil falls 10% all year",
 ]
 
 
@@ -971,6 +973,10 @@ def eval_view():
         empty = "No evaluation yet. Run `python -m staffpilot eval`, then open this page again."
         return empty, None, pd.DataFrame(), "", pd.DataFrame(), "", pd.DataFrame()
     summary = pd.read_csv(results / "summary.csv")
+    order = {"main": 0, "holdout": 1, "followups": 2, "edge": 3}
+    summary = summary.sort_values("split", key=lambda s: s.map(order).fillna(9), kind="stable")
+    if "judged_by" in summary:
+        summary["judged_by"] = summary["judged_by"].fillna("")
     holdout = summary[summary["split"] == "holdout"].sort_values("intent_accuracy", ascending=False)
     lead = ""
     if not holdout.empty:
@@ -1008,11 +1014,15 @@ def eval_view():
         "grounded_rate",
         "judge_score",
     ]
+    if "ask_back_accuracy" in summary:
+        # The edge set: questions where the right reply is a question back, and lists of changes.
+        columns.insert(columns.index("grounded_rate"), "ask_back_accuracy")
     columns += ["mean_seconds"] + (["judged_by"] if "judged_by" in summary else [])
     view = summary[columns].rename(
         columns={
             "intent_accuracy": "intent_rate",
             "scenario_accuracy": "scenario_rate",
+            "ask_back_accuracy": "ask_back_rate",
             "mean_seconds": "seconds",
         }
     )

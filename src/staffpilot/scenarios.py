@@ -10,7 +10,34 @@ from dataclasses import dataclass
 from typing import Literal
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class DemandChange(BaseModel):
+    """One change to eligible sign ups, with its own countries and months."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    countries: list[str] = Field(
+        default_factory=list, description="Countries this change applies to. Empty means every country."
+    )
+    months: list[int] = Field(
+        default_factory=list, description="Calendar months (1 to 12) of this change. Empty means all."
+    )
+    multiplier: float = Field(
+        ge=0.1, le=3.0, description="Scale on eligible sign ups, for example 1.5 for a 50 percent rise."
+    )
+
+    @field_validator("months")
+    @classmethod
+    def _calendar_months(cls, months: list[int]) -> list[int]:
+        if any(not 1 <= m <= 12 for m in months):
+            raise ValueError("months must be calendar months 1 to 12")
+        return sorted(set(months))
+
+    def plain(self) -> str:
+        place = "in " + _join(self.countries) if self.countries else "in every country"
+        return f"sign ups {place} {_move(self.multiplier, 'rise', 'fall')}{_month_phrase(self.months)}"
 
 
 class ScenarioParams(BaseModel):
@@ -55,6 +82,21 @@ class ScenarioParams(BaseModel):
     replan: bool = Field(
         True, description="True to reoptimize under the scenario, False to stress the current plan."
     )
+    adjustments: list[DemandChange] = Field(
+        default_factory=list,
+        description=(
+            "Several sign up changes at once, each with its own countries and months, for example India up "
+            "50 percent in Q4 and Brazil down 10 percent all year. Use it only when the question names two or "
+            "more sign up changes; a single change uses demand_multiplier."
+        ),
+    )
+
+    def all_countries(self) -> list[str]:
+        """Every country the scenario touches; empty means all of them."""
+        if any(not a.countries for a in self.adjustments) or (not self.countries and not self.adjustments):
+            return []
+        names = [*self.countries, *(c for a in self.adjustments for c in a.countries)]
+        return list(dict.fromkeys(names))
 
     def plain(self) -> str:
         """The scenario as a manager would say it, for answers and the app."""
@@ -62,6 +104,7 @@ class ScenarioParams(BaseModel):
         changes = []
         if self.demand_multiplier != 1.0:
             changes.append(f"sign ups {_move(self.demand_multiplier, 'rise', 'fall')}{when}")
+        changes += [a.plain() for a in self.adjustments]
         if self.threshold_multiplier != 1.0:
             changes.append(
                 f"the eligibility threshold is {_move(self.threshold_multiplier, 'raised', 'lowered', 'by ')}"
@@ -80,7 +123,12 @@ class ScenarioParams(BaseModel):
             changes.append("the largest budgets are served first")
         if self.initial_pool == "carryover":
             changes.append("late December sign ups are still waiting on 1 January")
-        where = " in " + _join(self.countries) if self.countries else " in every country"
+        if self.adjustments and len(changes) == len(self.adjustments):
+            where = ""  # each sign up change of the list names its own place
+        elif self.countries:
+            where = " in " + _join(self.countries)
+        else:
+            where = " in every country"
         mode = "and we rebuild the plan" if self.replan else "and we keep the current plan"
         if not changes:
             return f"Nothing changes{where}"
@@ -91,6 +139,9 @@ class ScenarioParams(BaseModel):
         if self.demand_multiplier != 1.0:
             months = f" in months {self.months}" if self.months else ""
             parts.append(f"demand x{self.demand_multiplier:g}{months}")
+        for a in self.adjustments:
+            months = f" in months {a.months}" if a.months else ""
+            parts.append(f"demand x{a.multiplier:g} for {', '.join(a.countries) or 'all countries'}{months}")
         if self.threshold_multiplier != 1.0:
             parts.append(f"threshold x{self.threshold_multiplier:g}")
         if self.salary_multiplier != 1.0:

@@ -191,6 +191,10 @@ def update_rows(update: MonthlyUpdate) -> list[dict[str, Any]]:
 
 
 def _shown(value: Any) -> str:
+    if isinstance(value, list) and value and isinstance(value[0], dict) and "multiplier" in value[0]:
+        from staffpilot.scenarios import DemandChange
+
+        return "; ".join(DemandChange(**change).plain() for change in value)
     if isinstance(value, list):
         return ", ".join(str(v) for v in value) or "all"
     return "" if value is None else str(value)

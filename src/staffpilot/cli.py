@@ -309,7 +309,10 @@ def cmd_eval(args: argparse.Namespace) -> None:
         "main": EVAL_DIR / "testset.jsonl",
         "holdout": EVAL_DIR / "holdout.jsonl",
         "followups": EVAL_DIR / "followups.jsonl",
+        "edge": EVAL_DIR / "edge.jsonl",
     }
+    if args.split:
+        testsets = {name: path for name, path in testsets.items() if name in args.split}
     _, summary = run_evaluation(
         Planner(),
         names,
@@ -430,6 +433,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     evaluate.add_argument("--tier", choices=["strong", "fast", "both"], default="both")
     evaluate.add_argument("--skip-agent", action="store_true", help="do not evaluate the create_agent chat")
+    evaluate.add_argument(
+        "--split",
+        action="append",
+        choices=["main", "holdout", "followups", "edge"],
+        help="run only this test set (repeat for several); with --keep the other sets keep their results",
+    )
     evaluate.add_argument(
         "--keep",
         action="store_true",

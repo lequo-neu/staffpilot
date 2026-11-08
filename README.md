@@ -239,10 +239,10 @@ docs/            report, methods, evaluation, presentation, setup and testing gu
 eval/            labelled questions, cached model replies, results
 notebooks/       the executed submission notebook
 src/staffpilot/  planning core, GenAI assistant, web app, command line
-tests/           159 tests on synthetic data
+tests/           181 tests on synthetic data
 ```
 
-`python -m pytest` runs the 159 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
+`python -m pytest` runs the 181 tests in about 20 seconds with no data or key. GitHub Actions runs them with lint, a writing style check and the command line tools on Ubuntu, macOS and Windows with Python 3.11 to 3.13.
 
 ## References
 

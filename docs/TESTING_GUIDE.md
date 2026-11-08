@@ -28,7 +28,7 @@ These run the project's own tests. Run each command and compare the last line.
 
 | Step | Command | Expected |
 |---|---|---|
-| A1 | `python -m pytest -q` | the last line says `159 passed` |
+| A1 | `python -m pytest -q` | the last line says `181 passed` |
 | A2 | `python -m compileall -q src tests scripts` | no output at all |
 | A3 | `ruff check .` | `All checks passed!` |
 | A4 | `python scripts/check_style.py` | `0 finding(s)` |
@@ -233,7 +233,7 @@ Run these and check the results; nothing private may go into the repository.
 |---|---|---|
 | F1 | `git status --short` | only files you meant to change |
 | F2 | `git ls-files \| grep -E "\.env$\|\.xlsx$\|^\.cache/\|^logs/"` | no output |
-| F3 | `python -m pytest -q` | `159 passed` |
+| F3 | `python -m pytest -q` | `181 passed` |
 
 Then commit as described in the README.
 

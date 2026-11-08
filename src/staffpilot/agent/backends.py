@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field, ValidationError
 from staffpilot.agent.schemas import Intent, MemoDraft, RoutedQuery, repair_route
 from staffpilot.agent.tools import ToolOutput
 from staffpilot.config import Settings, load_env_file
-from staffpilot.scenarios import ScenarioParams
+from staffpilot.scenarios import DemandChange, ScenarioParams
 
 
 log = logging.getLogger(__name__)
@@ -194,12 +194,36 @@ def _find_countries(text: str, countries: list[str]) -> list[str]:
     return found
 
 
+_MONTH_WORD = "|".join(sorted([*FULL_MONTHS, *SHORT_MONTHS], key=len, reverse=True))
+_RANGES = (
+    re.compile(rf"\bbetween ({_MONTH_WORD})\b(?:\s+\d{{4}})? and ({_MONTH_WORD})\b"),
+    re.compile(rf"\b({_MONTH_WORD})\b(?:\s+\d{{4}})?\s*(?:to|through|thru|until|till|-)\s*({_MONTH_WORD})\b"),
+)
+HALVES = {r"\b(?:first|1st) half\b|\bh1\b": range(1, 7), r"\b(?:second|2nd) half\b|\bh2\b": range(7, 13)}
+
+
+def _month_number(word: str) -> int:
+    return FULL_MONTHS.get(word) or SHORT_MONTHS[word]
+
+
+def _month_ranges(text: str) -> list[tuple[int, int]]:
+    """Month ranges such as "from October through December", as (first, last) numbers."""
+    lowered = text.lower()
+    return [(_month_number(a), _month_number(b)) for pattern in _RANGES for a, b in pattern.findall(lowered)]
+
+
 def _find_months(text: str) -> list[int]:
     lowered = text.lower()
     months: set[int] = set()
     for quarter, values in QUARTERS.items():
         if re.search(rf"\b{quarter}\b", lowered):
             months.update(values)
+    for pattern, values in HALVES.items():
+        if re.search(pattern, lowered):
+            months.update(values)
+    for first, last in _month_ranges(text):
+        if first <= last:
+            months.update(range(first, last + 1))
     for name, number in FULL_MONTHS.items():
         if name == "may":
             # "may" is usually a verb; only count it with a clear date context.
@@ -211,6 +235,101 @@ def _find_months(text: str) -> list[int]:
         if re.search(rf"\b{abbreviation}\b", lowered):
             months.add(number)
     return sorted(months)
+
+
+_TIMES = {r"\bdoubl(?:e|es|ed|ing)\b": 2.0, r"\btripl(?:e|es|ed|ing)\b": 3.0, r"\bhalv(?:e|es|ed|ing)\b": 0.5}
+
+
+def _level(text: str) -> float | None:
+    """A change written as a level, not a rise or fall: "doubles", "120% demand", "80 percent of forecast"."""
+    for pattern, factor in _TIMES.items():
+        if re.search(pattern, text):
+            return factor
+    match = re.search(
+        r"(\d+(?:\.\d+)?)\s*(?:%|percent)\s+(?:of\s+)?(?:the\s+)?(?:demand|forecast|sign\s?ups?|signups?)\b",
+        text,
+    )
+    return float(match.group(1)) / 100 if match else None
+
+
+_ALL_YEAR = re.compile(r"\b(?:all|the whole|the full|the entire) year\b|\bevery month\b|\byear round\b")
+_SEPARATOR = re.compile(r"\s*(?:;|,|\band\b|\bwhile\b|\bbut\b)\s*")
+ONE_AT_A_TIME = (
+    "I can run several sign up changes at once, but not this mix. Ask about each change on its own, "
+    "for example: sign ups in India rise 50 percent in Q4."
+)
+
+
+def _change_sizes(text: str) -> list[str]:
+    """Every size of change in the text: percents and level words such as "doubles"."""
+    lowered = text.lower()
+    sizes = re.findall(r"\d+(?:\.\d+)?\s*(?:%|percent)", lowered)
+    return sizes + [p for p in _TIMES if re.search(p, lowered)]
+
+
+def _offline_changes(text: str, countries: list[str]) -> tuple[ScenarioParams | None, str | None]:
+    """Read a question with several sign up changes, such as "India grows 50% in Q4 and Brazil falls 10% all year".
+
+    The question is cut into parts with one size of change each. A part that names no country keeps the
+    country of the part before it ("Germany rises 30% in Q4 and falls 10% in Q1"). Anything the parts do
+    not settle is asked back rather than guessed: a change that is not about sign ups, or months named for
+    one change but not for another.
+    """
+    parts: list[str] = []
+    for piece in _SEPARATOR.split(text):
+        if parts and _change_sizes(piece) and _change_sizes(parts[-1]):
+            parts.append(piece)
+        elif parts:
+            parts[-1] += " and " + piece
+        else:
+            parts.append(piece)
+    changes: list[DemandChange] = []
+    named_months: list[bool] = []
+    place: list[str] = []
+    for part in parts:
+        lowered = part.lower()
+        if any(
+            w in lowered
+            for w in ("threshold", "salar", "wage", "uplift", "capacity", "hire", "served", "service")
+        ):
+            return None, ONE_AT_A_TIME
+        sign, pct = _direction(part), _percent(lowered)
+        factor = 1 + sign * pct if pct is not None and sign else _level(lowered)
+        if factor is None:
+            return None, ONE_AT_A_TIME
+        # A part starts mid sentence, so a leading capital is a name, not the start of a sentence.
+        unknown = _unknown_places(f"and {part}", countries)
+        if unknown and not _find_countries(part, countries):
+            return (
+                None,
+                f"I do not have data for {unknown[0]}. The countries in the data are {', '.join(countries)}.",
+            )
+        place = _find_countries(part, countries) or place
+        months = _find_months(part)
+        named_months.append(bool(months) or bool(_ALL_YEAR.search(lowered)))
+        try:
+            changes.append(DemandChange(countries=place, months=months, multiplier=round(factor, 4)))
+        except ValidationError as error:
+            return None, _range_message(error)
+    if any(named_months) and not all(named_months):
+        return None, (
+            "Which months does each change cover? For example: India grows 50 percent in Q4 and Brazil falls "
+            "10 percent all year."
+        )
+    return ScenarioParams(adjustments=changes), None
+
+
+def _crossing_range(text: str) -> str | None:
+    """A question about a period that runs past December, which one planning year cannot hold."""
+    for first, last in _month_ranges(text):
+        if first > last:
+            names = list(FULL_MONTHS)
+            return (
+                f"The plan covers one calendar year, so {names[first - 1].capitalize()} to "
+                f"{names[last - 1].capitalize()} runs into the next year. Ask about months within the year, "
+                "for example October to December."
+            )
+    return None
 
 
 def _percent(text: str) -> float | None:
@@ -241,6 +360,8 @@ def _offline_scenario(question: str, countries: list[str], months: list[int]) ->
     pct = _percent(q)
     sign = _direction(q)
     factor = 1 + sign * pct if pct is not None and sign else None
+    if factor is None:
+        factor = _level(q)
     fields: dict[str, Any] = {"countries": countries, "months": months}
     if any(w in q for w in ("keep the current plan", "without replanning", "current plan", "stress")):
         fields["replan"] = False
@@ -492,6 +613,22 @@ def _insight_kind(q: str) -> str:
     return "volatility"
 
 
+def _scenario_action(facts: dict[str, float], same_service: bool) -> list[str]:
+    """One closing line on what to do, chosen from the direction of the change; it holds no number."""
+    change = facts.get("scenario.avg_active_scenario", 0.0) - facts.get("scenario.avg_active_base", 0.0)
+    if change >= 0.5:
+        return [
+            "Decide the hires a month early: a new agent needs a month of ramp up before taking advertisers."
+        ]
+    if change <= -0.5:
+        return [
+            "Give the notices a month early: an agent under notice is paid for that month but takes no new advertisers."
+        ]
+    if same_service:
+        return ["The planned team absorbs the change, so no extra hiring or notice is needed."]
+    return []
+
+
 class OfflineBackend:
     """Keyword router and template writer. Deterministic and free."""
 
@@ -522,6 +659,11 @@ class OfflineBackend:
             clarification = (
                 f"I do not have data for {unknown[0]}. The countries in the data are {', '.join(countries)}."
             )
+        elif intent == Intent.what_if and (crossing := _crossing_range(text)):
+            # A request is never changed silently: a period past December is asked about, not cut.
+            scenario, clarification = None, crossing
+        elif intent == Intent.what_if and len(_change_sizes(text)) > 1:
+            scenario, clarification = _offline_changes(text, countries)
         elif intent == Intent.what_if and scenario is None and clarification is None:
             clarification = (
                 "Which input should change, and by how much? For example: sign ups drop 30 percent in Q3."
@@ -702,6 +844,7 @@ def template_answer(route: RoutedQuery, outputs: list[ToolOutput], facts: dict[s
                 "Headcount moves from about {{scenario.avg_active_base}} to {{scenario.avg_active_scenario}} agents in an "
                 f"average month, and {service}."
             )
+            lines += _scenario_action(out.facts, same)
         elif out.name == "sensitivity":
             lines.append(
                 "If sign ups come in a fifth below forecast, rebuilding the plan earns {{demand_80.replanned.net_value}} "
@@ -740,8 +883,11 @@ Intents:
 * rules: questions about the case rules, assumptions or metric definitions
 * out_of_scope: anything else
 For what_if fill `scenario`. Use multipliers: a 30 percent drop is 0.7, a 20 percent rise is 1.2. Quarters map to months
-(Q3 is 7, 8, 9). Set replan to false only when the user wants to keep the current plan. Copy country names exactly as
-listed. Ask a clarification only if the request cannot be acted on."""
+(Q3 is 7, 8, 9). When the question names two or more sign up changes, each with its own countries or months, put one
+item per change in scenario.adjustments and leave demand_multiplier at 1. Set replan to false only when the user wants
+to keep the current plan. Copy country names exactly as listed. Never change what was asked to make it fit: ask a
+clarification instead when a country is not in the data, a period runs past December, a change is outside 0.1 to 3
+times, or the question gives no size of change."""
 
 HISTORY_PROMPT = """Earlier in this conversation:
 {history}

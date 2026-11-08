@@ -1,0 +1,11 @@
+{"id": "e01", "question": "What if Atlantis demand increases 40%?", "intent": "what_if", "countries": [], "ask_back": true}
+{"id": "e02", "question": "What if Japan sign ups increase 15% from October 2026 to March 2027?", "intent": "what_if", "countries": ["Japan"], "ask_back": true}
+{"id": "e03", "question": "What if Brazil demand grows 400%?", "intent": "what_if", "countries": ["Brazil"], "ask_back": true}
+{"id": "e04", "question": "What if things get a lot busier next year?", "intent": "what_if", "countries": [], "ask_back": true}
+{"id": "e05", "question": "What happens to the plan if demand is higher?", "intent": "what_if", "countries": [], "ask_back": true}
+{"id": "e06", "question": "What if India grows 50% in Q4 and Brazil falls 10% all year?", "intent": "what_if", "countries": ["India", "Brazil"], "ask_back": false, "scenario": {"adjustments": [{"countries": ["India"], "months": [10, 11, 12], "multiplier": 1.5}, {"countries": ["Brazil"], "months": [], "multiplier": 0.9}]}}
+{"id": "e07", "question": "What if demand in France, Italy and Spain drops 25% in the first half of the year and Germany rises 10% in Q4?", "intent": "what_if", "countries": ["France", "Italy", "Spain", "Germany"], "ask_back": false, "scenario": {"adjustments": [{"countries": ["France", "Italy", "Spain"], "months": [1, 2, 3, 4, 5, 6], "multiplier": 0.75}, {"countries": ["Germany"], "months": [10, 11, 12], "multiplier": 1.1}]}}
+{"id": "e08", "question": "What if Vietnam's demand doubles in March?", "intent": "what_if", "countries": ["Vietnam"], "ask_back": false, "scenario": {"demand_multiplier": 2.0, "months": [3]}}
+{"id": "e09", "question": "What if Germany sign ups increase 30% from October through December?", "intent": "what_if", "countries": ["Germany"], "ask_back": false, "scenario": {"demand_multiplier": 1.3, "months": [10, 11, 12]}}
+{"id": "e10", "question": "What happens if all countries experience 120% demand?", "intent": "what_if", "countries": [], "ask_back": false, "scenario": {"demand_multiplier": 1.2, "months": []}}
+{"id": "e11", "question": "What if United States and United Kingdom demand rise 10%?", "intent": "what_if", "countries": ["USA", "UK"], "ask_back": false, "scenario": {"demand_multiplier": 1.1, "months": []}}
