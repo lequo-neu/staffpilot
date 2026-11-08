@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from pydantic import ValidationError
 
-from staffpilot import accounts, audit, cache, charts, checks
+from staffpilot import accounts, audit, cache, charts, checks, manager
 from staffpilot.agent import StaffPilot
 from staffpilot.agent.catalog import usable_models, working_default
 from staffpilot.agent.facts import checked_numbers
@@ -50,15 +50,17 @@ HOME = "This year"
 # it follows the manager's year: plan before it starts, update every month.
 NAV_GROUPS = [
     ("", ["Assistant", HOME]),
-    ("Before the year starts", ["Data", "Plan", "Scenario", "Memo"]),
+    ("Before the year starts", ["Data", "Country inputs", "Plan", "Compare policies", "Scenario", "Memo"]),
     ("Every month", ["Monthly update", "Decision log"]),
     ("Behind the numbers", ["Evaluation"]),
 ]
 PAGES = [page for _, names in NAV_GROUPS for page in names]
 # The page that comes next in the manager's year, and why.
 NEXT = {
-    "Data": ("Plan", "Next: set the goal and approve."),
-    "Plan": ("Scenario", "Next: stress test the plan."),
+    "Data": ("Country inputs", "Next: see each country's inputs and the assumptions."),
+    "Country inputs": ("Plan", "Next: set the goal and approve."),
+    "Plan": ("Compare policies", "Next: see the other policies and the sign up risk."),
+    "Compare policies": ("Scenario", "Next: stress test the plan."),
     "Scenario": ("Memo", "Next: brief the countries."),
     "Memo": (HOME, "The plan for the year is ready."),
     "Monthly update": ("Decision log", "Next: see what changed."),
@@ -870,8 +872,13 @@ SCENARIO_EXAMPLES = [
 
 
 def run_scenario(
-    params_json: str, proposal: dict | None = None, request: gr.Request | None = None, record: bool = True
+    params_json: str,
+    proposal: dict | None = None,
+    request: gr.Request | None = None,
+    record: bool = True,
+    policy: str | None = None,
 ):
+    """Run a scenario against the plan. `policy` picks the service goal; None keeps the planner's default."""
     try:
         params = ScenarioParams.model_validate_json(params_json)
     except ValidationError as error:
@@ -881,7 +888,7 @@ def run_scenario(
         )
         return f"Those parameters are not valid ({problems}). Edit them and run again.", None, pd.DataFrame()
     p = planner()
-    result = p.scenario(params)
+    result = p.scenario(params) if policy is None else p.scenario(params, policy)
     t = result.totals()
     proposal = proposal or {}
     proposed = ScenarioParams.model_validate(proposal["params"]) if proposal.get("params") else None
@@ -900,8 +907,10 @@ def run_scenario(
         f"**{charts.money(t['net_value_scenario'])}** ({sign}{charts.money(abs(change))}). "
         f"Service goes from {t['service_rate_base']:.1%} to {t['service_rate_scenario']:.1%}."
     )
+    if policy is not None:
+        summary += f" Staffing policy: {GOAL_NAMES.get(policy, policy)}."
     affected = result.comparison["country"].tolist()
-    base = p.run(RECOMMENDED_POLICY).plan_table()
+    base = p.run(policy or RECOMMENDED_POLICY).plan_table()
     where = ", ".join(affected) if len(affected) <= 3 else f"{len(affected)} countries"
     figure = charts.scenario_lines(
         base[base["country"].isin(affected)], result.plan, f"{where}: headcount under the scenario", change
@@ -920,6 +929,99 @@ def run_scenario(
     worse = list(shown["net_value_change"] < 0)
     styled = _tinted(_readable(shown), {"Net value change": worse}, {"Net value change": "red"})
     return summary, components.sharp(figure), styled
+
+
+# Manager tools without a language model (see staffpilot.manager)
+
+
+def compare_view(scope: str):
+    """Every staffing policy for the chosen countries: the trade offs, a chart and the table."""
+    frame = manager.policy_comparison(planner(), [] if scope == "All countries" else [scope])
+    text = "\n".join(f"* {line}" for line in manager.policy_takeaways(frame))
+    return text, components.sharp(charts.policy_bars(frame, RECOMMENDED_POLICY)), manager.policy_table(frame)
+
+
+def sensitivity_view(scope: str):
+    """The recommended plan with sign ups 30% below and above the forecast, kept or rebuilt."""
+    frame = manager.sensitivity(planner(), [] if scope == "All countries" else [scope])
+    text = "\n".join(f"* {line}" for line in manager.sensitivity_takeaways(frame))
+    return text, components.sharp(charts.sensitivity_panels(frame)), manager.sensitivity_table(frame)
+
+
+def open_compare(name: str, seen: bool, scope: str):
+    """Fill Compare policies the first time it opens; the scope list refreshes it after that."""
+    if name != "Compare policies" or seen:
+        return seen, gr.update(), gr.update(), gr.update()
+    return True, *compare_view(scope)
+
+
+def open_sensitivity(name: str, seen: bool, scope: str):
+    if name != "Compare policies" or seen:
+        return seen, gr.update(), gr.update(), gr.update()
+    return True, *sensitivity_view(scope)
+
+
+def _builder_params(
+    countries, period, months, percent, countries2, period2, months2, percent2, mode
+) -> ScenarioParams:
+    first = manager.demand_change(countries, period, months, percent)
+    second = manager.demand_change(countries2, period2, months2, percent2) if float(percent2 or 0) else None
+    return manager.build_params(first, second, rebuild=mode != manager.KEEP)
+
+
+def builder_preview(*controls) -> str:
+    """The scenario as chosen, in words, so the manager can check it before running."""
+    *choices, policy = controls
+    try:
+        params = _builder_params(*choices)
+    except manager.ScenarioChoiceError as error:
+        return f"**Not ready yet:** {error}"
+    except ValidationError:
+        return "**Not ready yet:** check the change in sign ups."
+    return f"**You chose:** {params.plain()}. Staffing policy: {GOAL_NAMES.get(policy, policy)}."
+
+
+def run_builder(*controls, request: gr.Request | None = None):
+    """Run the chosen scenario with the planner; no language model reads anything."""
+    *choices, policy = controls
+    try:
+        params = _builder_params(*choices)
+    except manager.ScenarioChoiceError as error:
+        return f"**Not ready yet:** {error}", None, pd.DataFrame()
+    except ValidationError:
+        return "**Not ready yet:** check the change in sign ups.", None, pd.DataFrame()
+    proposal = {"params": None, "reader": "manager (step by step)", "guardrails": []}
+    return run_scenario(params.model_dump_json(), proposal, request, policy=policy)
+
+
+MONEY_COLUMNS = ("Agent salary a year", "Eligibility threshold", "Median eligible budget")
+
+
+def country_view():
+    """The country inputs, with countries short of their busiest 60 days in amber, and the assumptions."""
+    p = planner()
+    frame = manager.country_inputs(p)
+    short = list(frame["January team against that need"] < 1)
+    counts = [c for c in frame.columns if c.startswith(("Eligible sign ups", "Agents"))]
+    styled = frame.style.format(
+        {
+            **{c: "${:,.0f}" for c in MONEY_COLUMNS},
+            **{c: "{:,.0f}" for c in counts},
+            "Share eligible": "{:.1%}",
+            "January team against that need": "{:.1f} times",
+        }
+    ).apply(
+        lambda column: [TINT["amber"] if flag else "" for flag in short]
+        if column.name in {"Country", "January team against that need"}
+        else [""] * len(column)
+    )
+    return manager.country_summary(frame), styled, manager.assumptions(p)
+
+
+def open_countries(name: str, seen: bool):
+    if name != "Country inputs" or seen:
+        return seen, gr.update(), gr.update(), gr.update()
+    return True, *country_view()
 
 
 def memo(country: str, backend: str):
@@ -1155,8 +1257,10 @@ def log_view(choice: str = "All decisions"):
 PAGE_TEXT = {
     HOME: "Where you are in the year, and what to do next.",
     "Data": "The sign up history the plan is built on.",
+    "Country inputs": "Each country's salary, threshold, team and sign ups, and the assumptions. Read only.",
     "Plan": "Choose a service goal, check the plan, approve it.",
-    "Scenario": "Describe a change, check how it was read, run it.",
+    "Compare policies": "Every staffing policy side by side, and what happens if sign ups miss the forecast.",
+    "Scenario": "Describe a change in words, or choose it step by step, then run it.",
     "Memo": "A one page memo for each country manager.",
     "Monthly update": "Enter the real numbers, check them, plan the rest of the year.",
     "Decision log": "What was proposed, what changed it, what was applied.",
@@ -1174,6 +1278,9 @@ TIPS = {
     "Score my plan": "Runs your headcount through the same simulator and compares it with the optimized plan",
     "Approve the update": "Saves a CSV named by country, month and time, and logs every change",
     "Scenario": "Test a change, such as fewer sign ups or a hiring cap",
+    "Compare policies": "Every staffing policy side by side, and sign ups 30% below or above the forecast",
+    "Country inputs": "Salaries, thresholds, January teams, sign ups and the assumptions, read only",
+    "Run Scenario": "Runs the planner on your choices; no language model or API key is needed",
     "Memo": "Write a staffing memo for one country",
     "Data": "Data quality checks and patterns in the sign ups",
     "Evaluation": "Assistant accuracy and the run history",
@@ -1454,6 +1561,31 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                             manual_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
                 next_row("Plan")
 
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Compare policies"]:
+                with gr.Row(elem_classes="sp-toolbar"):
+                    compare_scope = gr.Dropdown(
+                        ["All countries", *p.countries], value="All countries", label="Country", scale=3
+                    )
+                gr.Markdown(
+                    "Every policy runs through the same optimizer, rules and day by day simulator as the plan. "
+                    "The first look at all countries takes about a minute; after that it opens at once.",
+                    elem_classes="sp-note",
+                )
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.HTML('<div class="sp-panel-title">Staffing policies side by side</div>')
+                    compare_text = gr.Markdown(elem_classes="sp-prose")
+                    compare_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                    compare_table = gr.Dataframe(show_label=False, interactive=False)
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.HTML(
+                        '<div class="sp-panel-title">If sign ups miss the forecast: '
+                        "30% fewer, as forecast, 30% more</div>"
+                    )
+                    sens_text = gr.Markdown(elem_classes="sp-prose")
+                    sens_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                    sens_table = gr.Dataframe(show_label=False, interactive=False)
+                next_row("Compare policies")
+
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"]:
                 with gr.Row(equal_height=True, elem_classes="sp-even"):
                     with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
@@ -1505,39 +1637,106 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 next_row("Monthly update")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Scenario"]:
-                with gr.Row(equal_height=True, elem_classes="sp-even"):
-                    with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
-                        text = gr.Textbox(
-                            label="Describe the change", value="Sign ups in Germany drop 30% in Q3"
-                        )
-                        with gr.Row():
-                            read_btn = gr.Button("Read the scenario")
-                            run_btn = gr.Button("Run the scenario", variant="primary")
-                        examples = [
-                            gr.Button(example, size="sm", elem_classes="sp-example")
-                            for example in SCENARIO_EXAMPLES
-                        ]
-                        understood = gr.Markdown(elem_classes="sp-note")
-                        with gr.Accordion("Edit the parameters", open=False, elem_classes="sp-block"):
-                            params = gr.Code(language="json", show_label=False)
-                        proposal = gr.State({})
-                    with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
-                        summary = gr.Markdown(
-                            "Read a scenario, then run it.",
-                            elem_classes="sp-prose",
-                        )
-                        scenario_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                        diff = gr.Dataframe(
-                            value=pd.DataFrame(
-                                columns=[
-                                    "Country",
-                                    "Agents now",
-                                    "Agents with change",
-                                    "Net value change",
-                                ]
-                            ),
-                            label="Current plan against the scenario",
-                        )
+                with gr.Tabs(elem_classes="sp-tabs"):
+                    with gr.Tab("Describe in words"), gr.Row(equal_height=True, elem_classes="sp-even"):
+                        with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                            text = gr.Textbox(
+                                label="Describe the change", value="Sign ups in Germany drop 30% in Q3"
+                            )
+                            with gr.Row():
+                                read_btn = gr.Button("Read the scenario")
+                                run_btn = gr.Button("Run the scenario", variant="primary")
+                            examples = [
+                                gr.Button(example, size="sm", elem_classes="sp-example")
+                                for example in SCENARIO_EXAMPLES
+                            ]
+                            understood = gr.Markdown(elem_classes="sp-note")
+                            with gr.Accordion("Edit the parameters", open=False, elem_classes="sp-block"):
+                                params = gr.Code(language="json", show_label=False)
+                            proposal = gr.State({})
+                        with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                            summary = gr.Markdown(
+                                "Read a scenario, then run it.",
+                                elem_classes="sp-prose",
+                            )
+                            scenario_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                            diff = gr.Dataframe(
+                                value=pd.DataFrame(
+                                    columns=[
+                                        "Country",
+                                        "Agents now",
+                                        "Agents with change",
+                                        "Net value change",
+                                    ]
+                                ),
+                                label="Current plan against the scenario",
+                            )
+                    with gr.Tab("Choose step by step"), gr.Row(equal_height=True, elem_classes="sp-even"):
+                        with gr.Column(scale=2, min_width=300, elem_classes="sp-panel"):
+                            gr.Markdown(
+                                "Choose the change from the lists; no language model or API key is used.",
+                                elem_classes="sp-note",
+                            )
+                            b_countries = gr.Dropdown(
+                                p.countries,
+                                value=[],
+                                multiselect=True,
+                                label="Countries",
+                                info="Leave empty for every country",
+                            )
+                            b_period = gr.Dropdown(
+                                list(manager.PERIODS), value="Q4 (October to December)", label="When"
+                            )
+                            b_months = gr.Dropdown(
+                                MONTH_NAMES, value=[], multiselect=True, label="Months", visible=False
+                            )
+                            b_percent = gr.Slider(
+                                -50,
+                                100,
+                                value=20,
+                                step=5,
+                                label="Change in eligible sign ups (percent)",
+                                info="Below zero means fewer sign ups",
+                            )
+                            with gr.Accordion(
+                                "Add a second change (optional)", open=False, elem_classes="sp-block"
+                            ):
+                                b2_countries = gr.Dropdown(
+                                    p.countries,
+                                    value=[],
+                                    multiselect=True,
+                                    label="Countries",
+                                    info="Leave empty for every country",
+                                )
+                                b2_period = gr.Dropdown(list(manager.PERIODS), value="All year", label="When")
+                                b2_months = gr.Dropdown(
+                                    MONTH_NAMES, value=[], multiselect=True, label="Months", visible=False
+                                )
+                                b2_percent = gr.Slider(
+                                    -50,
+                                    100,
+                                    value=0,
+                                    step=5,
+                                    label="Change in eligible sign ups (percent)",
+                                    info="Leave at 0 to skip this change",
+                                )
+                            b_policy = gr.Dropdown(GOALS, value=RECOMMENDED_POLICY, label="Staffing policy")
+                            b_mode = gr.Radio(
+                                [manager.REBUILD, manager.KEEP], value=manager.REBUILD, label="How to respond"
+                            )
+                            b_understood = gr.Markdown(elem_classes="sp-note")
+                            b_run = gr.Button("Run Scenario", variant="primary")
+                        with gr.Column(scale=3, min_width=320, elem_classes="sp-panel"):
+                            b_summary = gr.Markdown(
+                                "Choose a change, then run the scenario.", elem_classes="sp-prose"
+                            )
+                            b_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
+                            b_diff = gr.Dataframe(
+                                value=pd.DataFrame(
+                                    columns=["Country", "Agents now", "Agents with change", "Net value change"]
+                                ),
+                                label="Current plan against the scenario",
+                            )
                 next_row("Scenario")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Memo"]:
@@ -1569,6 +1768,26 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     with gr.Accordion("Every check, as a table", open=False, elem_classes="sp-block"):
                         quality_table = gr.Dataframe(show_label=False)
                 next_row("Data")
+
+            with gr.Column(visible=False, elem_classes="sp-page") as pages["Country inputs"]:
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.HTML('<div class="sp-panel-title">Country inputs</div>')
+                    country_text = gr.Markdown(elem_classes="sp-prose")
+                    country_table = gr.Dataframe(show_label=False, interactive=False)
+                    gr.Markdown(
+                        "Read only, straight from the dataset. Sign ups count only when the budget is above "
+                        "the country threshold. To test another salary or threshold, use the Scenario page.",
+                        elem_classes="sp-note",
+                    )
+                with gr.Column(elem_classes="sp-panel"):
+                    gr.HTML('<div class="sp-panel-title">Assumptions behind every plan</div>')
+                    assumption_table = gr.Dataframe(show_label=False, interactive=False, wrap=True)
+                    gr.Markdown(
+                        "Fixed in this version. The rules come from the brief; the rest are the choices the brief "
+                        "leaves open, each explained in the method notes.",
+                        elem_classes="sp-note",
+                    )
+                next_row("Country inputs")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Evaluation"]:
                 with gr.Column(elem_classes="sp-panel"):
@@ -1688,6 +1907,28 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
             [summary, scenario_plot, diff],
         )
         run_btn.click(run_scenario, [params, proposal], [summary, scenario_plot, diff])
+        # Step by step scenario: the choice is shown in words as it changes, and runs without a model.
+        b_controls = [b_countries, b_period, b_months, b_percent, b2_countries, b2_period, b2_months, b2_percent]
+        b_inputs = [*b_controls, b_mode, b_policy]
+        for period, months in ((b_period, b_months), (b2_period, b2_months)):
+            period.change(lambda v: gr.update(visible=v == manager.CUSTOM), period, months)
+        for control in b_inputs:
+            control.change(builder_preview, b_inputs, b_understood)
+        demo.load(builder_preview, b_inputs, b_understood)
+        b_run.click(run_builder, b_inputs, [b_summary, b_plot, b_diff])
+        # Compare policies and Country inputs fill the first time they open.
+        compare_out = [compare_text, compare_plot, compare_table]
+        sens_out = [sens_text, sens_plot, sens_table]
+        compare_seen, sens_seen, countries_seen = gr.State(False), gr.State(False), gr.State(False)
+        nav.change(open_compare, [nav, compare_seen, compare_scope], [compare_seen, *compare_out]).then(
+            open_sensitivity, [nav, sens_seen, compare_scope], [sens_seen, *sens_out]
+        )
+        compare_scope.change(compare_view, compare_scope, compare_out).then(
+            sensitivity_view, compare_scope, sens_out
+        )
+        nav.change(
+            open_countries, [nav, countries_seen], [countries_seen, country_text, country_table, assumption_table]
+        )
         memo_btn.click(memo, [memo_country, backend], [memo_text, memo_plot])
         memo_seen = gr.State(False)
         nav.change(open_memo, [nav, memo_seen, memo_country, backend], [memo_seen, memo_text, memo_plot])
