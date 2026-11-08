@@ -44,15 +44,15 @@ def policy_table(frame: pd.DataFrame) -> pd.DataFrame:
         {
             "Policy": frame["name"],
             "Net value": frame["net_value"].map(charts.money),
-            "Against the January team": frame.get("net_value_vs_hold", pd.Series(0.0, frame.index)).map(
+            "vs January team": frame.get("net_value_vs_hold", pd.Series(0.0, frame.index)).map(
                 _signed_money
             ),
-            "Salaries and notices": frame["total_cost"].map(charts.money),
-            "Average agents": frame["avg_active"].round().astype(int),
-            "Hires": frame["hires"].round().astype(int),
-            "Notices": frame["notices"].round().astype(int),
-            "Eligible served": frame["service_rate"].map(lambda v: f"{v:.1%}"),
-            "Average wait (days)": frame["mean_wait_days"].round(1),
+            "Cost": frame["total_cost"].map(charts.money),
+            "Avg agents": frame["avg_active"].map(_count),
+            "Hires": frame["hires"].map(_count),
+            "Notices": frame["notices"].map(_count),
+            "Served": frame["service_rate"].map(lambda v: f"{v:.1%}"),
+            "Avg wait (days)": frame["mean_wait_days"].round(1),
         }
     )
     return shown.reset_index(drop=True)
@@ -80,9 +80,14 @@ def policy_takeaways(frame: pd.DataFrame) -> list[str]:
             cost = "costs almost nothing"
         else:
             cost = f"{'costs' if price > 0 else 'adds'} {charts.money(abs(price))} of net value"
+        served, opt_served = f"{rec['service_rate']:.1%}", f"{opt['service_rate']:.1%}"
+        if served == opt_served:
+            service = f"both serve {served}, so here the promise is a guarantee rather than a change"
+        else:
+            service = f"it serves {served} instead of {opt_served}. This is why it is recommended"
         lines.append(
-            f"**The service promise:** serving at least 98% of eligible advertisers {cost} against profit only, "
-            f"and serves {rec['service_rate']:.1%} instead of {opt['service_rate']:.1%}. This is why it is recommended."
+            f"**The service promise:** serving at least 98% of eligible advertisers {cost} against profit only; "
+            f"{service}."
         )
     if "hold" in rows.index:
         hold = rows.loc["hold"]
@@ -108,6 +113,10 @@ def policy_takeaways(frame: pd.DataFrame) -> list[str]:
             f"and earns {_gap(peak['net_value'] - rec['net_value'])}."
         )
     return lines
+
+
+def _count(value: float) -> str:
+    return f"{value:,.0f}"
 
 
 def _signed_money(value: float) -> str:
@@ -173,13 +182,13 @@ def sensitivity_table(frame: pd.DataFrame) -> pd.DataFrame:
         rows.append(
             {
                 "Sign ups": volume_label(scale),
-                "Net value, plan kept": charts.money(k["net_value"]),
-                "Net value, plan rebuilt": charts.money(r["net_value"]),
+                "Kept: net value": charts.money(k["net_value"]),
+                "Rebuilt: net value": charts.money(r["net_value"]),
                 "Gain from rebuilding": _signed_money(r["net_value"] - k["net_value"]),
-                "Served, plan kept": f"{k['service_rate']:.1%}",
-                "Served, plan rebuilt": f"{r['service_rate']:.1%}",
-                "Average wait (days), plan kept": round(float(k["mean_wait_days"]), 1),
-                "Average agents, plan rebuilt": round(float(r["avg_active"])),
+                "Kept: served": f"{k['service_rate']:.1%}",
+                "Rebuilt: served": f"{r['service_rate']:.1%}",
+                "Kept: wait (days)": round(float(k["mean_wait_days"]), 1),
+                "Rebuilt: agents": _count(r["avg_active"]),
             }
         )
     return pd.DataFrame(rows)
@@ -294,24 +303,24 @@ def country_inputs(p: Planner) -> pd.DataFrame:
     frame = pd.DataFrame(
         {
             "Country": by_country.index,
-            "Agent salary a year": by_country["salary"].to_numpy(),
-            "Eligibility threshold": by_country["threshold"].to_numpy(),
-            "Agents on 1 January": by_country["agents"].astype(int).to_numpy(),
+            "Salary": by_country["salary"].to_numpy(),
+            "Threshold": by_country["threshold"].to_numpy(),
+            "January agents": by_country["agents"].astype(int).to_numpy(),
         }
     )
     for year in per_year.columns:
-        frame[f"Eligible sign ups {year}"] = per_year[year].reindex(by_country.index, fill_value=0).to_numpy()
+        frame[f"Eligible {year}"] = per_year[year].reindex(by_country.index, fill_value=0).to_numpy()
     frame["Share eligible"] = by_country["eligible_rate"].to_numpy()
-    frame["Median eligible budget"] = by_country["median_eligible_budget"].to_numpy()
-    frame["Agents the busiest 60 days need"] = by_country["peak_need"].round().astype(int).to_numpy()
-    frame["January team against that need"] = by_country["staff_to_need"].to_numpy()
+    frame["Median budget"] = by_country["median_eligible_budget"].to_numpy()
+    frame["Peak need"] = by_country["peak_need"].round().astype(int).to_numpy()
+    frame["Team vs need"] = by_country["staff_to_need"].to_numpy()
     return frame.sort_values("Country").reset_index(drop=True)
 
 
 def country_summary(frame: pd.DataFrame) -> str:
-    agents = int(frame["Agents on 1 January"].sum())
-    need = int(frame["Agents the busiest 60 days need"].sum())
-    short = frame.loc[frame["January team against that need"] < 1, "Country"].tolist()
+    agents = int(frame["January agents"].sum())
+    need = int(frame["Peak need"].sum())
+    short = frame.loc[frame["Team vs need"] < 1, "Country"].tolist()
     text = (
         f"**{len(frame)} countries** start the year with **{agents:,} agents**, while the busiest 60 days of "
         f"eligible sign ups need about **{need:,}**."

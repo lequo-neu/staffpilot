@@ -20,7 +20,7 @@ def test_policy_comparison_is_the_planners_own(planner):
     table = manager.policy_table(frame)
     assert len(table) == len(POLICIES)
     assert table.iloc[0]["Net value"] == charts.money(frame["net_value"].max())
-    assert {"Against the January team", "Eligible served", "Average agents", "Notices"} <= set(table.columns)
+    assert {"vs January team", "Served", "Avg agents", "Notices"} <= set(table.columns)
     assert (table["Policy"] == "Keep January headcount").sum() == 1
 
     lines = manager.policy_takeaways(frame)
@@ -94,11 +94,11 @@ def test_country_inputs_match_the_dataset(planner):
     countries = planner.dataset.countries
     assert list(frame["Country"]) == sorted(countries.index)
     alpha = frame.set_index("Country").loc["Alpha"]
-    assert alpha["Agent salary a year"] == countries.loc["Alpha", "salary"]
-    assert alpha["Eligibility threshold"] == countries.loc["Alpha", "threshold"]
-    assert alpha["Agents on 1 January"] == countries.loc["Alpha", "agents"]
-    years = [c for c in frame.columns if c.startswith("Eligible sign ups")]
-    assert years == [f"Eligible sign ups {y}" for y in planner.dataset.history_years]
+    assert alpha["Salary"] == countries.loc["Alpha", "salary"]
+    assert alpha["Threshold"] == countries.loc["Alpha", "threshold"]
+    assert alpha["January agents"] == countries.loc["Alpha", "agents"]
+    years = [c for c in frame.columns if c.startswith("Eligible ")]
+    assert years == [f"Eligible {y}" for y in planner.dataset.history_years]
     assert frame[years].to_numpy().sum() == len(planner.dataset.eligible())
     assert frame["Share eligible"].between(0, 1).all()
     assert "countries** start the year with" in manager.country_summary(frame)

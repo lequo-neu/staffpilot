@@ -994,25 +994,25 @@ def run_builder(*controls, request: gr.Request | None = None):
     return run_scenario(params.model_dump_json(), proposal, request, policy=policy)
 
 
-MONEY_COLUMNS = ("Agent salary a year", "Eligibility threshold", "Median eligible budget")
+MONEY_COLUMNS = ("Salary", "Threshold", "Median budget")
 
 
 def country_view():
     """The country inputs, with countries short of their busiest 60 days in amber, and the assumptions."""
     p = planner()
     frame = manager.country_inputs(p)
-    short = list(frame["January team against that need"] < 1)
-    counts = [c for c in frame.columns if c.startswith(("Eligible sign ups", "Agents"))]
+    short = list(frame["Team vs need"] < 1)
+    counts = [c for c in frame.columns if c.startswith(("Eligible ", "January agents", "Peak need"))]
     styled = frame.style.format(
         {
             **{c: "${:,.0f}" for c in MONEY_COLUMNS},
             **{c: "{:,.0f}" for c in counts},
             "Share eligible": "{:.1%}",
-            "January team against that need": "{:.1f} times",
+            "Team vs need": "{:.1f} times",
         }
     ).apply(
         lambda column: [TINT["amber"] if flag else "" for flag in short]
-        if column.name in {"Country", "January team against that need"}
+        if column.name in {"Country", "Team vs need"}
         else [""] * len(column)
     )
     return manager.country_summary(frame), styled, manager.assumptions(p)
@@ -1575,7 +1575,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     gr.HTML('<div class="sp-panel-title">Staffing policies side by side</div>')
                     compare_text = gr.Markdown(elem_classes="sp-prose")
                     compare_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                    compare_table = gr.Dataframe(show_label=False, interactive=False)
+                    compare_table = gr.Dataframe(show_label=False, interactive=False, wrap=True)
                 with gr.Column(elem_classes="sp-panel"):
                     gr.HTML(
                         '<div class="sp-panel-title">If sign ups miss the forecast: '
@@ -1583,7 +1583,7 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                     )
                     sens_text = gr.Markdown(elem_classes="sp-prose")
                     sens_plot = gr.Plot(show_label=False, elem_classes="sp-plot")
-                    sens_table = gr.Dataframe(show_label=False, interactive=False)
+                    sens_table = gr.Dataframe(show_label=False, interactive=False, wrap=True)
                 next_row("Compare policies")
 
             with gr.Column(visible=False, elem_classes="sp-page") as pages["Monthly update"]:
@@ -1773,15 +1773,22 @@ def build_app(p: Planner | None = None) -> gr.Blocks:
                 with gr.Column(elem_classes="sp-panel"):
                     gr.HTML('<div class="sp-panel-title">Country inputs</div>')
                     country_text = gr.Markdown(elem_classes="sp-prose")
-                    country_table = gr.Dataframe(show_label=False, interactive=False)
+                    country_table = gr.Dataframe(show_label=False, interactive=False, wrap=True, max_height=1000)
                     gr.Markdown(
-                        "Read only, straight from the dataset. Sign ups count only when the budget is above "
-                        "the country threshold. To test another salary or threshold, use the Scenario page.",
+                        "Read only, straight from the dataset. Eligible: sign ups whose budget is above the threshold. "
+                        "Peak need: agents the busiest 60 days of eligible sign ups need. Team vs need: January "
+                        "agents divided by that need. To test another salary or threshold, use the Scenario page.",
                         elem_classes="sp-note",
                     )
                 with gr.Column(elem_classes="sp-panel"):
                     gr.HTML('<div class="sp-panel-title">Assumptions behind every plan</div>')
-                    assumption_table = gr.Dataframe(show_label=False, interactive=False, wrap=True)
+                    assumption_table = gr.Dataframe(
+                        show_label=False,
+                        interactive=False,
+                        wrap=True,
+                        max_height=1000,
+                        column_widths=["20%", "28%", "52%"],
+                    )
                     gr.Markdown(
                         "Fixed in this version. The rules come from the brief; the rest are the choices the brief "
                         "leaves open, each explained in the method notes.",
