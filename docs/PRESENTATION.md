@@ -2,7 +2,7 @@
 
 Two scripts that follow a staffing manager's year, from the question Google asks to the last decision of the month:
 
-* **The video script** below is read aloud while the screen is recorded. As written it runs about 3 minutes 20 seconds (about 440 words at 145 words a minute, with short pauses for clicks); the three cuts under "If it runs long" bring it to the 3 minutes the brief asks for. The brief asks the video to show the product, the architecture and the part we are most proud of: the architecture is scene 6, the proudest part is scene 8.
+* **The video script** below is read aloud while the screen is recorded. It runs about 3 minutes 45 seconds and has three parts, each announced aloud so a viewer always knows where they are: **the architecture**, **how StaffPilot meets the brief**, and **the part we are most proud of**. The cuts under "If it runs long" bring it to about 3 minutes 25 seconds.
 * **The ten minute talk** further down has one slide per question, for a live presentation.
 
 ## Video script
@@ -10,109 +10,87 @@ Two scripts that follow a staffing manager's year, from the question Google asks
 ### Before you record
 
 * Start the app with `python -m staffpilot app`, open http://127.0.0.1:7860 in a window of about 1440 by 900, and sign in as `kevin`.
-* In **Settings**, keep **Offline**: it is free and answers at once. A paid model takes 8 to 12 seconds per answer, which a three minute video cannot spare.
-* On **Plan**, keep **All countries** with the recommended goal and click **Approve this plan**, so This year shows the approval and the decision log has your name.
-* Run each slow step once, so it answers at once while you record: on **Scenario**, the example "Sign ups in the USA rise 20% in Q4", then **Run the scenario**; on **Monthly update**, USA, March and 20 percent (the defaults), then **Update the plan**; on **Memo**, Vietnam, then **Write the memo**. Then click **New chat** on Assistant and go back to **This year**.
+* In **Settings**, keep **Offline**: it is free and answers at once. A paid model takes 8 to 12 seconds per answer.
+* On **Plan**, keep **All countries** with the recommended goal and click **Approve this plan**, so the decision log has your name.
+* Warm up the slow pages once, so they open at once while you record:
+  * **Compare policies**: open it and wait until both tables show (about a minute the first time).
+  * **Scenario**, tab **Choose step by step**: pick USA, keep Q4 and 20, click **Run Scenario**.
+  * **Monthly update**: USA, March and 20 percent (the defaults), then **Update the plan**.
+  * **Assistant**: click **New chat** so the conversation starts empty.
 * In a second browser tab, open the README on GitHub at **How it works**, so the diagram is already drawn.
-* Turn on Do Not Disturb, hide the bookmarks bar, and record only the browser window.
-* Read the script aloud once with a timer. If it runs past 3:30, use the cuts at the end of this section.
+* Go back to **This year**. Turn on Do Not Disturb, hide the bookmarks bar, and record only the browser window.
+* Read the script aloud once with a timer. If it runs past 4:00, use the cuts at the end of this section.
 
-### 1. The problem (0:00)
+### Opening: the problem and the answer (0:00)
 
-**Do:** stay on **This year**.
+**Do:** stay on **This year**. Point at the net value tile, then the agents tile, then January in the month strip.
 
-> Hi, we are the Seven Team, and this is StaffPilot. Google gives every eligible new advertiser a support agent for 60 days, and 22 countries must decide how many agents to employ each month. Too many waste salary; too few make advertisers wait.
+> Hi, we are Seven Team, and this is StaffPilot. Twenty two countries must decide how many support agents to employ each month: too many waste salary, too few make new advertisers wait. The first screen gives the answer: 479.7 million dollars of net value, 109 million more than keeping the January team, with about 2,220 agents a month instead of 6,474, and every eligible advertiser still served.
 
-### 2. The answer (0:18)
+### Part 1: the architecture (0:27)
 
-**Do:** point at the net value tile, then the agents tile, then January in the month strip (Hire 11, Notice 4,741).
+**Do:** switch to the GitHub tab. Point at the left box of the diagram, follow the arrows to the simulator, then point at the right box.
 
-> The first screen gives the answer for the year: 479.7 million dollars of net value, 109 million or 29.5 percent more than keeping the January team. The team goes from 6,474 agents to about 2,220 a month, and everyone is still served. Most notices go out in January.
+> Part one, the architecture. On the left is the planning core, with no language model at all. It applies the eligibility rule, forecasts each country by month, and solves one integer program per country for hires and notices. A simulator then replays the plan day by day under every rule; if a day breaks one, the optimizer solves again. Every number you see comes from this simulator.
+>
+> On the right is the GenAI side. A router reads the question into structured output, LangChain tools call the planner, BM25 retrieval finds the rules, and a number check compares every figure with the planner's facts. That is six course techniques, and with no API key it all runs offline.
 
-### 3. The data (0:39)
+### Part 2: how StaffPilot meets the brief (1:17)
 
-**Do:** click **Data**. Point at "Is demand seasonal?", "Does demand jump from day to day?" and "Is the January team the right size?".
+**Do:** back to the app. Click **Plan**, then the tab **Check the plan**. Scroll slowly down the eight checks.
 
-> Why cut so much? Demand is seasonal: November is 1.8 times June. It jumps from day to day, so we simulate the waiting pool daily. And the January team is 2.8 times what the busiest 60 days need.
+> Part two, how we meet the brief. The plan gives agents, hires and notices for every country and month, and Check the plan tests it against every rule: ten advertisers per agent, sixty days of support and of waiting, a month of ramp up and of notice. Eight of eight pass, and on a year it never saw, the method reaches 99.3 percent of hindsight.
 
-### 4. The proof (0:57)
+**Do:** click **Compare policies**. Point at the rows Recommended, Keep January headcount and Follow last month's demand. Then scroll to **If sign ups miss the forecast** and point at the row "30% more sign ups".
 
-**Do:** click **Plan**, then the tab **Check the plan**. Scroll slowly down the eight checks.
+> For cost, service and scale, this page compares five ways of staffing. Keeping the January team earns 109 million less; following last month's demand takes 1,243 hires and 5,495 notices. And for sensitivity: with 30 percent more sign ups, the kept plan makes advertisers wait 22 days, while a rebuilt plan serves everyone and adds 18.2 million.
 
-> Is the plan right? A day by day simulator replays it against every rule of the brief, and eight of eight checks pass. The solver proved it optimal in all 22 countries, and on a year it never saw, it reaches 99.3 percent of hindsight.
+**Do:** click **Scenario**, then the tab **Choose step by step** (USA, Q4, 20 percent, already run). Point at the summary line.
 
-### 5. The service goal (1:17)
+> Any change can be described in words or chosen step by step: USA up 20 percent in Q4 moves USA net value from 117.6 to 126.9 million.
 
-**Do:** click the tab **Overview** and open **Every service goal**. Point at the row "within 7 days".
+**Do:** click **Monthly update** (USA, March, 20 percent, already updated). Point at "Keep the approved plan ... 12.9 days", then "Decide in March: hire 39".
 
-> The manager also picks the service goal: serving everyone within a week costs 3.6 million dollars more.
+> Each month the manager enters actual sign ups. By March, USA is 20 percent above forecast. Keeping the plan, the wait grows to 12.9 days, so the update says: hire 39 now, which brings it back to 2.3 days.
 
-### 6. The architecture (1:26)
+### Part 3: the part we are most proud of (2:42)
 
-**Do:** switch to the GitHub tab. Point at the left box of the diagram, then the right box.
+**Do:** click **Assistant**. Click the example "What if sign ups in Brazil drop 30% in Q3?". When it answers, type `And Mexico?` and press Enter. Point at the panel **How this answer was built**.
 
-> Under the hood, the planning core has no language model: a forecast, one integer program per country, and a simulator behind every number. The GenAI side reads questions with structured output, calls LangChain tools on the planner, and finds rules with RAG.
+> Part three, the part we are most proud of: you can trust every number the AI says. What if sign ups in Brazil drop 30 percent in Q3? And Mexico? The follow up keeps the scenario and changes only the country. This panel shows six numbers, each matched to one of 56 planner facts. The model never writes a number: it writes a placeholder, the planner fills it in, and a number without a source is rejected.
 
-### 7. The scenario (1:45)
+**Do:** click **Evaluation** and point at the first line. Then click **Decision log** and point at the user column.
 
-**Do:** back to the app. Click **Scenario**, click the example "Sign ups in the USA rise 20% in Q4", click **Read the scenario** (the "Understood as" line appears), then **Run the scenario**.
+> We measured the AI too. On 32 questions in new wording, Claude Sonnet reads every one right; keywords alone read 28 percent. And every decision is logged with who approved it.
 
-> If the market moves, I describe it in one sentence. The app turns it into parameters I can check, then rebuilds the plan: USA net value goes from 117.6 to 126.9 million.
-
-### 8. The assistant, and the part we are most proud of (2:00)
-
-**Do:** click **Assistant**. Click the example "What if sign ups in Brazil drop 30% in Q3?". When it answers, type `And Mexico?` and press Enter. Point at the panel **How this answer was built**: "6 numbers in the answer, each matched to one of 56 planner facts".
-
-> Or the manager just asks. What if sign ups in Brazil drop 30 percent in Q3? And Mexico? The follow up keeps the scenario. This panel is the part we are most proud of: six numbers, each matched to a planner fact. Even with Claude or GPT, the model writes only placeholders, the planner fills them in, and a number without a source is rejected.
-
-### 9. The memo (2:29)
-
-**Do:** click **Memo**; Vietnam is already written. Point at the last line, "Every number matches the planner."
-
-> Each country gets a one page memo, and every number in it matches the planner.
-
-### 10. The monthly update (2:36)
-
-**Do:** click **Monthly update** (USA, March, 20 percent). Point at "Keep the approved plan ... 12.9 days", then "Decide in March: hire 39".
-
-> Now it is March, and USA sign ups came in 20 percent above forecast. Keeping the plan, advertisers would wait 12.9 days. The update keeps the months already done and says: hire 39 now. The wait drops to 2.3 days.
-
-### 11. The log and the evaluation (2:55)
-
-**Do:** click **Decision log** and point at the user column. Then click **Evaluation** and point at the first line.
-
-> Every decision is logged, with who approved it. And we measured the AI itself: on 32 questions in new wording, Claude Sonnet reads every one right. Keywords alone read 28 percent.
-
-### 12. Close (3:10)
+### Close (3:30)
 
 **Do:** click **This year** and stop moving the mouse.
 
-> StaffPilot cuts the team by two thirds, keeps every advertiser served, and adds 109 million dollars. And every number the AI says comes from the model. Thank you.
+> StaffPilot cuts the team by two thirds, keeps every advertiser served, and adds 109 million dollars. And every number it says comes from the model. Thank you.
 
-The script ends at about 3:20 at 145 words a minute.
+The script ends at about 3:45: about 500 words at 145 words a minute, plus short pauses for clicks.
 
 ### If it runs long
 
-* Drop scene 9 (the memo): 7 seconds.
-* Drop scene 5 (the service goal): 8 seconds.
-* In scene 4, stop after "eight of eight checks pass": 8 seconds.
+* In Part 2, drop the Scenario step: 12 seconds.
+* In Part 3, drop the last sentence on the decision log: 5 seconds.
+* In Part 1, drop "Every number you see comes from this simulator": 3 seconds.
 
-All three together bring the video to about 3:00.
+All three together bring the video to about 3:25.
 
-### What each scene proves
+### What each part proves
 
-| Scene | Requirement of the brief | Beyond the brief |
+| Part | Requirement of the brief | Beyond the brief |
 |---|---|---|
-| 2 The answer | agents per country and month, with the dates of hires and notices | a home page built around the manager's year |
-| 3 The data | use of the provided data | six questions with their answers |
-| 4 The proof | the staffing model and its rules | a day by day simulator that checks the optimizer; a backtest on an unseen year |
-| 5 The service goal | cost against timely support | each service level is its own optimization |
-| 6 The architecture | architecture diagram; two or more course techniques | the planning core never uses a language model |
-| 7 The scenario | sensitivity analysis and a scenario explorer | the parameters are shown before the run |
-| 8 The assistant | a planning assistant | follow ups that keep context; the number check |
-| 9 The memo | the staffing memo generator | every number checked against the planner |
-| 10 The monthly update | other considerations | a rolling update with input checks |
-| 11 The log and the evaluation | | a decision log with the user; multi model evaluation with a holdout |
+| Opening | agents per country and month, with the dates of hires and notices | a home page built around the manager's year |
+| 1 Architecture | architecture diagram; two or more course techniques | the planning core never uses a language model; the same pipeline runs offline |
+| 2 Check the plan | the staffing model and every rule (capacity, support, pool, ramp up, notice) | a day by day simulator that checks the optimizer; a backtest on an unseen year |
+| 2 Compare policies | cost efficiency, timely support, scalability; sensitivity to sign up volume | five policies and kept against rebuilt plans in one view |
+| 2 Scenario | a scenario explorer | a sentence or a step by step choice gives the same result |
+| 2 Monthly update | other considerations | a rolling update that keeps the months already done |
+| 3 Assistant | a planning assistant | follow ups that keep context; the number check on every answer |
+| 3 Evaluation and log | | multi model evaluation with a holdout; a decision log with the user |
 
 ## Ten minute talk
 

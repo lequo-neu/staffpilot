@@ -9,7 +9,7 @@ StaffPilot plans how many support agents each of 22 countries needs in each mont
 | GitHub repository | https://github.com/lequo-neu/staffpilot |
 | Executed notebook | [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb) |
 | Analysis report | [`docs/report.md`](docs/report.md) |
-| Demo video (3 minutes) | `<to be added>` |
+| Demo video (under 4 minutes) | `<to be added>` |
 | Methods in detail | [`docs/METHODS.md`](docs/METHODS.md) |
 | Evaluation in detail | [`docs/EVALUATION.md`](docs/EVALUATION.md) |
 | Presentation script | [`docs/PRESENTATION.md`](docs/PRESENTATION.md) |

@@ -168,6 +168,16 @@ def test_step_by_step_scenario_runs_without_a_model(planner, tmp_path, monkeypat
     assert set(log["country"]) == {"Alpha", "Alpha, Beta"}
     assert "Profit only" in set(log.loc[log["item"] == "service goal", "applied"])
 
+    # Gradio hands the signed in user to the handler, so the log names who ran it.
+    from gradio import helpers
+
+    signed_in = app.gr.Request(username="kevin")
+    args, *_ = helpers.special_args(app.run_builder, [*choice, RECOMMENDED_POLICY], signed_in)
+    assert args[-1] is signed_in
+    app.run_builder(*args)
+    log = pd.read_csv(tmp_path / "decision_audit.csv")
+    assert set(log["user"].dropna()) == {"kevin"}
+
     nothing = [[], "All year", [], 0, [], "All year", [], 0, manager.REBUILD]
     assert app.builder_preview(*nothing, RECOMMENDED_POLICY).startswith("**Not ready yet:**")
     message, chart, table = app.run_builder(*nothing, RECOMMENDED_POLICY)

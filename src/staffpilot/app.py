@@ -982,11 +982,26 @@ def builder_preview(*controls) -> str:
     return f"**You chose:** {params.plain()}. Service goal: {GOAL_NAMES.get(policy, policy)}."
 
 
-def run_builder(*controls, request: gr.Request | None = None):
-    """Run the chosen scenario with the planner; no language model reads anything."""
-    *choices, policy = controls
+def run_builder(
+    countries,
+    period,
+    months,
+    percent,
+    countries2,
+    period2,
+    months2,
+    percent2,
+    mode,
+    policy,
+    request: gr.Request | None = None,
+):
+    """Run the chosen scenario with the planner; no language model reads anything.
+
+    The controls are named one by one rather than taken as `*controls`: Gradio passes
+    the signed in user only to a named `request` parameter, and the log needs that name.
+    """
     try:
-        params = _builder_params(*choices)
+        params = _builder_params(countries, period, months, percent, countries2, period2, months2, percent2, mode)
     except manager.ScenarioChoiceError as error:
         return f"**Not ready yet:** {error}", None, pd.DataFrame()
     except ValidationError:
