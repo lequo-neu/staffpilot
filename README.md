@@ -8,11 +8,12 @@ StaffPilot plans how many support agents each of 22 countries needs in each mont
 |---|---|
 | GitHub repository | https://github.com/lequo-neu/staffpilot |
 | Executed notebook | [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb) |
-| Analysis report | [`docs/report.md`](docs/report.md) |
-| Demo video (under 4 minutes) | `<to be added>` |
+| Analysis report | [`docs/REPORT.md`](docs/REPORT.md) |
+| Demo video (3 to 4 minutes) | https://drive.google.com/file/d/1TXi6O2w-RZ6yYFXhVAAcJCADAdR5jF_D/view?usp=sharing |
+| Full walkthrough video (about 20 minutes) | https://drive.google.com/file/d/1_E3Lm7iKuQb808oZUR50gpA_nF8o3DzR/view?usp=sharing |
+| Slides | [`docs/StaffPilot_Presentation.pdf`](docs/StaffPilot_Presentation.pdf) |
 | Methods in detail | [`docs/METHODS.md`](docs/METHODS.md) |
 | Evaluation in detail | [`docs/EVALUATION.md`](docs/EVALUATION.md) |
-| Presentation script | [`docs/PRESENTATION.md`](docs/PRESENTATION.md) |
 
 Topic confirmed via email with Ms. Niki on 3 November 2026.
 
@@ -35,20 +36,37 @@ Planned from 2024 alone and scored on what really happened in 2025, the method r
 
 ## What the brief asks, and the evidence
 
-| ID | Brief | What StaffPilot does | Proof |
+| ID | The brief asks | What StaffPilot does | Where to see it |
 |---|---|---|---|
-| R1, R2 | A dynamic month by month plan per country | 22 countries by 12 months: agents at work, hires and notices, with their dates | `outputs/plan.csv`; This year and Plan pages |
-| R3 to R11 | Eligibility: budget exceeds the country threshold | strictly greater (13 budgets sit exactly on one) | Data page, data quality note |
-| R3 to R11 | At most 10 advertisers per agent; 60 days of support; 60 days in the pool | applied day by day by the simulator, which produces every reported number | Check the plan: 8 of 8 pass, no day above 10 |
-| R3 to R11 | One month of ramp up; one month of notice at 40% of salary | hires work from the next month; notices end after one month and cost 40% | Check the plan; How it is calculated |
-| R3 to R11 | Uplift of 0 to 25% with the given probabilities | expected uplift 13.5% on the projected annual budget | How it is calculated |
-| R12 | Cost efficiency, timely support, scalability | net value maximized; utilization 68.9% (from 23.9%); mean wait 1.1 days; monthly hires and notices | Plan cards; service goals |
-| R13 | Analysis and justification | key decisions, assumptions and their impact | [`docs/report.md`](docs/report.md) |
-| R14 | Sensitivity to sign up volume | sign ups from 70% to 130% of forecast, Monte Carlo with 20 runs, what if scenarios | report section 5; notebook section 10; Scenario page |
-| R15 | Other considerations | monthly update with actual sign ups, lower thresholds, the UAE, notice rules, pool fairness | report section 6; Monthly update page |
-| R16 | The provided data, easy to swap for another file | every sign up with its budget; the planning year follows the data; one line in the config | `tests/test_dataset_swap.py` |
-| R17 to R22 | A GenAI app with at least two course techniques | six: API calls, prompt engineering, structured output, LangChain, RAG, agents | How it works, below |
-| R26 to R29 | Notebook, README with setup, diagram and contributions, AI use | executed notebook; this file; [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | links above |
+| R1 | An agent count for every country and every month | 22 countries by 12 months of 2026 | `outputs/plan.csv`; This year and Plan pages |
+| R2 | A dynamic plan: when to hire and when to give notice | hires and notices with the month they are decided, agents in ramp up and in notice, payroll | `outputs/plan.csv`; Plan, month by month detail |
+| R3 | Staffing is local: agents serve only their own country | one plan and one day by day simulation per country | `test_countries_do_not_share_agents` |
+| R4 | Eligible when the projected budget exceeds the country threshold | strictly greater; 13 budgets sit exactly on a threshold | `test_eligibility_is_strictly_greater_than_threshold`; Data page |
+| R5 | Eligible advertisers wait in a pool up to 60 days, then leave | the pool is simulated day by day | `test_without_agents_everyone_leaves_after_sixty_days`; Check the plan |
+| R6 | At most 10 advertisers per agent at any time | checked on every day of every plan | `test_optimized_plan_respects_capacity_day_by_day`; Check the plan: no day above 10 |
+| R7 | Agents start the year with no advertisers | empty slots and an empty pool on 1 January | `test_agents_start_the_year_with_no_advertisers` |
+| R8 | Support lasts 60 days, then the slot frees | the slot frees on day 61 | `test_slot_frees_exactly_after_sixty_days_of_support` |
+| R9 | A new agent needs one month of ramp up | a hire decided in one month works from the next | `test_hire_is_active_one_month_after_the_decision` |
+| R10 | A notice takes one month and costs 40% of annual salary | paid that month, no new advertisers, 40% cost | `test_notice_leaves_one_month_later_and_costs_forty_percent`; How it is calculated |
+| R11 | Uplift of 0 to 25% with the given probabilities | expected uplift 13.5% on the projected annual budget; sampled in Monte Carlo | `test_expected_uplift_value_uses_the_brief_distribution`; How it is calculated |
+| R12 | Balance cost efficiency, timely support and scalability | net value maximized; utilization 23.9% → 68.9%; mean wait 1.1 days; a service goal to choose | Plan cards; Compare policies |
+| R13 | Analysis and justification of decisions, assumptions, revenue and cost | key decisions, eleven assumptions and their impact, against keeping the January team | [`docs/REPORT.md`](docs/REPORT.md) |
+| R14 | Sensitivity to sign up volume | 70% to 130% of forecast, Monte Carlo with 20 runs, what if scenarios | report section 5; notebook section 10; Compare policies and Scenario pages |
+| R15 | Other considerations | monthly update with real sign ups, lower thresholds, the UAE, notice rules, pool fairness | report section 6; Monthly update page |
+| R16 | Use the provided data; swapping the file is easy | the planning year follows the data; a new file is one line of config | `test_shifting_every_date_one_year_back_gives_the_same_plan`; Data and Country inputs pages |
+| R17 | A GenAI app with at least two course techniques | all six: API calls, prompt engineering, structured output, LangChain, RAG, agents | How it works, below |
+| R18 | GenAI tied to the model, not an add on | every number in an answer comes from a planner tool and passes the number check | Assistant, panel "How this answer was built" |
+| R19 | A planning assistant that retrieves rules and answers what if questions | BM25 retrieval of the rules; planner tools; follow ups that keep context | Assistant page; [`docs/AGENT_LIVE_CHECK.md`](docs/AGENT_LIVE_CHECK.md) |
+| R20 | Sign up insights in plain English, with charts | six questions the data answers, each with its numbers and a chart | Data page; notebook section 3 |
+| R21 | A scenario explorer: words to parameters to a new plan | the sentence is read into parameters the manager can check, then the plan is rebuilt | Scenario page; edge set in [`docs/EVALUATION.md`](docs/EVALUATION.md) |
+| R22 | A staffing memo for each country manager | a one page memo; every number matches the planner | Memo page |
+| R23 | Start with one or two countries, then scale | Germany and Vietnam first, then all 22 countries | notebook sections 6 and 7 |
+| R24 | Expected values first, randomness after | the plan uses expected values; Monte Carlo comes after | notebook sections 8 and 10 |
+| R25 | A small model that runs end to end | runs offline with no API key; CI on Ubuntu, macOS and Windows | Run it, below; GitHub Actions |
+| R26 | A notebook with every cell run and its outputs | 33 code cells, all run, no errors | [`notebooks/StaffPilot_Topic3.ipynb`](notebooks/StaffPilot_Topic3.ipynb) |
+| R27 | A repo with code, README, setup, architecture diagram and contributions | this README: Run it, How it works, Team contributions | sections below |
+| R28 | A demo video | short demo and full walkthrough | links at the top |
+| R29 | Explain AI use and mark AI generated parts | which parts were drafted with AI, how they were checked, what the team decided | [`docs/AI_USAGE.md`](docs/AI_USAGE.md) |
 
 ### The plan, and the checks that it follows the rules
 
@@ -64,11 +82,21 @@ The Plan page shows the headline numbers with their change against keeping the J
 
 Demand is seasonal (November is 1.8 times June), jumps from day to day (coefficient of variation 0.69, so the waiting pool is simulated day by day), is not growing (minus 1.8% a year) and barely differs by weekday. The January team is 2.8 times what the busiest 60 days need.
 
+![Country inputs: salary, threshold, January team and need per country, with Vietnam the only country short of its need](docs/Assets/M2.png)
+
+Country inputs lists what the plan starts from for each country, read straight from the dataset, and every assumption with what it changes.
+
 ### Sensitivity and what if
 
 ![Scenario page: a sentence becomes model parameters, and the plan is rebuilt](docs/Assets/R8.png)
 
 "Sign ups in the USA rise 20% in Q4" is read into parameters the manager can check and edit; the rebuilt plan moves USA net value from $117.6M to $126.9M and adds 27 to 29 agents from October. Across all countries, scaling sign ups from 70% to 130% of forecast shows when replanning pays: below forecast it saves money, above it keeps the wait at a day where the unchanged plan lets it grow to 22 days.
+
+| Compare policies: five ways to staff, with the trade offs in words | Scenario, step by step: the same change chosen from lists |
+|---|---|
+| ![Compare policies: net value, cost, hires, notices and service of each policy](docs/Assets/M1.png) | ![Scenario chosen step by step: USA, Q4, 20% more sign ups](docs/Assets/M3.png) |
+
+Compare policies runs every policy through the same optimizer and simulator, and tests the plan against sign ups 30% below and above the forecast, kept or rebuilt. The step by step scenario gives the same $117.6M to $126.9M as the sentence, with no language model.
 
 ### The GenAI application
 
@@ -77,6 +105,31 @@ Demand is seasonal (November is 1.8 times June), jumps from day to day (coeffici
 | ![Assistant answering a follow up about Mexico](docs/Assets/R9.png) | ![Staffing memo for Vietnam](docs/Assets/R10.png) |
 
 The assistant answered "And Mexico?" after a question about Brazil by keeping the scenario and changing the country. The panel on the right shows how: 6 numbers in the answer, each matched to one of 56 planner facts, and the question as it was read.
+
+## Who uses it, and how
+
+StaffPilot serves the people who staff the year, not only the planner. The sidebar follows the manager's year: **Before the year starts** (Data, Country inputs, Plan, Compare policies, Scenario, Memo), **Every month** (Monthly update, Decision log) and **Behind the numbers** (Evaluation); the Assistant and This year are open at any time.
+
+| Role | What they need | Where in the app |
+|---|---|---|
+| Staffing manager | the right team every month, at the lowest cost | This year, Plan, Scenario, Monthly update |
+| Country managers | to understand and explain their own numbers | Memo, Assistant |
+| Finance and leadership | proof that the plan pays, and that simpler options pay less | Plan (How it is calculated), Compare policies |
+| People team | notices that are fair and lawful | alerts on This year (in 18 countries more than half the January team gets notice), Plan month by month |
+| IT and governance | control, an audit trail, no lock in | sign in, Decision log, any model or none in Settings, a new data file in one line of config |
+
+| When | The question | Page | What the app answers |
+|---|---|---|---|
+| Before the year | What do we do this year? | This year | $479.7M; hire 11 and give 4,741 notices in January |
+| Before the year | Profit only, or a service promise? | Plan | 98% served costs $0.03M; 98% within 7 days costs $3.6M |
+| Before the year | Why not something simpler? | Compare policies | keeping the January team earns $109.3M less |
+| Before the year | Which country needs what? | Country inputs | only Vietnam is short: 59 agents for a need of 107 |
+| Before the year | How do I brief each country? | Memo | one page per country; every number matches the planner |
+| The market moves | What if sign ups change? | Scenario | USA up 20% in Q4: $117.6M to $126.9M |
+| The market moves | What if the forecast is wrong? | Compare policies | 30% more sign ups: the kept plan waits 22 days; rebuilt, +$18.2M |
+| Every month | Sign ups came in above forecast | Monthly update | USA in March, 20% high: hire 39 now; wait 12.9 to 2.3 days |
+| Every month | Who changed what? | Decision log | what was proposed, what changed it, what was applied, and by whom |
+| Any time | A question in plain English | Assistant | "And Mexico?" keeps the scenario; 6 numbers, each matched to one of 56 planner facts |
 
 ## Beyond the brief
 
@@ -152,7 +205,7 @@ Net value = uplift minus salaries minus notice cost. Uplift = advertisers served
 | Structured output | Pydantic `RoutedQuery`, `ScenarioParams`, `MemoDraft`, `Judgement` |
 | LangChain | six `StructuredTool`s, conversation memory, `create_agent` chat |
 | RAG | BM25 over `src/staffpilot/knowledge/` with citations |
-| Agents | a structured assistant that routes to one tool, and a `create_agent` chat that chains tools |
+| Agents | a structured assistant that routes to one tool, and a `create_agent` chat that chains tools (live run: [`docs/AGENT_LIVE_CHECK.md`](docs/AGENT_LIVE_CHECK.md)) |
 
 Each step, the design choices and the numbers behind them: [`docs/METHODS.md`](docs/METHODS.md).
 
@@ -218,11 +271,11 @@ Share of the work: **Kevin 40%**, **Hamad 30%**, **Khoa 30%**. All three reviewe
 | 10 | Build the evaluation and compare the models | `evaluation.py`, `docs/EVALUATION.md` | Kevin | Done |
 | 11 | Build the web app: pages, monthly update, decision log, sign in | `app.py`, `src/staffpilot/ui/` | Kevin | Done |
 | 12 | Build the manager pages: compare policies, country inputs, a scenario chosen step by step | `manager.py`, `tests/test_manager.py` | Hamad | Done |
-| 13 | Check the plan against real capacity planning practice and write the business recommendations | `docs/report.md` | Khoa | Done |
-| 14 | Write the process improvement view | `docs/report.md` | Hamad | Done |
+| 13 | Check the plan against real capacity planning practice and write the business recommendations | `docs/REPORT.md` | Khoa | Done |
+| 14 | Write the process improvement view | `docs/REPORT.md` | Hamad | Done |
 | 15 | Run the testing guide before submission | `docs/TESTING_GUIDE.md` | Khoa & Hamad | Done |
 | 16 | Executed notebook, README and CI on three systems | `notebooks/StaffPilot_Topic3.ipynb`, `.github/workflows/ci.yml` | Kevin | Done |
-| 17 | Presentation script and demo video | `docs/PRESENTATION.md` | Khoa & Kevin | Video to be recorded |
+| 17 | Slides and demo videos | `docs/StaffPilot_Presentation.pdf`, video links above | Khoa & Kevin | Done |
 
 | Member | Role | Background |
 |---|---|---|
@@ -239,7 +292,7 @@ AI assistants were used; details in [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
 ```
 config/          settings: the data file, models, prices
 data/raw/        the teaching team workbook (not committed)
-docs/            report, methods, evaluation, presentation, setup and testing guides, screenshots
+docs/            report, methods, evaluation, slides, setup and testing guides, screenshots
 eval/            labelled questions, cached model replies, results
 notebooks/       the executed submission notebook
 src/staffpilot/  planning core, GenAI assistant, web app, command line

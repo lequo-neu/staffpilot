@@ -45,3 +45,7 @@ outputs/accounts.tmp
 # Local backups of evaluation results, and a Gemini run stopped when the free quota ran out
 eval/results_*/
 eval/cache/google.jsonl
+
+# Demo videos are shared by link, not committed (GitHub limit 100 MB)
+*.mov
+*.mp4
