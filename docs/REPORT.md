@@ -6,6 +6,23 @@ IE5374 Module 7 Hackathon, Topic 3, Dynamic Agent Staffing Optimization. All num
 
 Each method in detail: [METHODS.md](METHODS.md). The evaluation in full: [EVALUATION.md](EVALUATION.md).
 
+## Demo and links
+
+| What | Link |
+|---|---|
+| Demo video (3 to 4 minutes): the product, the architecture and the part we are most proud of | https://drive.google.com/file/d/1TXi6O2w-RZ6yYFXhVAAcJCADAdR5jF_D/view?usp=sharing |
+| Full walkthrough video (about 20 minutes): every page of the app | https://drive.google.com/file/d/1_E3Lm7iKuQb808oZUR50gpA_nF8o3DzR/view?usp=sharing |
+| Slides (PDF) | https://github.com/lequo-neu/staffpilot/blob/main/docs/StaffPilot_Presentation.pdf |
+| GitHub repository (code, setup, architecture diagram) | https://github.com/lequo-neu/staffpilot |
+| Executed notebook | https://github.com/lequo-neu/staffpilot/blob/main/notebooks/StaffPilot_Topic3.ipynb |
+| How to run the app (macOS and Windows) | https://github.com/lequo-neu/staffpilot/blob/main/docs/SETUP_GUIDE.md |
+| Methods in detail | https://github.com/lequo-neu/staffpilot/blob/main/docs/METHODS.md |
+| Multi LLM evaluation | https://github.com/lequo-neu/staffpilot/blob/main/docs/EVALUATION.md |
+| A live run of the agent | https://github.com/lequo-neu/staffpilot/blob/main/docs/AGENT_LIVE_CHECK.md |
+| How AI tools were used | https://github.com/lequo-neu/staffpilot/blob/main/docs/AI_USAGE.md |
+
+Each member's contribution is in the appendix at the end of this report.
+
 ## 1. Problem and headline
 
 Google supports eligible new advertisers with dedicated agents for 60 days. Each agent holds at most ten advertisers, eligible advertisers wait at most 60 days, new hires need a month of ramp up, and a notice costs 40 percent of annual salary plus a month of pay. The task is a monthly headcount per country that balances cost, timely support and the ability to adjust.
@@ -142,3 +159,36 @@ The keyword router was written against the main set, where it scores 100%; the g
 * The number check catches invented and misattributed numbers but not a wrong sign or a wrong small count.
 * Language model results depend on the models and keys available at run time; cached replies make reruns reproducible once committed.
 * Sign in only records who approved each decision. It has no roles yet, and passwords travel over plain HTTP on a laptop; a deployment would use the company sign in service.
+
+## Appendix: team contributions
+
+Share of the work: Quoc Hung Le (Kevin) 40%, Hamad Al Sulaimi 30%, Khoa Tran 30%. All three reviewed the plan, the assumptions and this report. The numbers in brackets are the steps of the task table in the README, section "Team contributions".
+
+**Quoc Hung Le (Kevin): team lead, solution architect and lead engineer**
+
+* Data preparation and the 29 February repair (01); forecast and backtest (02)
+* The planning model and the day by day simulator, with Hamad (03, 04)
+* The GenAI assistant: routing, planner tools, retrieval, number check, memory (08)
+* The multi LLM evaluation, including grading 30 answers by hand (10)
+* The web app with the monthly update, decision log and sign in (11)
+* The executed notebook, README and CI (16); review of the manager pages pull request
+* Slides and videos, with Khoa (17)
+
+**Hamad Al Sulaimi: optimization and process analysis**
+
+* The brief's rules as model constraints and the simulator checks, with Kevin (03, 04)
+* The KPIs and service goals of the Plan page (05)
+* Assumptions A1 to A11 and their impact, with Khoa (06)
+* Checking every evaluation label, with Khoa (09)
+* The manager pages: compare policies, country inputs, scenario step by step, through a pull request (12)
+* The process improvement view (14); the testing guide run, with Khoa (15)
+* A scenario explorer prototype whose hard questions became the 11 question edge set
+
+**Khoa Tran: operations and business validation**
+
+* Assumptions A1 to A11, with Hamad (06)
+* The what if scenarios, sensitivity and Monte Carlo runs, and what they mean (07)
+* Editing and checking the labelled test questions, with Hamad (09)
+* Checking the plan against capacity planning practice and writing the business recommendations (13)
+* The testing guide run, with Hamad (15)
+* Slides and demo videos, with Kevin (17)
